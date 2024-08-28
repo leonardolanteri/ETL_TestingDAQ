@@ -1,0 +1,6 @@
+[submodule "ScopeHandler"]
+	path = ScopeHandler
+	url = git@github.com:CMS-MTD/ScopeHandler.git
+[submodule "TimingDAQ"]
+	path = TimingDAQ
+	url = git@github.com:CMS-MTD/TimingDAQ.git
