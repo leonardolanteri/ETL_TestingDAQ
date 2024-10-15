@@ -24,6 +24,8 @@ If you work on a part are pushing to the repository, please push updates to `env
 
 If you find a way to update the yaml instead of rewriting please share here (potentially `conda env update --name etl_testing_daq --file environment.yml --prune` works).
 
+
+
 # Work Tracker
 
 From the loooking at `tbdaq.drawio` the codebase can be split into two parts. The first part is all the scripts that make the `.dat` (contains all the etroc data from the KCU) and `.trc` files (contains all scope data from the oscilliscope); also there is a script (`data_dumper.py`) that converts the dat file to json but this can ultamitely be removed. The second part is to convert all these into one root file. 
@@ -38,3 +40,9 @@ This part of the script takes the scope and etroc data (from whatever is last in
 * Enviroment for running the script
 * Clock function updated to account for faster sampling speeds. Also is faster and fully columnar.
 
+### RecoLoop.py
+
+Added root the environment by following instructions [here](https://indico.cern.ch/event/759388/contributions/3306849/attachments/1816254/2968550/root_conda_forge.pdf). All I did was the following to get recoLoop to work INSIDE the env:
+
+`conda config --env --add channels conda-forge` then,
+`conda install root`
