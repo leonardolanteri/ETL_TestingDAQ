@@ -68,15 +68,15 @@ Here is what our Oscilliscope settings were:
 
 |Pulse Signal Channel (2)|KCU 40MHz Clock Signal Channel (3)|
 |---|---|
-|![pulse_signal_channel_settings](images/pulse_signal_channel_settings.png)|![clock_signal_channel_settings](images/clock_signal_channel_settings.png)
+|![pulse_signal_channel_settings](images/365A9440-B7A4-407E-B0A7-822261808506.jpg)|![clock_signal_channel_settings](images/DDF35E18-184B-46CC-9CC3-67068653F8A0.jpg)
 
 |Pulse Generator|Trigger|
 |---|---|
-|![pulse_generator_settings](images/pulse_generator_settings.png)|![trigger settings](images/trigger_settings.png)|
+|![pulse_generator_settings](images/3CA769FC-A3AE-4C3D-81A7-CD92E135DFA8.jpg)|![trigger settings](images/635DFFE2-5842-435D-AA8D-CB0B5EA12C23.jpg)|
 
 |Holdoff|Timebase|
 |---|---|
-|![holdoff_settings](images/holdoff_settings.png)|![timebase settings](images/time_base_settings.png)|
+|![holdoff_settings](images/EA31AC74-8D68-434C-B060-6147203742AC.jpg)|![timebase settings](images/0A70AFA2-1BCF-4124-A30F-91009D3B21DC.jpg)|
 
 Getting trace files from oscilliscope using the software in teh directory `/home/users/hswanson13/ETL_TestingDAQ/ScopeHandler/Lecroy/Acquisition/`:
 ```
