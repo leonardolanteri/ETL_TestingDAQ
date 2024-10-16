@@ -12,7 +12,7 @@ The ```Run_Autopilot.sh``` script in ```module_test_sw``` starts the runs and at
 
 ### Here is a complete view the codebase:
 
-![tbdaq](./tbdaq.svg)
+![tbdaq](images/tbdaq.svg)
 
 ## Environment
 
@@ -23,7 +23,6 @@ If you work on a part are pushing to the repository, please push updates to `env
 ```conda env export | grep -v "^prefix: " > environment.yml```
 
 If you find a way to update the yaml instead of rewriting please share here (potentially `conda env update --name etl_testing_daq --file environment.yml --prune` works).
-
 
 
 # Work Tracker
@@ -40,9 +39,48 @@ This part of the script takes the scope and etroc data (from whatever is last in
 * Enviroment for running the script
 * Clock function updated to account for faster sampling speeds. Also is faster and fully columnar.
 
-### RecoLoop.py
+### `/ScopeHandler/Lecroy/` (`Acquisition/acquisition.py` and `Conversion/recoLoop.py`)
 
 Added root the environment by following instructions [here](https://indico.cern.ch/event/759388/contributions/3306849/attachments/1816254/2968550/root_conda_forge.pdf). All I did was the following to get recoLoop to work INSIDE the env:
 
 `conda config --env --add channels conda-forge` then,
 `conda install root`
+
+# DAQ Concepts
+
+This section is an overview of how data is collected from our backend FPGA board, KCU, and our Lecroy Oscilliscope for a single "event."  The picture below walks you through from particle to data.
+
+![DAQ Readout](images/DAQ_Readout.png) <sup>Remember for the module, the particle hit data is stored, for each pixel, in the circular buffer of the ETROC after LGAD analog signal passes a discriminator value and then the ETROC works its magic for the timing information. The KCU simply accesses this circular buffer.</sup>
+
+**Manuals**:
+* [Lecroy Waverunner Oscilliscope](https://cdn.teledynelecroy.com/files/manuals/waverunner-8000-operators-manual.pdf)
+
+## Oscilliscope Data Acquistion
+
+Here we will cover how data is obtained from our Oscilliscope.
+
+### With a Function Generator instead of MCP
+This allows us to test the setup without needing a particle to hit the MCP. The picture below highlights the setup. The function generator simply creates a pulse that the oscilliscope will trigger upon. The trigger signal (just a 1V pulse for ~40ns) is sent to the KCU.
+
+![function_generator_daq](images/function_generator_daq.png)
+
+Here is what our Oscilliscope settings were: 
+
+|Pulse Signal Channel (2)|KCU 40MHz Clock Signal Channel (3)|
+|---|---|
+|![pulse_signal_channel_settings](images/pulse_signal_channel_settings.png)|![clock_signal_channel_settings](images/clock_signal_channel_settings.png)
+
+|Pulse Generator|Trigger|
+|---|---|
+|![pulse_generator_settings](images/pulse_generator_settings.png)|![trigger settings](images/trigger_settings.png)|
+
+|Holdoff|Timebase|
+|---|---|
+|![holdoff_settings](images/holdoff_settings.png)|![timebase settings](images/time_base_settings.png)|
+
+Getting trace files from oscilliscope using the software in teh directory `/home/users/hswanson13/ETL_TestingDAQ/ScopeHandler/Lecroy/Acquisition/`:
+```
+python3 acquisition.py --numEvents 200 --sampleRate 10 --horizontalWindow 50 --trigCh C2 --trig -0.05 --trigSlope "NEG" --vScale1 0.2 --vScale2 0.15 --vScale3 0.2--vScale4 0.2 --vPos1 0 --vPos2 2 --vPos3 -3 --vPos4 0 --timeoffset 0 --display 1
+```
+
+Then to convert the trace files recoLoop.py in the Conversion directory was used. 
