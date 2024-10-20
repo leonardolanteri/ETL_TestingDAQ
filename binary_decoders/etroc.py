@@ -83,8 +83,6 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
                 continue
             if t not in ['trailer', 'filler']:
                 all_raw.append(d['raw_full'])
-
-
             if t == 'header':
                 elink_report[d['elink']]['nheader'] += 1
                 hit_counter = 0
@@ -103,11 +101,10 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
                     if skip_event:
                         print("Skipping event (same l1a counter)", d['l1counter'], d['bcid'], bcid_t)
                         continue
-                    pass
-
                 else:
                     if abs(l1a - d['l1counter']) not in [1,255] and l1a>=0:
-                        missing_l1counter.append([d['l1counter'], d['bcid'], i, d['l1counter'] - l1a])  # this checks if we miss any event according to the counter
+                        missed_l1counter_info = [d['l1counter'], d['bcid'], i, d['l1counter'] - l1a] #original by Daniel
+                        missing_l1counter.append(missed_l1counter_info)  # this checks if we miss any event according to the counter
                         last_missing = True
                     if uuid_tmp in uuid and abs(i - np.where(np.array(uuid) == uuid_tmp)[0][-1]) < 150:
                         print("Skipping duplicate event")
@@ -227,9 +224,12 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
             print(f" - found {len(missing_l1counter)} missing events (irregular increase of L1counter).")
             if len(missing_l1counter)>0:
                 print("   L1counter, BCID, event number and step size of these events are:")
-                for ml1,mbcid,mev,mdelta,mbcidt in missing_l1counter:
+                # The last element passed the "last_missing" condition so the next bcid could not be appended
+                if len(missing_l1counter[-1]) == 4:
+                    missing_l1counter[-1].append(-9999) #append dummy value
+                for ml1, mbcid, mev, mdelta, mbcidt in missing_l1counter:
                     if mbcidt - mbcid<7:
-                        print("Expected issue because of missing L1A dead time:", ml1, mbcid, mev,mdelta,mbcidt)
+                        print("Expected issue because of missing L1A dead time:", ml1, mbcid, mev, mdelta, mbcidt)
                     else:
                         print(ml1, mbcid, mev,mdelta,mbcidt)
 
@@ -264,7 +264,6 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
                 cal = ak.to_list(events[sel].cal_code)
                 elink = ak.to_list(events[sel].elink)
                 chipid = ak.to_list(events[sel].chipid)
-
             else:
                 # loop through rb0 events, and find corresponding entries in the other layers
                 print(f"Merging events from RB {rb}")
