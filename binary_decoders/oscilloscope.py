@@ -251,7 +251,7 @@ def calc_horizontal_array(points_per_frame, horizontal_interval, horizontal_offs
     x_axis = horizontal_offset + horizontal_interval * np.linspace(0, points_per_frame-1, points_per_frame)
     return x_axis
 
-def converter(trig_scope_chnl_trc: str,  clock_scope_chnl_trc: str):
+def converter(trig_scope_chnl_trc: str,  kcu_scope_chnl_trc: str):
 
     nchan=4
     active_chan=2#20GS/s

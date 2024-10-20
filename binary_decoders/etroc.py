@@ -271,7 +271,6 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
                 with tqdm(total=events_with_hits, bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}') as pbar:
                     for i, ev in enumerate(event_number):
                         for j, tmp_evt in enumerate(events_all_rb[rb][ak.flatten(events_all_rb[rb].bcid + 1 == events_all_rb[0].bcid[ev])]):
-
                             if abs(tmp_evt.event - ev)<100:
                                 nhits[i] += ak.to_list(tmp_evt.nhits)
                                 row[i] += ak.to_list(tmp_evt.row)
@@ -282,7 +281,6 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
                                 elink[i] += ak.to_list(tmp_evt.elink)
                                 chipid[i] += ak.to_list(tmp_evt.chipid)
                                 break
-
                         pbar.update()
 
         events = ak.Array({
