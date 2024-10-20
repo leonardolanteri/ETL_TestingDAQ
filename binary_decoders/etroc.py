@@ -14,6 +14,7 @@ except ModuleNotFoundError:
     def emojize(in_string):
         return ''
 
+
 def merge_words(res):
     empty_frame_mask = np.array(res[0::2]) > (2**8) # masking empty fifo entries
     len_cut = min(len(res[0::2]), len(res[1::2]))   # ensuring equal length of arrays downstream
