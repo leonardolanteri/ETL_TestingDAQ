@@ -3,8 +3,10 @@ import awkward as ak
 from awkward import Array as akArray
 import json
 from binary_decoders import etroc
-import importlib
-importlib.reload(etroc)
+
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("conditional_counter")
 
 def load_json(path: str) -> akArray:
     with open(path) as f:
@@ -22,8 +24,7 @@ MULTI_RB_INPUT = etroc.converter(
      "unit_test/input_data/run_6000/output_run_6000_rb2.dat"],
     skip_trigger_check=True
 )
-#=============================================================#
-
+#==============================================================#
 
 #=================ETROC DATA TO ASSERT TO======================#
 SINGLE_RB_ASSERT        = load_json("unit_test/asserted_output/run_5100/output_run_5100_rb0.json")
