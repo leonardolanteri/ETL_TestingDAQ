@@ -1,52 +1,72 @@
 import unittest
 import awkward as ak
+from awkward import Array as akArray
 import json
-from binary_decoders.etroc import converter
+from binary_decoders import etroc
 
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("conditional_counter")
 
-#=================ETROC DATA TO ASSERT TO======================#
-ETROC_BINARY_DATA_PATH = "unit_test/asserted_output/output_run_5100_rb0.json"
-with open(ETROC_BINARY_DATA_PATH) as f:
-    ETROC_DATA_ASSERT = ak.Array(
-        json.load(f)
-    )
-with open("unit_test/asserted_output/manual_chipid.json") as f:
-    ETROC_CHIPID_MANUAL = ak.Array(json.load(f))
-
-with open("unit_test/asserted_output/manual_nhits.json") as f:
-    ETROC_NHITS_MANUAL = ak.Array(json.load(f))
-#=============================================================#
+def load_json(path: str) -> akArray:
+    with open(path) as f:
+        return ak.Array(json.load(f))
 
 #=====================ETROC INPUT DATA=========================#
-ETROC_INPUT_DATA_PATHS = [
-    "unit_test/input_data/output_run_5100_rb0.dat"
-]
-ETROC_INPUT_DATA = converter(
-    ETROC_INPUT_DATA_PATHS,
+SINGLE_RB_INPUT = etroc.converter(
+    ["unit_test/input_data/run_5100/output_run_5100_rb0.dat"],
     skip_trigger_check=True
 )
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  #
+MULTI_RB_INPUT = etroc.converter(
+    ["unit_test/input_data/run_6000/output_run_6000_rb0.dat", 
+     "unit_test/input_data/run_6000/output_run_6000_rb1.dat", 
+     "unit_test/input_data/run_6000/output_run_6000_rb2.dat"],
+    skip_trigger_check=True
+)
+#==============================================================#
+
+#=================ETROC DATA TO ASSERT TO======================#
+SINGLE_RB_ASSERT        = load_json("unit_test/asserted_output/run_5100/output_run_5100_rb0.json")
+SINGLE_RB_CHIPID_ASSERT = load_json("unit_test/asserted_output/run_5100/manual_chipid.json") # overrides chipid from SINGLE RB ASSERT
+SINGLE_RB_NHITS_ASSERT  = load_json("unit_test/asserted_output/run_5100/manual_nhits.json")  # overrides nhits from SINGLE RB ASSERT
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  #
+MULTI_RB_ASSERT         = load_json("unit_test/asserted_output/run_6000/output_run_6000_rb0.json")
+MULTI_RB_CHIPID_ASSERT  = load_json("unit_test/asserted_output/run_6000/manual_chipid.json") # overrides chipid from SINGLE RB ASSERT
+MULTI_RB_NHITS_ASSERT   = load_json("unit_test/asserted_output/run_6000/manual_nhits.json")  # overrides nhits from SINGLE RB ASSERT
 #=============================================================#
+
 
 class TestETROCBinaryDecoder(unittest.TestCase):
     """
     Test the binary decoding of etroc and scope data
     """
-    def setUp(self):
-        """
-        Special method used by unittest that will be used for each case.
-        """
-        self.data_assert = ETROC_DATA_ASSERT
-        self.input_data = ETROC_INPUT_DATA
+    def _test_event_field(self, field_name: str, single_rb_assert:akArray = SINGLE_RB_ASSERT, multi_rb_assert:akArray = MULTI_RB_ASSERT):
+        #SINGLE RB FIELD CHECK
+        with self.subTest(f"Single RB Check on: {field_name}"):
+            ak.almost_equal(single_rb_assert[field_name], SINGLE_RB_INPUT[field_name])
 
-    def _test_event_field(self, field_name: str):
-       self.assertTrue(
-            ak.almost_equal(
-                self.data_assert[field_name], self.input_data[field_name]
-            )
-        ) 
+        #MULTI RB FIELD CHECK
+        with self.subTest(f"Multi RB Check on: {field_name}"):
+            ak.almost_equal(multi_rb_assert[field_name], MULTI_RB_INPUT[field_name])
+
     ##
     #### TEST IMPORTANT EVENT FIELDS
     ##
+    def test_chipid(self):
+        self._test_event_field(
+            'chipid', 
+            single_rb_assert=SINGLE_RB_CHIPID_ASSERT, 
+            multi_rb_assert=MULTI_RB_CHIPID_ASSERT
+        )
+
+    def test_nhits(self):
+        self._test_event_field(
+            'nhits', 
+            single_rb_assert=SINGLE_RB_NHITS_ASSERT, 
+            multi_rb_assert=MULTI_RB_NHITS_ASSERT
+        )
+
     def test_toa_code(self):
         self._test_event_field('toa_code')
 
@@ -62,25 +82,8 @@ class TestETROCBinaryDecoder(unittest.TestCase):
     def test_col(self):
         self._test_event_field('col')
 
-    def test_chipid(self):
-        #self._test_event_field('chipid')
-        # Chipid seems to be wrong but I am gonna assume it is ok, toa, tot and cal are fine.
-        self.assertTrue(
-            ak.almost_equal(
-                ETROC_CHIPID_MANUAL, self.input_data['chipid']
-            )
-        ) 
-
     def test_bcid(self):
         self._test_event_field('bcid')
-
-    def test_nhits(self):
-        #self._test_event_field('nhits')
-        self.assertTrue(
-            ak.almost_equal(
-                ETROC_NHITS_MANUAL, self.input_data['nhits']
-            )
-        ) 
 
     def test_event(self):
         self._test_event_field('event')
