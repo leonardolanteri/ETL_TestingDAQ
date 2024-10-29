@@ -1,5 +1,17 @@
 #!/bin/bash
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;36m'
+NC='\033[0m'
+nicerStatus(){
+    if [ ${2} == "True" ]; then
+        echo -e "${1}${GREEN}True${NC}"
+    else
+        echo -e "${1}${RED}False${NC}"
+    fi
+}
+
 # 1) Number of runs
 # 2) Bias voltage
 # 3) Threshold offset
@@ -23,55 +35,57 @@ powerMode=$9  # I1 (high) to I4 (low)
 isMulti=${10}
 run_number=`cat ScopeHandler/Lecroy/Acquisition/next_run_number.txt`
 
-echo "Starting configuration for $run_number on KCU . Turn beam OFF!!"
-/usr/bin/python3 telescope.py  --configuration cern_1 --kcu 192.168.0.10 --offset $3 --delay 14 
-#/usr/bin/python3 poke_board.py --configuration modulev1 --etrocs 0 --kcu 192.168.0.10 --dark_mode --mask telescope_config_data/cern_test_2024-05-13-20-07-26/noise_width_module_106_etroc_2.yaml
-/usr/bin/python3 poke_board.py --configuration modulev1 --etrocs 2 --kcu 192.168.0.10 --dark_mode
+echo -e "Starting configuration for $run_number on KCU. ${RED}Turn beam OFF!!${NC}"
+#/usr/bin/python3 $TAMALERO_BASE/telescope.py  --configuration cern_1 --kcu 192.168.0.10 --offset $3 --delay 14 
+##/usr/bin/python3 poke_board.py --configuration modulev1 --etrocs 0 --kcu 192.168.0.10 --dark_mode --mask telescope_config_data/cern_test_2024-05-13-20-07-26/noise_width_module_106_etroc_2.yaml
+#/usr/bin/python3 $TAMALERO_BASE/poke_board.py --configuration modulev1 --etrocs 2 --kcu 192.168.0.10 --dark_mode
 
 if [ "$isTrack" = true ]
 then
-    echo "You are starting a telescope run. Have you entered the run number $run_number on telescope? And turn BEAM ON now"
+    echo -e "You are starting a telescope run. Have you entered the run number ${BLUE}$run_number${NC} on telescope? And turn ${RED}BEAM ON${NC} now"
     read dummy
-fi  
+fi
+
+scope_path="ScopeHandler/Lecroy/"
+merging_dir="ScopeHandler/ScopeData/LecroyMerged/"
 
 for i in $(seq 1 $1)
 do
-    merging_dir="ScopeHandler/ScopeData/LecroyMerged/"
-    
-    echo "___________________________________ "$i
+    echo "---------------------------------"
+    echo "Batch Run ${i} of ${1}"
+    echo "Overall Run Number: ${run_number}"
+    echo "---------------------------------"
     run_number=`cat ScopeHandler/Lecroy/Acquisition/next_run_number.txt`
-    echo "Run number: $run_number"
-    # /usr/bin/python3 poke_board.py --configuration modulev0b --etrocs 0  --kcu 192.168.0.10 --rb 1 --bitslip
-    # /usr/bin/python3 poke_board.py --configuration modulev1 --etrocs 2  --kcu 192.168.0.10 --rb 2 --bitslip
-    # /usr/bin/python3 poke_board.py --configuration modulev1 --etrocs 2  --kcu 192.168.0.10 --rb 1 --bitslip
+    #/usr/bin/python3 poke_board.py --configuration modulev0b --etrocs 0  --kcu 192.168.0.10 --rb 1 --bitslip
+    #/usr/bin/python3 poke_board.py --configuration modulev1  --etrocs 2  --kcu 192.168.0.10 --rb 2 --bitslip
+    #/usr/bin/python3 poke_board.py --configuration modulev1  --etrocs 2  --kcu 192.168.0.10 --rb 1 --bitslip
     ./autopilot.sh $n_events $offset
-    temperature=$(/usr/bin/python3 poke_board.py --configuration modulev1 --etrocs 2 --rbs 0 --modules 1 --kcu 192.168.0.10 --temperature)
+    temperature=$(/usr/bin/python3 $TAMALERO_BASE/poke_board.py --configuration modulev1 --etrocs 2 --rbs 0 --modules 1 --kcu 192.168.0.10 --temperature)
 
     sleep 7s
-    kcu=`cat module_test_sw/running_ETROC_acquisition.txt`
-    scope=`cat ScopeHandler/Lecroy/Acquisition/running_acquisition.txt`
-    conversion=`cat ScopeHandler/Lecroy/Conversion/ongoing_conversion.txt`
-    merging=`cat ScopeHandler/Lecroy/Merging/ongoing_merging.txt`
-    echo $kcu
-    echo $scope
-    echo $conversion
-    echo $merging
+    kcu=`cat ${TAMALERO_BASE}/running_ETROC_acquisition.txt`
+    scope=`cat ${scope_path}Acquisition/running_acquisition.txt`
+    conversion=`cat ${scope_path}Conversion/ongoing_conversion.txt`
+    merging=`cat ${scope_path}Merging/ongoing_merging.txt`
+    nicerStatus "Running ETROC acquisition: " $kcu
+    nicerStatus "Running SCOPE acquisition: " $scope
+    nicerStatus "Converting files:          " $conversion
+    nicerStatus "Merging files:             " $merging
 
     while [ $kcu == "True" ] || [ $scope == "True" ] || [ $conversion == "True" ] || [ $merging == "True" ]; do
         echo "Waiting..."
         sleep 1s
-        kcu=`cat module_test_sw/running_ETROC_acquisition.txt`
-        scope=`cat ScopeHandler/Lecroy/Acquisition/running_acquisition.txt`
-        conversion=`cat ScopeHandler/Lecroy/Conversion/ongoing_conversion.txt`
-        merging=`cat ScopeHandler/Lecroy/Merging/ongoing_merging.txt`
-        echo $kcu
-        echo $scope
-        echo $conversion
-        echo $merging
+        kcu=`cat ${TAMALERO_BASE}/running_ETROC_acquisition.txt`
+        scope=`cat ${scope_path}Acquisition/running_acquisition.txt`
+        conversion=`cat ${scope_path}Conversion/ongoing_conversion.txt`
+        merging=`cat ${scope_path}Merging/ongoing_merging.txt`
+        nicerStatus "Running ETROC acquisition: " $kcu
+        nicerStatus "Running SCOPE acquisition: " $scope
+        nicerStatus "Converting files:          " $conversion
+        nicerStatus "Merging files:             " $merging
     done
 
     test_successful=`test "$merging_dir/run_$run_number.root"`
 
     printf "$run_number,$bias_V,$offset,$n_events,$board_number,$bond,$energy,`date -u`,$isTrack,$powerMode,$temperature, $isMulti \n">>./run_log_SPS_Oct2024.csv
-
 done
