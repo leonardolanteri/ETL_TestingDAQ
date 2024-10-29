@@ -12,7 +12,7 @@ The ```Run_Autopilot.sh``` script in ```module_test_sw``` starts the runs and at
 
 ### Here is a complete view the codebase:
 
-![tbdaq](images/tbdaq.svg)
+![tbdaq](images/tbdaq.png)
 
 ## Environment
 
