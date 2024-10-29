@@ -12,33 +12,60 @@ nicerStatus(){
     fi
 }
 
+valFinder(){
+    IFS='['
+    read -ra parts <<< "$1"
+    IFS=']'
+    read -ra chan <<< ${parts[4]}
+    read -ra var <<< ${parts[5]}
+    read -ra value <<< ${parts[6]}
+}
+
+biasHelper(){
+    staleLog=true
+    if ! [[ -n $(find $HOME -amin -5 -iname 'CAENGECO2020.log') ]]; then
+        echo "Stale HV log file, check HV supply status"
+    else
+        staleLog=false
+    fi
+    IFS=$'\r\n'
+    command eval 'lines=($(tail $HOME/CAENGECO2020.log))'
+    #check for "ch [3]" and "VMon"
+    for ((j=${#ljnes[@]}-1; j>=0; j--)); do
+        valFinder "${lines[$j]}"
+        if [[ ${chan[0]} == '3' ]] && [[ ${var[0]} == 'VMon' ]]; then
+            break
+        fi
+    done
+    #round to nearest 5
+    biasV=$(awk '{print $1}' <<< ${value[0]})
+    biasV=$(echo $biasV | awk '{print int(($biasV / 5) + 0.5) * 5}')
+}
+
 # 1) Number of runs
-# 2) Bias voltage
-# 3) Threshold offset
-# 4) Number of events
-# 5) The number of the PCb board, use "-" to separate boards id in multilayer setup
-# 6) Wirebonded/Bump-bonded wb or bb
-# 7) Beam energy
-# 8) tracker
-# 9) ETROC Power mode: i1,i2,i3,i4
+# 2) Threshold offset
+# 3) Number of events
+# 4) The number of the PCb board, use "-" to separate boards id in multilayer setup
+# 5) Wirebonded/Bump-bonded wb or bb
+# 6) Beam energy
+# 7) tracker
+# 8) ETROC Power mode: i1,i2,i3,i4
 # 9) Multilayer setup
 
-# LOOP={10..12..1}
-bias_V=$2 # V
-offset=$3 # vth
-n_events=$4
-board_number=$5
-bond=$6
-energy=$7
-isTrack=$8
-powerMode=$9  # I1 (high) to I4 (low)
-isMulti=${10}
+offset=$2 # vth
+n_events=$3
+board_number=$4
+bond=$5
+energy=$6
+isTrack=$7
+powerMode=$8 # I1 (high) to I4 (low)
+isMulti=$9
 run_number=`cat ScopeHandler/Lecroy/Acquisition/next_run_number.txt`
 
-echo -e "Starting configuration for $run_number on KCU. ${RED}Turn beam OFF!!${NC}"
-#/usr/bin/python3 $TAMALERO_BASE/telescope.py  --configuration cern_1 --kcu 192.168.0.10 --offset $3 --delay 14 
-##/usr/bin/python3 poke_board.py --configuration modulev1 --etrocs 0 --kcu 192.168.0.10 --dark_mode --mask telescope_config_data/cern_test_2024-05-13-20-07-26/noise_width_module_106_etroc_2.yaml
-#/usr/bin/python3 $TAMALERO_BASE/poke_board.py --configuration modulev1 --etrocs 2 --kcu 192.168.0.10 --dark_mode
+echo -e "Starting configuration for run $run_number on KCU. ${RED}Turn beam OFF!!${NC}"
+/usr/bin/python3 $TAMALERO_BASE/telescope.py  --configuration cern_1 --kcu 192.168.0.10 --offset $3 --delay 14 
+#/usr/bin/python3 poke_board.py --configuration modulev1 --etrocs 0 --kcu 192.168.0.10 --dark_mode --mask telescope_config_data/cern_test_2024-05-13-20-07-26/noise_width_module_106_etroc_2.yaml
+/usr/bin/python3 $TAMALERO_BASE/poke_board.py --configuration modulev1 --etrocs 2 --kcu 192.168.0.10 --dark_mode
 
 if [ "$isTrack" = true ]
 then
@@ -49,13 +76,20 @@ fi
 scope_path="ScopeHandler/Lecroy/"
 merging_dir="ScopeHandler/ScopeData/LecroyMerged/"
 
-for i in $(seq 1 $1)
-do
-    echo "---------------------------------"
-    echo "Batch Run ${i} of ${1}"
-    echo "Overall Run Number: ${run_number}"
-    echo "---------------------------------"
+for (( i = 1; i <= $1; i++ )); do
     run_number=`cat ScopeHandler/Lecroy/Acquisition/next_run_number.txt`
+    echo -e "---------------------------------"
+    echo -e "Batch Run ${i} of ${1}"
+    echo -e "Overall Run Number: ${run_number}"
+    echo -e "---------------------------------"
+    #TODO: add a reminder to confirm bias channel of HV
+    biasHelper
+    if $staleLog; then
+        echo -e "${RED}ERROR: The HV log file has not been update for more than 5 minutes${NC}"
+        echo -e "${RED}ERROR${NC}: Path to HV file: ${BLUE}$HOME/CAENGECO2020.log${NC}"
+        echo -e "${RED}ERROR: Check that the HV supply has not tripped${NC}"
+    fi
+    continue
     #/usr/bin/python3 poke_board.py --configuration modulev0b --etrocs 0  --kcu 192.168.0.10 --rb 1 --bitslip
     #/usr/bin/python3 poke_board.py --configuration modulev1  --etrocs 2  --kcu 192.168.0.10 --rb 2 --bitslip
     #/usr/bin/python3 poke_board.py --configuration modulev1  --etrocs 2  --kcu 192.168.0.10 --rb 1 --bitslip
@@ -87,5 +121,5 @@ do
 
     test_successful=`test "$merging_dir/run_$run_number.root"`
 
-    printf "$run_number,$bias_V,$offset,$n_events,$board_number,$bond,$energy,`date -u`,$isTrack,$powerMode,$temperature, $isMulti \n">>./run_log_SPS_Oct2024.csv
+    printf "$run_number,$biasV,$offset,$n_events,$board_number,$bond,$energy,`date -u`,$isTrack,$powerMode,$temperature, $isMulti \n">>./run_log_SPS_Oct2024.csv
 done
