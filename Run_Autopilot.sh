@@ -76,6 +76,18 @@ fi
 scope_path="ScopeHandler/Lecroy/"
 merging_dir="ScopeHandler/ScopeData/LecroyMerged/"
 
+# Scope variables
+sample_rate=20 #GHz
+horizontal_window=50 #ns
+trigger_channel="C2"
+trigger="-0.3" #V
+v_scale_2=0.2
+v_scale_3=0.2
+v_position_2=3
+v_position_3="-3"
+time_offset="NEG"
+trigger_slope=0
+
 for (( i = 1; i <= $1; i++ )); do
     run_number=`cat ScopeHandler/Lecroy/Acquisition/next_run_number.txt`
     echo -e "---------------------------------"
@@ -93,7 +105,15 @@ for (( i = 1; i <= $1; i++ )); do
     #/usr/bin/python3 poke_board.py --configuration modulev0b --etrocs 0  --kcu 192.168.0.10 --rb 1 --bitslip
     #/usr/bin/python3 poke_board.py --configuration modulev1  --etrocs 2  --kcu 192.168.0.10 --rb 2 --bitslip
     #/usr/bin/python3 poke_board.py --configuration modulev1  --etrocs 2  --kcu 192.168.0.10 --rb 1 --bitslip
-    ./autopilot.sh $n_events $offset
+    ./autopilot.sh \ 
+        $n_events $offset \
+        $sample_rate $horizontal_window \
+        $trigger_channel $trigger \
+        $v_scale_2 $v_scale_3 \
+        $v_position_2 $v_position_3 \
+        $time_offset $trigger_slope \
+    /
+
     temperature=$(/usr/bin/python3 $TAMALERO_BASE/poke_board.py --configuration modulev1 --etrocs 2 --rbs 0 --modules 1 --kcu 192.168.0.10 --temperature)
 
     sleep 7s
@@ -121,5 +141,5 @@ for (( i = 1; i <= $1; i++ )); do
 
     test_successful=`test "$merging_dir/run_$run_number.root"`
 
-    printf "$run_number,$biasV,$offset,$n_events,$board_number,$bond,$energy,`date -u`,$isTrack,$powerMode,$temperature, $isMulti \n">>./run_log_SPS_Oct2024.csv
+    printf "$run_number,$biasV,$offset,$n_events,$board_number,$bond,$energy,`date -u`,$isTrack,$powerMode,$temperature,$isMulti,$sample_rate,$horizontal_window,$trigger_channel,$trigger,$v_scale_2,$v_scale_3,$v_position_2,$v_position_3,$time_offset,$trigger_slope\n">>./run_log_SPS_Oct2024.csv
 done
