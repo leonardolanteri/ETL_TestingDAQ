@@ -1,3 +1,4 @@
+#!/bin/bash
 index=`cat ScopeHandler/Lecroy/Acquisition/next_run_number.txt`
 
 #i/usr/bin/python3 telescope.py -- --kcu 192.168.0.10 --offset $2 --delay 32

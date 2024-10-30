@@ -1,8 +1,8 @@
 source source /cvmfs/sft.cern.ch/lcg/releases/LCG_99/ROOT/v6.22.06/x86_64-ubuntu2004-gcc9-opt/bin/thisroot.sh
 source vivado.sh
-cd ../etl_test_fw-v3.2.0
+cd ${HOME}/Test_Stand/etl_test_fw-v3.2.0/program.sh
 source program.sh
-cd ../ETL_TestingDAQ/module_test_sw/
+cd ${HOME}/Test_Stand/ETL_TestingDAQ/module_test_sw/
 source setup.sh
 /opt/cactus/bin/controlhub_start
 PROMPT_COMMAND='echo -en "\033]0; Tamalero \a"'

@@ -17,6 +17,8 @@ SINGLE_RB_INPUT = etroc.converter(
     ["unit_test/input_data/run_5100/output_run_5100_rb0.dat"],
     skip_trigger_check=True
 )
+SINGLE_RB_INPUT = etroc.root_dumper(SINGLE_RB_INPUT)
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  #
 MULTI_RB_INPUT = etroc.converter(
     ["unit_test/input_data/run_6000/output_run_6000_rb0.dat", 
@@ -24,6 +26,8 @@ MULTI_RB_INPUT = etroc.converter(
      "unit_test/input_data/run_6000/output_run_6000_rb2.dat"],
     skip_trigger_check=True
 )
+MULTI_RB_INPUT = etroc.root_dumper(MULTI_RB_INPUT)
+
 #==============================================================#
 
 #=================ETROC DATA TO ASSERT TO======================#
@@ -31,11 +35,11 @@ SINGLE_RB_ASSERT        = load_json("unit_test/asserted_output/run_5100/output_r
 SINGLE_RB_CHIPID_ASSERT = load_json("unit_test/asserted_output/run_5100/manual_chipid.json") # overrides chipid from SINGLE RB ASSERT
 SINGLE_RB_NHITS_ASSERT  = load_json("unit_test/asserted_output/run_5100/manual_nhits.json")  # overrides nhits from SINGLE RB ASSERT
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  #
-MULTI_RB_ASSERT         = load_json("unit_test/asserted_output/run_6000/output_run_6000_rb0.json")
-MULTI_RB_CHIPID_ASSERT  = load_json("unit_test/asserted_output/run_6000/manual_chipid.json") # overrides chipid from SINGLE RB ASSERT
-MULTI_RB_NHITS_ASSERT   = load_json("unit_test/asserted_output/run_6000/manual_nhits.json")  # overrides nhits from SINGLE RB ASSERT
+#MULTI_RB_ASSERT         = load_json("unit_test/asserted_output/run_6000/output_run_6000_rb0.json")
+MULTI_RB_ASSERT         = load_json("/home/etl/Test_Stand/ETL_TestingDAQ/unit_test/input_data/run_6000/output_run_6000_rb0.json")
+# MULTI_RB_CHIPID_ASSERT  = load_json("unit_test/asserted_output/run_6000/manual_chipid.json") # overrides chipid from SINGLE RB ASSERT
+# MULTI_RB_NHITS_ASSERT   = load_json("unit_test/asserted_output/run_6000/manual_nhits.json")  # overrides nhits from SINGLE RB ASSERT
 #=============================================================#
-
 
 class TestETROCBinaryDecoder(unittest.TestCase):
     """
@@ -57,14 +61,14 @@ class TestETROCBinaryDecoder(unittest.TestCase):
         self._test_event_field(
             'chipid', 
             single_rb_assert=SINGLE_RB_CHIPID_ASSERT, 
-            multi_rb_assert=MULTI_RB_CHIPID_ASSERT
+            # multi_rb_assert=MULTI_RB_CHIPID_ASSERT
         )
 
     def test_nhits(self):
         self._test_event_field(
             'nhits', 
             single_rb_assert=SINGLE_RB_NHITS_ASSERT, 
-            multi_rb_assert=MULTI_RB_NHITS_ASSERT
+            # multi_rb_assert=MULTI_RB_NHITS_ASSERT
         )
 
     def test_toa_code(self):

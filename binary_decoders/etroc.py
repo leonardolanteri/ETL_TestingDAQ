@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 import pandas as pd
 import awkward as ak
+from awkward import Array as akArray
 import json
 import yaml
 from yaml import Dumper, Loader
@@ -11,9 +12,8 @@ from tqdm import tqdm
 from emoji import emojize
 from functools import wraps
 import logging
-from logger import NoRepeatedLogs
 
-logger = logging.getLogger("conditional_counter")
+logger = logging.getLogger("etroc_decoder")
 
 def merge_words(res):
     empty_frame_mask = np.array(res[0::2]) > (2**8) # masking empty fifo entries
@@ -23,8 +23,7 @@ def merge_words(res):
     else:
         return []
 
-@NoRepeatedLogs(logger=logger, num_logged_ifs=34)
-def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_check:bool = False, force:bool = False):
+def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_check:bool = False, force:bool = False) -> akArray:
     # NOTE find all files (i.e. layers) for the specified input file
     df = DataFrame('ETROC2')
     events_all_rb = []
@@ -77,17 +76,13 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
 
         for t, d in unpacked_data:
             if d['elink'] not in elink_report:
-                logger.info(f"COND: d['elink'] not in elink_report", extra={"cond_num": 1})
                 elink_report[d['elink']] = {'nheader':0, 'nhits':0, 'ntrailer':0}
             sus = False
             if d['raw_full'] in all_raw[-50:] and not t in ['trailer', 'filler']:  # trailers often look the same
-                logger.info(f"COND: d['raw_full'] in all_raw[-50:] and not t in ['trailer', 'filler']", extra={"cond_num": 2})
                 continue
             if t not in ['trailer', 'filler']:
-                logger.info(f"COND: t not in ['trailer', 'filler']", extra={"cond_num": 3})
                 all_raw.append(d['raw_full'])
             if t == 'header':
-                logger.info(f"COND: t==header", extra={"cond_num": 4})
                 elink_report[d['elink']]['nheader'] += 1
                 hit_counter = 0
                 uuid_tmp = d['l1counter'] | d['bcid']<<8
@@ -95,47 +90,38 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
                 header_counter += 1
 
                 if d['bcid'] != bcid_t and last_missing:
-                    logger.info(f"COND: t==header and d['bcid'] != bcid_t and last_missing", extra={"cond_num": 5})
                     missing_l1counter[-1].append(d['bcid'])
                     last_missing = False
 
                 if d['l1counter'] == l1a:
-                    logger.info(f"COND: t==header and d['l1counter'] == l1a", extra={"cond_num": 6})
                     # this just skips additional headers for the same event
                     counter_h[-1] += 1
                     raw[-1].append(d['raw_full'])
                     if skip_event:
-                        logger.info(f"COND: t==header and d['l1counter'] == l1a and skip_event", extra={"cond_num": 7})
                         logger.debug("Skipping event (same l1a counter)", d['l1counter'], d['bcid'], bcid_t)
                         continue
                 else:
                     if abs(l1a - d['l1counter']) not in [1,255] and l1a>=0:
-                        logger.info(f"COND: t==header and d['l1counter'] != l1a and abs(l1a - d['l1counter']) not in [1,255] and l1a>=0", extra={"cond_num": 8})
                         missed_l1counter_info = [d['l1counter'], d['bcid'], i, d['l1counter'] - l1a] #original by Daniel
                         missing_l1counter.append(missed_l1counter_info)  # this checks if we miss any event according to the counter
                         last_missing = True
                     if uuid_tmp in uuid and abs(i - np.where(np.array(uuid) == uuid_tmp)[0][-1]) < 150:
-                        logger.info(f"COND: t==header and d['l1counter'] != l1a and uuid_tmp in uuid and abs(i - np.where(np.array(uuid) == uuid_tmp)[0][-1]) < 150", extra={"cond_num": 9})
                         logger.debug("Skipping duplicate event")
                         skip_counter += 1
                         skip_event = True
                         continue
                     else:
-                        logger.info(f"COND: t==header and d['l1counter'] != l1a and NOT(uuid_tmp in uuid and abs(i - np.where(np.array(uuid) == uuid_tmp)[0][-1]) < 150)", extra={"cond_num": 10})
                         uuid.append(d['l1counter'] | d['bcid']<<8)
 
                     if (((abs(d['bcid']-bcid_t)<150) or (abs(d['bcid']+3564-bcid_t)<50)) and not (d['bcid'] == bcid_t) and not skip_trigger_check):
-                        logger.info(f"COND: t==header and d['l1counter'] != l1a and (((abs(d['bcid']-bcid_t)<150) or (abs(d['bcid']+3564-bcid_t)<50)) and not (d['bcid'] == bcid_t) and not skip_trigger_check)", extra={"cond_num": 11})
                         skip_event = True
                         logger.debug("Skipping event", d['l1counter'], d['bcid'], bcid_t)
                         skip_counter += 1
                         continue
                     else:
-                        logger.info(f"COND: t==header and d['l1counter'] != l1a and NOT(((abs(d['bcid']-bcid_t)<150) or (abs(d['bcid']+3564-bcid_t)<50)) and not (d['bcid'] == bcid_t) and not skip_trigger_check)", extra={"cond_num": 12})
                         skip_event = False
                     bcid_t = d['bcid']
                     if (abs(l1a - d['l1counter'])>1) and abs(l1a - d['l1counter'])!=255 and verbose:
-                        logger.info(f"COND: t==header and d['l1counter'] != l1a and (abs(l1a - d['l1counter'])>1) and abs(l1a - d['l1counter'])!=255 and verbose", extra={"cond_num": 13})
                         sus = True
                     l1a = d['l1counter']
                     event.append(i)
@@ -157,29 +143,22 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
                     counter_a.append([])
                     i += 1
                     if verbose or sus:
-                        logger.info(f"COND: t==header and d['l1counter'] != l1a and verbose or sus", extra={"cond_num": 14})
                         logger.debug("New event:", l1a, i, d['bcid'])
             if t == 'data':
-                logger.info(f"COND: t==data", extra={"cond_num": 15})
                 elink_report[d['elink']]['nhits'] += 1
             if t == 'trailer':
-                logger.info(f"COND: t==trailer", extra={"cond_num": 16})
                 elink_report[d['elink']]['ntrailer'] += 1
 
             if t == 'data' and not skip_event:
-                logger.info(f"COND: t==data and NOT skip event", extra={"cond_num": 17})
                 hit_counter += 1
                 if 'tot' in d:
-                    logger.info(f"COND: t==data and NOT skip event and tot in d", extra={"cond_num": 18})
                     tot_code[-1].append(d['tot'])
                     toa_code[-1].append(d['toa'])
                     cal_code[-1].append(d['cal'])
                 elif 'counter_a' in d:
-                    logger.info(f"COND: t==data and NOT skip_event and counter_a in d", extra={"cond_num": 19})
                     bcid[-1].append(d['bcid'])
                     counter_a[-1].append(d['counter_a'])
                 elif 'counter_b' in d:
-                    logger.info(f"COND: t==data and NOT skip_event and counter_b in d", extra={"cond_num": 20})
                     pass
                 row[-1].append(d['row_id'])
                 col[-1].append(d['col_id'])
@@ -187,22 +166,18 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
                 raw[-1].append(d['raw_full'])
                 nhits[-1] += 1
                 if nhits[-1] > 256:
-                    logger.info(f"COND: t==data and NOT skip_event and nhits[-1] > 256", extra={"cond_num": 21})
                     logger.debug("This event already has more than 256 hits. Skipping event.")
                     skip_event = True
                     continue
 
 
             if t == 'trailer' and t_tmp != 'trailer':
-                logger.info(f"COND: t == 'trailer' and t_tmp != 'trailer'", extra={"cond_num": 22})
                 trailers.append(d['raw_full'])
                 trailer_counter += 1
                 if not skip_event:
-                    logger.info(f"COND: t == 'trailer' and t_tmp != 'trailer' and NOT skip_event", extra={"cond_num": 23})
                     try:
                         counter_t[-1] += 1
                         if hit_counter > 0:
-                            logger.info(f"COND: t == 'trailer' and t_tmp != 'trailer' and NOT skip_event and hit_counter > 0", extra={"cond_num": 24})
                             chipid[-1] += hit_counter*[d['chipid']]
                         nhits_trail[-1].append(d['hits'])
                         raw[-1].append(d['raw'])
@@ -212,7 +187,6 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
             t_tmp = t
 
         if not bad_run or force:
-            logger.info(f"COND: not bad_run or force", extra={"cond_num": 25})
             events = ak.Array({
                 'event': event,
                 'l1counter': l1counter,
@@ -238,26 +212,20 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
             logger.debug(f"Done with {len(events)} events. " + emojize(":check_mark_button:"))
 
             if header_counter == trailer_counter:
-                logger.info(f"COND: not bad_run or force and header_counter == trailer_counte", extra={"cond_num": 26})
                 logger.debug(f" - found same number of headers and trailers!: {header_counter} " + emojize(":check_mark_button:"))
             else:
-                logger.info(f"COND: not bad_run or force and NOT(header_counter == trailer_counte)", extra={"cond_num": 27})
                 logger.debug(f" - found {header_counter} headers and {trailer_counter} trailers. Please check. " + emojize(":warning:"))
 
             logger.debug(f" - found {len(missing_l1counter)} missing events (irregular increase of L1counter).")
             if len(missing_l1counter)>0:
-                logger.info(f"COND: not bad_run or force and len(missing_l1counter)>0", extra={"cond_num": 28})
                 logger.debug("   L1counter, BCID, event number and step size of these events are:")
                 # The last element passed the "last_missing" condition so the next bcid could not be appended
                 if len(missing_l1counter[-1]) == 4:
-                    logger.info(f"COND: not bad_run or force and len(missing_l1counter)>0 and len(missing_l1counter[-1]) == 4", extra={"cond_num": 29})
                     missing_l1counter[-1].append(-9999) #append dummy value
                 for ml1, mbcid, mev, mdelta, mbcidt in missing_l1counter:
                     if mbcidt - mbcid<7:
-                        logger.info(f"COND: not bad_run or force and len(missing_l1counter)>0 and mbcidt - mbcid<7", extra={"cond_num": 30})
                         logger.debug(f"Expected issue because of missing L1A dead time: {[ml1, mbcid, mev, mdelta, mbcidt]}")
                     else:
-                        logger.info(f"COND: not bad_run or force and len(missing_l1counter)>0 and NOT(mbcidt - mbcid<7)", extra={"cond_num": 31})
                         logger.debug(f"missing_l1counter={[ml1, mbcid, mev,mdelta,mbcidt]}")
 
             logger.debug(f" - Total expected events is {total_events+len(missing_l1counter)}")
@@ -268,7 +236,6 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
 
 
     if len(events_all_rb)>1 or True:
-        logger.info(f"COND: len(events_all_rb)>1 or True", extra={"cond_num": 32})
         event_number = []
         bcid = []
         nhits = []
@@ -281,7 +248,6 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
 
         for rb, events in enumerate(events_all_rb):
             if rb == 0:
-                logger.info(f"COND: len(events_all_rb)>1 or True and rb==0", extra={"cond_num": 33})
                 event_number = ak.to_list(events[sel].event)
                 l1counter = ak.to_list(events[sel].l1counter)
                 bcid = ak.to_list(events[sel].bcid)
@@ -294,14 +260,12 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
                 elink = ak.to_list(events[sel].elink)
                 chipid = ak.to_list(events[sel].chipid)
             else:
-                logger.info(f"COND: len(events_all_rb)>1 or True and NOT(rb==0)", extra={"cond_num": 34})
                 # loop through rb0 events, and find corresponding entries in the other layers
                 logger.debug(f"Merging events from RB {rb}")
                 with tqdm(total=events_with_hits, bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}') as pbar:
                     for i, ev in enumerate(event_number):
                         for j, tmp_evt in enumerate(events_all_rb[rb][ak.flatten(events_all_rb[rb].bcid + 1 == events_all_rb[0].bcid[ev])]):
                             if abs(tmp_evt.event - ev)<100:
-                                logger.info(f"COND: len(events_all_rb)>1 or True and NOT(rb==0) and abs(tmp_evt.event - ev)<100", extra={"cond_num": 35})
                                 nhits[i] += ak.to_list(tmp_evt.nhits)
                                 row[i] += ak.to_list(tmp_evt.row)
                                 col[i] += ak.to_list(tmp_evt.col)
@@ -327,3 +291,23 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
             'nhits': nhits,
         })
     return events
+
+def root_dumper(events: akArray) -> akArray:
+    output_data = []
+    for event in events.to_list():
+        augmented_event = {
+            "event": event["event"],
+            "l1counter": event["l1counter"],
+            "row": event["row"],
+            "col": event["col"],
+            "tot_code": event["tot_code"],
+            "toa_code": event["toa_code"],
+            "cal_code": event["cal_code"],
+            "elink": event["elink"],
+            "chipid": event["chipid"],
+            "bcid": int(event["bcid"][0]),
+            "nhits": event["nhits"],
+            # "nhits_trail": event.get("nhits_trail", default_value), # if defined
+        }
+        output_data.append(augmented_event)
+    return ak.Array(output_data)
