@@ -99,6 +99,7 @@ class LecroyReader:
         return x.reshape(-1, points_per_frame), y.reshape(-1, points_per_frame)
     
     def get_segment_times(self):
+        "Look at todo to reduce open times and increase simplicity!"
         dtype = np.dtype([('trigger_offset', np.float64), ('horizontal_offset', np.float64)])
         with open(self.path, 'rb') as my_file:
             my_file.seek(self.offset)
@@ -207,7 +208,6 @@ def read_root_file_as_array(output_path):
         # Converting tree branches to a dictionary of NumPy arrays
         data = tree.arrays(library="np")
     return data
-
 
 def output_root(output_path, array):
     with uproot.recreate(output_path) as file:

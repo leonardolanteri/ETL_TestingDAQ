@@ -287,7 +287,7 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
             'cal_code': cal,
             'elink': elink,
             'chipid': chipid,
-            'bcid': bcid,
+            'bcid': bcid, #just put [:,0] here to get functionality from root dumper?
             'nhits': nhits,
         })
     return events
