@@ -45,150 +45,6 @@ aVERTICAL_VERNIER	= WAVEDESC+ 336
 aACQ_VERT_OFFSET	= WAVEDESC+ 340
 aWAVE_SOURCE		= WAVEDESC+ 344
 
-
-
-def dump_info(filepath_in, index_in, n_points):
-    x_axis = []
-    y_axis = []
-
-    # read from file
-    my_index = index_in
-    my_file = open(filepath_in, 'rb')
-
-    my_file.seek(WAVEDESC)
-    wd = struct.unpack("16s",my_file.read(16))
-    print ("WAVEDESC" , wd)
-
-    my_file.seek(aCOMM_ORDER)
-    comm_order = struct.unpack('h',my_file.read(2))
-    print("Comm order",comm_order)
-
-    my_file.seek(aCOMM_TYPE)
-    comm_type = struct.unpack('h',my_file.read(2))
-    print("Comm type",comm_type)
-
-    my_file.seek(aTEMPLATE_NAME)
-    template_name= struct.unpack("16s",my_file.read(16) )
-    print(template_name)
-
-    my_file.seek(aINSTRUMENT_NAME)
-    instrument_name = struct.unpack('16s',my_file.read(16))
-    print("instrument name ",instrument_name)
-
-    my_file.seek(aINSTRUMENT_NUMBER)
-    instrument_number = struct.unpack("i",my_file.read(4))
-    print ("instrument number ",instrument_number)
-
-    my_file.seek(aWAVE_SOURCE)
-    print("Wave source index is ",struct.unpack('h',my_file.read(2)))
-
-    my_file.seek(aVERT_COUPLING)
-    print("Vert coupling index is ",struct.unpack('h',my_file.read(2)))
-
-    my_file.seek(aBANDWIDTH_LIMIT)
-    print("Bandwith limiting index is ",struct.unpack('h',my_file.read(2)))
-
-    my_file.seek(aRECORD_TYPE)
-    print("Record type index is ",struct.unpack('h',my_file.read(2)))
-
-    my_file.seek(aVERTICAL_GAIN)
-    vertical_gain = struct.unpack('f',my_file.read(4))
-    print("Vertical gain is ",vertical_gain)
-
-    my_file.seek(aVERTICAL_OFFSET)
-    print("Vertical offset is ",struct.unpack('f',my_file.read(4)))
-
-    my_file.seek(aFIXED_VERT_GAIN)
-    print("Fixed vertical gain index is",struct.unpack('h',my_file.read(2)))
-
-    my_file.seek(aNOMINAL_BITS)
-    print("Nominal bits is ",struct.unpack('h',my_file.read(2)))
-
-    my_file.seek(aHORIZ_INTERVAL)
-    print("Horizontal interval is ",struct.unpack('f',my_file.read(4)))
-
-    my_file.seek(aHORIZ_OFFSET)
-    print("Horizontal offset is ",struct.unpack('d',my_file.read(8)))
-
-    my_file.seek(aWAVE_DESCRIPTOR)
-    wave_descriptor = struct.unpack('i',my_file.read(4))
-    print("descriptor is ",wave_descriptor)
-
-    my_file.seek(aUSER_TEXT)
-    USER_TEXT			= struct.unpack('i',my_file.read(4))#ReadLong(fid, aUSER_TEXT);
-
-    my_file.seek(aWAVE_ARRAY_1)
-    WAVE_ARRAY_1		= struct.unpack('i',my_file.read(4))
-
-    my_file.seek(aWAVE_ARRAY_COUNT)
-    WAVE_ARRAY_COUNT    = struct.unpack('i',my_file.read(4))
-
-    my_file.seek(aPNTS_PER_SECREEN)
-    PNTS_PER_SCREEN    = struct.unpack('i',my_file.read(4))
-
-    my_file.seek(aTRIGTIME_ARRAY)
-    TRIGTIME_ARRAY      = struct.unpack('i',my_file.read(4))
-
-    my_file.seek(aSEGMENT_INDEX)
-    SEGMENT_INDEX      = struct.unpack('i',my_file.read(4))
-
-    my_file.seek(aSUBARRAY_COUNT)
-    SUBARRAY_COUNT      = struct.unpack('i',my_file.read(4))
-
-    print("Actual segment count: ",SUBARRAY_COUNT)
-    my_file.seek(aNOM_SUBARRAY_COUNT)
-    NOM_SUBARRAY_COUNT      = struct.unpack('h',my_file.read(2))
-    print("Target segment count: ",NOM_SUBARRAY_COUNT)
-
-    my_file.seek(aTRIGGER_TIME)
-    TRIGGER_TIME      = struct.unpack('d',my_file.read(8))
-
-    my_file.seek(aACQ_DURATION)
-    ACQ_DURATION      = struct.unpack('f',my_file.read(4))
-
-    print("User text ",USER_TEXT)
-    print("Wave array",WAVE_ARRAY_1)
-    print("Wave array count",WAVE_ARRAY_COUNT)
-    print("PNTS_PER_SCREEN",PNTS_PER_SCREEN)
-    print("Trig time array",TRIGTIME_ARRAY)
-    print("Segment index",SEGMENT_INDEX)
-    print("Trigger time,",TRIGGER_TIME)
-    print("Acquisition duration",ACQ_DURATION)
-
-    my_file.seek(aFIRST_VALID_PNT)
-    FIRST_VALID_PNT = struct.unpack("i",my_file.read(4))
-
-    my_file.seek(aLAST_VALID_PNT)
-    LAST_VALID_PNT = struct.unpack("i",my_file.read(4))
-    print("First point ",FIRST_VALID_PNT)
-    print("LAST point ",LAST_VALID_PNT)
-
-    offset = WAVEDESC + wave_descriptor[0] + USER_TEXT[0] #+ TRIGTIME_ARRAY[0]
-    my_file.seek(offset)
-    print("offset ",offset)
-    time_event1      = struct.unpack('d',my_file.read(8))
-    offset_event1      = struct.unpack('d',my_file.read(8))
-
-    time_event2      = struct.unpack('d',my_file.read(8))
-    offset_event2      = struct.unpack('d',my_file.read(8))
-
-    time_event3      = struct.unpack('d',my_file.read(8))
-    offset_event3      = struct.unpack('d',my_file.read(8))
-
-    print("time event 1 ",time_event1)
-    print("offset event 1 ",offset_event1)
-    print("time event 2 ",time_event2)
-    print("offset event 2 ",offset_event2)
-    print("time event 3 ",time_event3)
-    print("offset event 3 ",offset_event3)
-
-
-    my_file.seek(offset + TRIGTIME_ARRAY[0])
-    b_y_data = my_file.read(1004)
-    y_axis = struct.unpack("<"+str(502)+"h", b_y_data)
-    data = [1000*vertical_gain*y for y in y_axis]
-
-
 def get_waveform_block_offset(filepath_in):
     my_file = open(filepath_in, 'rb')
 
@@ -219,8 +75,13 @@ def get_configuration(filepath_in):
     WAVE_ARRAY_COUNT    = struct.unpack('i',my_file.read(4))[0]
     points_per_frame = int(WAVE_ARRAY_COUNT / nsegments)
     my_file.close()
-    return nsegments, points_per_frame, horizontal_interval, vertical_gain, vertical_offset
-
+    return {
+        'nsegments': nsegments,
+        'points_per_frame': points_per_frame,
+        'horizontal_interval': horizontal_interval,
+        'vertical_gain': vertical_gain,
+        'vertical_offset': vertical_offset
+    }
 
 def get_segment_times(filepath_in, offset,nsegments):
     my_file = open(filepath_in, 'rb')
@@ -251,42 +112,36 @@ def calc_horizontal_array(points_per_frame, horizontal_interval, horizontal_offs
     x_axis = horizontal_offset + horizontal_interval * np.linspace(0, points_per_frame-1, points_per_frame)
     return x_axis
 
-def converter(trig_scope_chnl_trc: str,  kcu_scope_chnl_trc: str):
-
-    nchan=4
+def converter(trig_chnl_trc_path: str,  clock_chnl_trc_path: str):
     active_chan=2#20GS/s
 
-    vertical_gains =[]
-    vertical_offsets =[]
-    nsegments=0
-    points_per_frame=0
-    horizontal_interval=0
+    trigger_config = get_configuration(trig_chnl_trc_path)
+    clock_config = get_configuration(clock_chnl_trc_path)
 
-    for ichan in range(active_chan): #20GS/s
-        nsegments, points_per_frame, horizontal_interval, vertical_gain, vertical_offset = get_configuration(inputFiles[ichan])
-        vertical_gains.append(vertical_gain)
-        vertical_offsets.append(vertical_offset)
+    vertical_gains = [trigger_config['vertical_gain'], clock_config['vertical_gain']]
+    vertical_offsets = [trigger_config['vertical_offset'], clock_config['vertical_offset']]
 
-    vertical_gains.append()
+    nsegments = clock_config['nsegments']
+    points_per_frame = clock_config['points_per_frame']
+    horizontal_interval = clock_config['horizontal_interval']
 
+    print(f"Number of segments: {nsegments}")
+    print(f"Points per segment: {points_per_frame}")
+    print(f"Horizontal interval: {horizontal_interval}")
 
-    print("Number of segments: %i" %nsegments)
-    print("Points per segment %i" % points_per_frame)
-    print("Horizontal interval %s" % str(horizontal_interval))
-
-    # for ichan in range(nchan):
+    # for ichan in range(nchanactive_chan):
     for ichan in range(active_chan):#20GS/s
         print("Channel %i"%ichan)
         print("\t vertical_gain %0.3f" % vertical_gains[ichan])
         print("\t vertical offset %0.3f" % vertical_offsets[ichan])
 
     ### find beginning of trigger time block and y-axis block
-    offset,full_offset = get_waveform_block_offset(inputFiles[0])
+    offset, full_offset = get_waveform_block_offset(trig_chnl_trc_path)
     #print "offset is ",offset
 
     ## get event times and offsets
-    trigger_times, horizontal_offsets = get_segment_times(inputFiles[0],offset,nsegments)
-    trigger_times2, horizontal_offsets2 = get_segment_times(inputFiles[1],offset,nsegments)
+    trigger_times, horizontal_offsets = get_segment_times(trig_chnl_trc_path, offset, nsegments)
+    trigger_times2, horizontal_offsets2 = get_segment_times(clock_chnl_trc_path, offset, nsegments)
 
     start = time.time()
     outRoot = TFile(outputFile, "RECREATE")
@@ -294,8 +149,8 @@ def converter(trig_scope_chnl_trc: str,  kcu_scope_chnl_trc: str):
 
     i_evt = np.zeros(1,dtype=np.dtype("u4"))
     segment_time = np.zeros(1,dtype=np.dtype("f"))
-    channel = np.zeros([active_chan,points_per_frame],dtype=np.float32)
-    time_array = np.zeros([1,points_per_frame],dtype=np.float32)
+    channel = np.zeros([active_chan, points_per_frame],dtype=np.float32)
+    time_array = np.zeros([1, points_per_frame],dtype=np.float32)
     time_offsets = np.zeros(active_chan,dtype=np.dtype("f"))
 
     outTree.Branch('i_evt',i_evt,'i_evt/i')
