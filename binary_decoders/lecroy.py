@@ -1,7 +1,6 @@
 
 import sys
 import numpy as np
-import glob
 
 # TODO: PROJECT
 
@@ -98,14 +97,18 @@ class LecroyReader:
         points_per_frame = int(self.waveArrayCount / self.sequenceSegments)
         return x.reshape(-1, points_per_frame), y.reshape(-1, points_per_frame)
     
-    def get_segment_times(self):
-        "Look at todo to reduce open times and increase simplicity!"
+    def get_segment_times(self) -> tuple[np.ndarray, np.ndarray]:
+        """Look at todo to reduce open times and increase simplicity!
+        Returns the trigger_offsets and the horizontal offsets
+        """
         dtype = np.dtype([('trigger_offset', np.float64), ('horizontal_offset', np.float64)])
         with open(self.path, 'rb') as my_file:
             my_file.seek(self.offset)
             # Read the data into a buffer
             buffer = my_file.read(self.sequenceSegments * dtype.itemsize) # 5000 * 16
-        return np.frombuffer(buffer, dtype=dtype, count=self.sequenceSegments)
+        seg_times = np.frombuffer(buffer, dtype=dtype, count=self.sequenceSegments)
+        trigger_offsets, horizontal_offsets = zip(*seg_times)
+        return np.array(trigger_offsets), np.array(horizontal_offsets)
 
     def unpack(self, pos, formatSpecifier, length):
         """ a wrapper that reads binary data
@@ -182,33 +185,3 @@ class LecroyReader:
         string += "TimeBase: " + self.timeBase + "\n"
         string += "TriggerTime: " + self.triggerTime + "\n"
         return string
-
-
-import subprocess
-import uproot
-
-def run_dattoroot(input_path, output_path, config_path): #YUCK! but the algorithms are good so here we are :)
-    # /home/etl/Test_Stand/ETL_TestingDAQ/TimingDAQ/config/LecroyScope_v12.config
-
-    # Construct the command
-    DattorootCmd = (
-        f'/home/etl/Test_Stand/ETL_TestingDAQ/TimingDAQ/NetScopeStandaloneDat2Root '
-        f'--correctForTimeOffsets --input_file={input_path} '
-        f'--output_file={output_path} --config={config_path} --save_meas'
-    )
-
-    # Execute the command using subprocess
-    subprocess.run(DattorootCmd, shell=True, check=True)
-
-def read_root_file_as_array(output_path):
-    # Open the .root file with uproot
-    with uproot.open(output_path) as file:
-        # Assuming "mytree" is the name of your tree inside the root file
-        tree = file["pulse"]
-        # Converting tree branches to a dictionary of NumPy arrays
-        data = tree.arrays(library="np")
-    return data
-
-def output_root(output_path, array):
-    with uproot.recreate(output_path) as file:
-        file["pulse"] = array  # "mytree" is the name of the TTree
