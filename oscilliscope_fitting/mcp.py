@@ -2,6 +2,63 @@ import subprocess
 import uproot
 import os
 import awkward as ak
+import numpy as np
+
+
+def interpolate_mcp_peak(seconds: np.ndarray, volts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """
+    For an array of MCP signal waveforms; where each waveform is the time and voltage of the siganl. 
+    This grabs the 3 smallest values (so the peak) then does a parabolic interpolation of the actual peak
+
+    Works only if you have enough points close to the signal peak. This function does the following,
+
+    Lets say you have 3 points (x1,y1), (x2,y2), (x3,y3) you can create 3 equations,
+    A*x1^2+B*x1+C=y1
+    A*x2^2+B*x2+C=y2
+    A*x3^2+B*x3+C=y3
+
+    And then this is a matrix eq of form M*c = b,
+    [x1^2 x1 1] [A]   [y1]
+    |x2^2 x2 1| |B| = |y2|
+    [x3^2 x3 1] [C]   [y3]
+
+    To solve for A, B, C you can solve by doing c = M^-1 * b
+
+    This function does this columnary for n waveforms where each waveform needs to have an interpolated peak.
+    """
+    # 1. Put indexes corresponding to 3 smallest values from each waveform (usually 5000 waveforms for 5000 events) first in the array
+    data_peak_idxs = np.argpartition(volts, 3, axis=1)
+
+    # 2. Grab x and y values along these indexes -> np.take_along_axis AND only want the first 3 elements from each waveform -> [:,:3]
+    peak_xs = np.take_along_axis(seconds, data_peak_idxs, axis=1)[:,:3]
+    peak_ys = np.take_along_axis(volts, data_peak_idxs, axis=1)[:,:3]
+
+    # 3. Quadratic Interpolation of the peak using first 3 points
+    # this creates an array of 3x3 equation matrices
+    equation_matrix = np.stack(
+        np.array([peak_xs**2, peak_xs, np.ones_like(peak_xs)]),
+        axis=-1
+    )
+    inv_matrix = np.linalg.inv(equation_matrix)
+    quadratic_coeff = np.einsum('ijk,ik->ij', inv_matrix, peak_ys) #thx gpt, does the matrix multiplication c = M^-1 * b
+
+    # for Ax^2 + Bx + C
+    A, B, C = quadratic_coeff[:, 0], quadratic_coeff[:, 1], quadratic_coeff[:, 2]
+    return -B/(2*A), C - B**2 / (4*A) #-> x_interpolated_peak, y_interpolated_peak
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 class Dat2RootFit:
     """
