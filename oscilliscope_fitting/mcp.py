@@ -4,21 +4,9 @@ import os
 import awkward as ak
 import numpy as np
 
-class ScaleMCPSignal:
-    def __init__(self, seconds: np.ndarray, volts: np.ndarray):
-        self.seconds = seconds
-        self.volts = volts
-
-        # Gaurd Conditions
-        if seconds.shape != volts.shape:
-            raise ValueError(f"Time and voltage arrays should have the same shape, instead they have {seconds.shape}, {volts.shape} respectively.")
-        
-        if seconds.ndim == 1: #only need to check seconds since shape check above :)
-            # if you just give one waveform it will work too :)
-            seconds = np.array([seconds])
-            volts = np.array([volts])
-
-    def _calc_mcp_peaks(self) -> tuple[np.ndarray, np.ndarray]:
+class MCPSignalScaler:
+    @staticmethod
+    def _calc_mcp_peaks(seconds: np.ndarray, volts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         For an array of MCP signal waveforms; where each waveform is the time and voltage of the signal. 
         This grabs the 3 smallest values (so the peak) then does a PARABOLIC INTERPOLATION to estimate the peak
@@ -41,11 +29,11 @@ class ScaleMCPSignal:
         """
         
         # 1. Put indexes corresponding to 3 smallest values from each waveform (usually 5000 waveforms for 5000 events) first in the array
-        data_peak_idxs = np.argpartition(self.volts, 3, axis=1)
+        data_peak_idxs = np.argpartition(volts, 3, axis=1)
 
         # 2. Grab x and y values along these indexes -> np.take_along_axis AND only want the first 3 elements from each waveform -> [:,:3]
-        peak_xs = np.take_along_axis(self.seconds, data_peak_idxs, axis=1)[:,:3]
-        peak_ys = np.take_along_axis(self.volts, data_peak_idxs, axis=1)[:,:3]
+        peak_xs = np.take_along_axis(seconds, data_peak_idxs, axis=1)[:,:3]
+        peak_ys = np.take_along_axis(volts, data_peak_idxs, axis=1)[:,:3]
 
         # 3. Quadratic Interpolation of the peak using first 3 points
         # this creates an array of 3x3 equation matrices
@@ -60,8 +48,8 @@ class ScaleMCPSignal:
         A, B, C = quadratic_coeff[:, 0], quadratic_coeff[:, 1], quadratic_coeff[:, 2]
         return -B/(2*A), C - B**2/(4*A) #-> x_interpolated_peak, y_interpolated_peak
 
-    
-    def _calc_baselines(self, peak_times: np.ndarray, peak_volts: np.ndarray, pulse_window_estimate: float = 1e-8) -> np.ndarray:
+    @staticmethod
+    def _calc_baselines(seconds: np.ndarray, volts: np.ndarray, peak_times: np.ndarray, peak_volts: np.ndarray, pulse_window_estimate: float = 1e-8) -> np.ndarray:
         """
         Calculate the baseline by performing a linear fit on data points excluding those around the SPECIFIED MCP peak.
 
@@ -78,40 +66,42 @@ class ScaleMCPSignal:
         if peak_times.ndim != 1:
             raise ValueError(f"Peak times and peak volts need to be a flat array, each integer corresponds to the peak of the mcp for that waveform.")
         
-        x_peaks_expanded = self.seconds[:, np.newaxis]
+        x_peaks_expanded = peak_times[:, np.newaxis]
         window_mask = (
-            (peak_times < (x_peaks_expanded - pulse_window_estimate)) 
-            or 
-            (peak_times > (x_peaks_expanded + pulse_window_estimate))
+            (seconds < (x_peaks_expanded - pulse_window_estimate)) | (seconds > (x_peaks_expanded + pulse_window_estimate))
         )
         
-        base_x = np.where(window_mask, self.seconds, np.NaN)
-        base_y = np.where(window_mask, self.volts, np.NaN)
+        base_x = np.where(window_mask, seconds, np.NaN)
+        base_y = np.where(window_mask, volts, np.NaN)
 
         baseline_idxs = np.isfinite(base_x) & np.isfinite(base_y)
         m, baseline = np.polyfit(base_x[baseline_idxs], base_y[baseline_idxs], 1)
         return baseline
 
-    def normalize(self) -> tuple[np.ndarray, np.ndarray]:
+    @classmethod
+    def normalize(cls, seconds: np.ndarray, volts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
         Normalize signal to be between 0 and 1 by calculating the baseline and peak maximum!
         """
-        peak_times, peak_volts = self._calc_mcp_peaks()
-        baselines = self._calc_baselines(peak_times, peak_volts)
 
+        # Gaurd Conditions
+        if seconds.shape != volts.shape:
+            raise ValueError(f"Time and voltage arrays should have the same shape, instead they have {seconds.shape}, {volts.shape} respectively.")
+        
+        if seconds.ndim == 1: #only need to check seconds since shape check above :)
+            # if you just give one waveform it will work too :)
+            seconds = np.array([seconds])
+            volts = np.array([volts])
+
+
+        peak_times, peak_volts = cls._calc_mcp_peaks(seconds, volts)
+        baselines = cls._calc_baselines(seconds, volts, peak_times, peak_volts)
+
+        #have to do [:,np.newaxis], just takes the array and wraps arrays around each peak (float)
         v_mins = np.ones_like(peak_volts)[:,np.newaxis] * baselines
-        v_maxs = peak_volts[:,np.newaxis] #have to do [:,np.newaxis], just takes the array and wrapps arrays around each peak (float)
-        volts_scaled = (self.volts - v_mins) / (v_maxs-v_mins)
-        return self.seconds, volts_scaled
-
-
-
-
-
-
-
-
-
+        v_maxs = peak_volts[:,np.newaxis] 
+        volts_scaled = (volts - v_mins) / (v_maxs-v_mins)
+        return seconds, volts_scaled
 
 
 class Dat2RootFit:
