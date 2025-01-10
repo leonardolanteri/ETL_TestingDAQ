@@ -71,12 +71,12 @@ class MCPSignalScaler:
             (seconds < (x_peaks_expanded - pulse_window_estimate)) | (seconds > (x_peaks_expanded + pulse_window_estimate))
         )
         
-        base_x = np.where(window_mask, seconds, np.NaN)
-        base_y = np.where(window_mask, volts, np.NaN)
+        base_x = ak.drop_none(ak.mask(seconds, window_mask))
+        base_y = ak.drop_none(ak.mask(volts, window_mask))
 
-        baseline_idxs = np.isfinite(base_x) & np.isfinite(base_y)
-        m, baseline = np.polyfit(base_x[baseline_idxs], base_y[baseline_idxs], 1)
-        return baseline
+        # NOTE: 1e9 is important, the awkward linear fit function was having troubles with small numbers floating error? 
+        fit = ak.linear_fit(base_x*1e9, base_y, axis=1) 
+        return fit.intercept.to_numpy()*1e-9 # I guess numpy is smarter so we put it back
 
     @classmethod
     def normalize(cls, seconds: np.ndarray, volts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -93,12 +93,11 @@ class MCPSignalScaler:
             seconds = np.array([seconds])
             volts = np.array([volts])
 
-
         peak_times, peak_volts = cls._calc_mcp_peaks(seconds, volts)
         baselines = cls._calc_baselines(seconds, volts, peak_times, peak_volts)
 
         #have to do [:,np.newaxis], just takes the array and wraps arrays around each peak (float)
-        v_mins = np.ones_like(peak_volts)[:,np.newaxis] * baselines
+        v_mins = baselines[:,np.newaxis]
         v_maxs = peak_volts[:,np.newaxis] 
         volts_scaled = (volts - v_mins) / (v_maxs-v_mins)
         return seconds, volts_scaled
