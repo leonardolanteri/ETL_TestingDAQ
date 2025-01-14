@@ -63,7 +63,6 @@ class LecroyReader:
         self.horUnit    = "NOT PARSED"
         self.traceLabel = "NOT PARSED"
 
-
         self.triggerTime      = self.parseTimeStamp(296, secondDigits = secondDigits)
         self.recordType       = recordTypeList[self.parseInt16(316)]
         self.processingDone   = processingList[self.parseInt16(318)]
@@ -82,7 +81,7 @@ class LecroyReader:
             dtype=dtype, 
             count=1, 
             #self.offset is 357 while triTimeArray is 80000, which is all the bytes needed to get the time offset information
-            offset=self.offset + self.trigTimeArray #also skip trig time
+            offset=self.offset + self.trigTimeArray
         )[0]
         # now scale the ADC values
         y = self.verticalGain * y - self.verticalOffset

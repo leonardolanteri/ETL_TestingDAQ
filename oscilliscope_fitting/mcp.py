@@ -49,14 +49,14 @@ class MCPSignalScaler:
         return -B/(2*A), C - B**2/(4*A) #-> x_interpolated_peak, y_interpolated_peak
 
     @staticmethod
-    def _calc_baselines(seconds: np.ndarray, volts: np.ndarray, peak_times: np.ndarray, peak_volts: np.ndarray, pulse_window_estimate: float = 1e-8) -> np.ndarray:
+    def _calc_baselines(seconds: np.ndarray, volts: np.ndarray, peak_times: np.ndarray, peak_volts: np.ndarray, pulse_window_estimate: float = 5) -> np.ndarray:
         """
         Calculate the baseline by performing a linear fit on data points excluding those around the SPECIFIED MCP peak.
 
         Parameters:
         - peak_times (np.ndarray): Array containing the times associated with the voltage peaks. One peak for each waveform.
         - peak_volts (np.ndarray): Array containing the voltage values at the peaks. One peak for each waveform.
-        - pulse_window_estimate (float, optional): Duration around the peak to exclude from the fit, default is 10ns.
+        - pulse_window_estimate (float, optional): Duration around the peak to exclude from the fit, default is 3ns.
 
         Excludes points within the specified window around the peak, then fits a linear line to the remaining data.
         """
@@ -67,16 +67,41 @@ class MCPSignalScaler:
             raise ValueError(f"Peak times and peak volts need to be a flat array, each integer corresponds to the peak of the mcp for that waveform.")
         
         x_peaks_expanded = peak_times[:, np.newaxis]
-        window_mask = (
-            (seconds < (x_peaks_expanded - pulse_window_estimate)) | (seconds > (x_peaks_expanded + pulse_window_estimate))
-        )
+        # window_mask = (
+        #     (seconds < (x_peaks_expanded - pulse_window_estimate)) | (seconds > (x_peaks_expanded + pulse_window_estimate))
+        # )
+        window_mask = seconds < (x_peaks_expanded - pulse_window_estimate)
         
         base_x = ak.drop_none(ak.mask(seconds, window_mask))
         base_y = ak.drop_none(ak.mask(volts, window_mask))
 
         # NOTE: 1e9 is important, the awkward linear fit function was having troubles with small numbers floating error? 
-        fit = ak.linear_fit(base_x*1e9, base_y, axis=1) 
-        return fit.intercept.to_numpy()*1e-9 # I guess numpy is smarter so we put it back
+        fit = ak.linear_fit(base_x, base_y, axis=1) 
+
+        return fit.intercept.to_numpy() # I guess numpy is smarter so we put it back
+        #return np.mean(base_x, axis=1)
+
+    @staticmethod
+    def _center_array(seconds: np.ndarray) -> np.ndarray:
+        """
+        this is important, the centered point is the first point that passed the threshold
+        ie the trigger point
+
+        Ex:
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        Becomes:
+        [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4]
+        """
+        def generate_centered_array(arr:np.ndarray):
+            half_size = arr.size // 2
+            steps = np.diff(arr)
+            step_size = steps[0] # might be bad?
+            return np.arange(
+                -half_size*step_size, 
+                half_size*step_size + (arr.size % 2)*step_size, 
+                step_size
+            )
+        return np.array([generate_centered_array(s) for s in seconds])
 
     @classmethod
     def normalize(cls, seconds: np.ndarray, volts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -95,12 +120,13 @@ class MCPSignalScaler:
 
         peak_times, peak_volts = cls._calc_mcp_peaks(seconds, volts)
         baselines = cls._calc_baselines(seconds, volts, peak_times, peak_volts)
-
+        # baselines = np.zeros_like(baselines)
         #have to do [:,np.newaxis], just takes the array and wraps arrays around each peak (float)
         v_mins = baselines[:,np.newaxis]
         v_maxs = peak_volts[:,np.newaxis] 
         volts_scaled = (volts - v_mins) / (v_maxs-v_mins)
-        return seconds, volts_scaled
+
+        return cls._center_array(seconds), volts_scaled
 
 
 class Dat2RootFit:
