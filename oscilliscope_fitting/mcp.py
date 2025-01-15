@@ -4,6 +4,8 @@ import os
 import awkward as ak
 import numpy as np
 
+SIGNAL_SATURATION_LEVEL = -0.54 #saturates at -0.55 but add -0.54 for cushion
+
 class MCPSignalScaler:
     @staticmethod
     def _calc_mcp_peaks(seconds: np.ndarray, volts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -45,7 +47,7 @@ class MCPSignalScaler:
         quadratic_coeff = np.einsum('ijk,ik->ij', inv_matrix, peak_ys) #thx gpt, does the matrix multiplication c = M^-1 * b
 
         # for Ax^2 + Bx + C
-        A, B, C = quadratic_coeff[:, 0], quadratic_coeff[:, 1], quadratic_coeff[:, 2]
+        A, B, C = quadratic_coeff[:, 0], quadratic_coeff[:, 1], quadratic_coeff[:, 2]        
         return -B/(2*A), C - B**2/(4*A) #-> x_interpolated_peak, y_interpolated_peak
 
     @staticmethod
@@ -118,15 +120,23 @@ class MCPSignalScaler:
             seconds = np.array([seconds])
             volts = np.array([volts])
 
+        seconds = cls._center_array(seconds)
+
+        # REMOVE SATURATED SIGNALS
+        # using np.where to preserve array length and np.min because the signal is negative \/
+        # have to do [:,np.newaxis], just takes the array and wraps arrays around the inner values (float)
+        volts   = np.where(np.min(volts, axis=1)[:,np.newaxis] > SIGNAL_SATURATION_LEVEL, volts, np.NaN)
+        seconds = np.where(np.min(volts, axis=1)[:,np.newaxis] > SIGNAL_SATURATION_LEVEL, seconds, np.NaN)
+        #-----------------------------------------------------------------------------#
+
         peak_times, peak_volts = cls._calc_mcp_peaks(seconds, volts)
         baselines = cls._calc_baselines(seconds, volts, peak_times, peak_volts)
-        # baselines = np.zeros_like(baselines)
-        #have to do [:,np.newaxis], just takes the array and wraps arrays around each peak (float)
+
         v_mins = baselines[:,np.newaxis]
         v_maxs = peak_volts[:,np.newaxis] 
         volts_scaled = (volts - v_mins) / (v_maxs-v_mins)
 
-        return cls._center_array(seconds), volts_scaled
+        return seconds, volts_scaled
 
 
 class Dat2RootFit:
