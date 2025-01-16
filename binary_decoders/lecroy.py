@@ -2,13 +2,6 @@
 import sys
 import numpy as np
 
-# TODO: PROJECT
-
-# USE BYTESIO AND JUST READ EVERYTHING OUT LIKE A BOOK
-# FIRST X bits give this
-# then offsets
-# then voltage values
-
 class LecroyReader:
     def __init__(self, path, secondDigits = 3):
         """
@@ -100,6 +93,7 @@ class LecroyReader:
             np.ones(self.n_events)*(self.points_per_frame-1), 
             self.points_per_frame, 
             axis=-1)    
+        
     @property
     def segment_times(self) -> tuple[np.ndarray, np.ndarray]:
         """

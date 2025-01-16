@@ -1,10 +1,5 @@
-import subprocess
-import uproot
-import os
 import awkward as ak
 import numpy as np
-
-SIGNAL_SATURATION_LEVEL = -0.54 #saturates at -0.55 but add -0.54 for cushion
 
 class MCPSignalScaler:
     """

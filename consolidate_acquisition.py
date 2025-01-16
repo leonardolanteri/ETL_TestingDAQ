@@ -23,12 +23,12 @@ def generate_old_awk_array(oscilliscope_reference_reader: lecroy.LecroyReader, m
         timeoffsets: 8 * float32 #one for each channel
     }
     """
-    ref_trigger_offset, ref_horz_offset = oscilliscope_reference_reader.get_segment_times()
+    ref_trigger_times, ref_horz_offset = oscilliscope_reference_reader.get_segment_times()
     _, mcp_horz_offset = mcp_reader.get_segment_times()
     _, clock_horz_offset = clock_reader.get_segment_times()
     return ak.Array({
         "i_evt": list(range(len(clock_reader.x))),
-        "segment_time": ref_trigger_offset,
+        "segment_time": ref_trigger_times,
         "channel": np.stack(
             [oscilliscope_reference_reader.y, 
              mcp_reader.y, 
@@ -47,46 +47,39 @@ def generate_old_awk_array(oscilliscope_reference_reader: lecroy.LecroyReader, m
 def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str], mcp_binary_path: str, clock_binary_path: str, oscilliscope_reference_path: str):
     def convert_etroc_binary() -> ak.Array:
         first_binary_convert = etroc.converter(etroc_binary_paths, skip_trigger_check=True)
-        return etroc.root_dumper(first_binary_convert) # root dumper name is due to history
-
-    def convert_mcp_binary() -> ak.Array:
-        return lecroy.LecroyReader(mcp_binary_path)
-
-    def convert_clock_binary() -> ak.Array:
-        return lecroy.LecroyReader(clock_binary_path)
+        return etroc.root_dumper(first_binary_convert) # root dumper name is due to history 
 
     def convert_oscilliscope_reference() -> ak.Array:
         """
         This will likely be removed one day. It is used to calculated timeoffset
         But this is to get the same output as the previous test beams... 
-        ->To calculate the time offset they take the difference in time between the clock channel 
-        and an unused channel 1 and NOT the mcp channel
+        ->To calculate the time offset they take the difference in time between the chosen channel 
+        and an unused channel 1 and NOT the differnece between the clock channel and mcp channel which I feel like makes more sense.
         BUT for SPS Oct 2024, it was done correctly because only the mcp and clock channels were inputted
         So you might have to give the same path for the clock or mcp here if you want to get the same output as before.
 
         Moreover this should probably be calculated in the analysis part of the code. But for backwards compatability it will be done here...
         """
         return lecroy.LecroyReader(oscilliscope_reference_path)
-
-    # Start by merging everything
     print("Converting Oscilliscope Reference") # AGAIN I DONT THINK THIS IS NECESSARY!!!!!!!!!!!!!!
     oscilliscope_reference_wavefrom = convert_oscilliscope_reference()
 
     print("Converting MCP Channel Binary")
-    mcp_waveform = convert_mcp_binary()
+    mcp_waveform = lecroy.LecroyReader(mcp_binary_path)
 
     print("Converting Clock Channel Binary")
-    clock_waveform = convert_clock_binary()
-    print("Performing Clock Wavefrom Fits")
-    clock_timestamps = clock.calc_clock(
-        clock_waveform.x, clock_waveform.y,
-        CLOCK_THRESH_LOW, CLOCK_THRESH_HIGH, CLOCK_MEAUREMENT_POINT
-    )
+    clock_waveform = lecroy.LecroyReader(clock_binary_path)
 
     print("Performing fit on MCP")
     mcp_fit_data = mcp.fit(generate_old_awk_array(
         oscilliscope_reference_wavefrom, mcp_waveform, clock_waveform
     ))
+
+    print("Performing Clock Wavefrom Fits")
+    clock_timestamps = clock.calc_clock(
+        clock_waveform.x, clock_waveform.y,
+        CLOCK_THRESH_LOW, CLOCK_THRESH_HIGH, CLOCK_MEAUREMENT_POINT
+    )
 
     print("Converting ETROC Binary")
     etroc_data = convert_etroc_binary()
