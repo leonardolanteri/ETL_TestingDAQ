@@ -21,17 +21,10 @@ class LecroyReader:
         """
 
         self.path = path
-        x, y = self.parseFile(path)
-        self.x = x
-        self.y = y
+        self.second_digits = 3
+        with open(self.path, 'rb') as scope_file:
+            self.data = scope_file.read()
     
-    def parseFile(self, path, secondDigits = 3):
-        with open(path, 'rb') as scope_file:
-            raw_data = scope_file.read()
-        return self.parseData(raw_data, secondDigits = secondDigits)
-
-    def parseData(self, data, secondDigits = 3):
-        self.data = data
         self.endianness = "<"
 
         waveSourceList = ["Channel 1", "Channel 2", "Channel 3", "Channel 4", "Unknown"]
@@ -56,21 +49,24 @@ class LecroyReader:
         self.instrumentName   = self.parseString(76)
         self.instrumentNumber = self.parseInt32(92)
         self.waveArrayCount   = self.parseInt32(116)
+        self.n_events = self.parseInt32(144) # OR another name is sequenceSegments
         self.verticalGain     = self.parseFloat(156)
         self.verticalOffset   = self.parseFloat(160)
         self.maxDACValue         = self.parseFloat(164) # used to help remove saturated signals!
         self.minDACValue         = self.parseFloat(168)
         self.nominalBits      = self.parseInt16(172)
         self.horizInterval    = self.parseFloat(176)
-
+        # Trigger offset in time domain for 0th sweep of trigger, 
+        # measured in seconds from triggers 0th data point (ie. actual trigger delay)
+        self.horizOffset      = self.parseDouble(180)
+        
         # after these points, the signals saturate!
         self.maxVerticalValue = self.convert_dac_value(self.maxDACValue)
         self.minVerticalValue = self.convert_dac_value(self.minDACValue)
 
-        # Trigger offset in time domain for 0th sweep of trigger, 
-        # measured in seconds from triggers 0th data point (ie. actual trigger delay)
-        self.horizOffset      = self.parseDouble(180)
-        self.n_events = self.parseInt32(144) # OR another name is sequenceSegments
+        # 502 points for 10Gs sampling
+        self.points_per_frame = int(self.waveArrayCount / self.n_events) 
+
         self.vertUnit   = "NOT PARSED"
         self.horUnit    = "NOT PARSED"
         self.traceLabel = "NOT PARSED"
@@ -96,22 +92,18 @@ class LecroyReader:
             offset=self.offset + self.trigTimeArray
         )[0]
         # now scale the ADC values
-        y = self.convert_dac_value(y)
+        self.y = self.convert_dac_value(y).reshape(-1, self.points_per_frame)
         
-        self.points_per_frame = int(self.waveArrayCount / self.n_events) # 502 for 10Gs 
         _, horz_off = self.segment_times
-        x = horz_off[:,np.newaxis] + self.horizInterval * np.linspace(
+        self.x = horz_off[:,np.newaxis] + self.horizInterval * np.linspace(
             np.zeros(self.n_events),  
             np.ones(self.n_events)*(self.points_per_frame-1), 
             self.points_per_frame, 
-            axis=-1)
-
-        # now regroup y based on the number of points per samples
-        return x, y.reshape(-1, self.points_per_frame)
-    
+            axis=-1)    
     @property
     def segment_times(self) -> tuple[np.ndarray, np.ndarray]:
-        """Look at todo to reduce open times and increase simplicity!
+        """
+        Look at todo to reduce open times and increase simplicity!
         Returns the trigger_times and the horizontal offsets
         """
         dtype = np.dtype([('trigger_times', np.float64), ('horizontal_offset', np.float64)])
