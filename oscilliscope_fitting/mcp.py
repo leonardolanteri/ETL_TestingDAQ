@@ -7,6 +7,9 @@ import numpy as np
 SIGNAL_SATURATION_LEVEL = -0.54 #saturates at -0.55 but add -0.54 for cushion
 
 class MCPSignalScaler:
+    """
+    Only works for negative mcp peaks
+    """
     @staticmethod
     def _calc_mcp_peaks(seconds: np.ndarray, volts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -86,14 +89,21 @@ class MCPSignalScaler:
     @staticmethod
     def _center_array(seconds: np.ndarray) -> np.ndarray:
         """
-        this is important, the centered point is the first point that passed the threshold
-        ie the trigger point
-
-        Ex:
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        Becomes:
-        [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4]
+        Subtracts the end of every previous array to the next element
         """
+        # s_ends = seconds[:,-1]
+        # return seconds - s_ends[:,np.newaxis]
+        # seconds[1:, 0] -= seconds[:-1, -1]
+        # return seconds
+        # """
+        # this is important, the centered point is the first point that passed the threshold
+        # ie the trigger point
+
+        # Ex:
+        # [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        # Becomes:
+        # [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4]
+        # """
         def generate_centered_array(arr:np.ndarray):
             half_size = arr.size // 2
             steps = np.diff(arr)
@@ -103,7 +113,8 @@ class MCPSignalScaler:
                 half_size*step_size + (arr.size % 2)*step_size, 
                 step_size
             )
-        return np.array([generate_centered_array(s) for s in seconds])
+        return np.array([np.arange(-25,25+0.2, 0.1) for s in seconds])
+        #return np.array([generate_centered_array(s) for s in seconds])
 
     @classmethod
     def normalize(cls, seconds: np.ndarray, volts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -120,7 +131,7 @@ class MCPSignalScaler:
             seconds = np.array([seconds])
             volts = np.array([volts])
 
-        seconds = cls._center_array(seconds)
+        #seconds = cls._center_array(seconds)
 
         # REMOVE SATURATED SIGNALS
         # using np.where to preserve array length and np.min because the signal is negative \/

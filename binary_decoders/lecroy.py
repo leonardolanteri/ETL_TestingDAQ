@@ -15,6 +15,9 @@ class LecroyReader:
         Followed this project, with some simplifications: 
         
         https://github.com/bennomeier/leCroyParser
+
+        Manual With format found here - I believe its the same for our 8104 model
+        https://cdn.teledynelecroy.com/files/manuals/waverunner9000-om-eng.pdf
         """
 
         self.path = path
@@ -55,10 +58,19 @@ class LecroyReader:
         self.waveArrayCount   = self.parseInt32(116)
         self.verticalGain     = self.parseFloat(156)
         self.verticalOffset   = self.parseFloat(160)
+        self.maxDACValue         = self.parseFloat(164) # used to help remove saturated signals!
+        self.minDACValue         = self.parseFloat(168)
         self.nominalBits      = self.parseInt16(172)
         self.horizInterval    = self.parseFloat(176)
+
+        # after these points, the signals saturate!
+        self.maxVerticalValue = self.convert_dac_value(self.maxDACValue)
+        self.minVerticalValue = self.convert_dac_value(self.minDACValue)
+
+        # Trigger offset in time domain for 0th sweep of trigger, 
+        # measured in seconds from triggers 0th data point (ie. actual trigger delay)
         self.horizOffset      = self.parseDouble(180)
-        self.sequenceSegments = self.parseInt32(144)
+        self.n_events = self.parseInt32(144) # OR another name is sequenceSegments
         self.vertUnit   = "NOT PARSED"
         self.horUnit    = "NOT PARSED"
         self.traceLabel = "NOT PARSED"
@@ -84,30 +96,39 @@ class LecroyReader:
             offset=self.offset + self.trigTimeArray
         )[0]
         # now scale the ADC values
-        y = self.verticalGain * y - self.verticalOffset
-
-        x = np.linspace(
-            0, 
-            self.waveArrayCount * self.horizInterval,
-            num = self.waveArrayCount
-        ) + self.horizOffset
+        y = self.convert_dac_value(y)
         
-        # now regroup x and y based on the number of points per samples
-        points_per_frame = int(self.waveArrayCount / self.sequenceSegments)
-        return x.reshape(-1, points_per_frame), y.reshape(-1, points_per_frame)
+        self.points_per_frame = int(self.waveArrayCount / self.n_events) # 502 for 10Gs 
+        _, horz_off = self.segment_times
+        x = horz_off[:,np.newaxis] + self.horizInterval * np.linspace(
+            np.zeros(self.n_events),  
+            np.ones(self.n_events)*(self.points_per_frame-1), 
+            self.points_per_frame, 
+            axis=-1)
+
+        # now regroup y based on the number of points per samples
+        return x, y.reshape(-1, self.points_per_frame)
     
-    def get_segment_times(self) -> tuple[np.ndarray, np.ndarray]:
+    @property
+    def segment_times(self) -> tuple[np.ndarray, np.ndarray]:
         """Look at todo to reduce open times and increase simplicity!
-        Returns the trigger_offsets and the horizontal offsets
+        Returns the trigger_times and the horizontal offsets
         """
-        dtype = np.dtype([('trigger_offset', np.float64), ('horizontal_offset', np.float64)])
+        dtype = np.dtype([('trigger_times', np.float64), ('horizontal_offset', np.float64)])
         with open(self.path, 'rb') as my_file:
             my_file.seek(self.offset)
             # Read the data into a buffer
-            buffer = my_file.read(self.sequenceSegments * dtype.itemsize) # 5000 * 16
-        seg_times = np.frombuffer(buffer, dtype=dtype, count=self.sequenceSegments)
-        trigger_offsets, horizontal_offsets = zip(*seg_times)
-        return np.array(trigger_offsets), np.array(horizontal_offsets)
+            buffer = my_file.read(self.n_events * dtype.itemsize) # 5000 * 16
+        seg_times = np.frombuffer(buffer, dtype=dtype, count=self.n_events)
+        trigger_times, horizontal_offsets = zip(*seg_times)
+        return np.array(trigger_times), np.array(horizontal_offsets)
+
+    def convert_dac_value(self, dac_val):
+        """
+        See vertical offset calculation in manual, byte 160
+        https://cdn.teledynelecroy.com/files/manuals/waverunner9000-om-eng.pdf
+        """
+        return self.verticalGain * dac_val - self.verticalOffset
 
     def unpack(self, pos, formatSpecifier, length):
         """ a wrapper that reads binary data
