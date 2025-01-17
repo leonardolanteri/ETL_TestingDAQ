@@ -9,7 +9,7 @@ class LecroyReader:
         
         https://github.com/bennomeier/leCroyParser
 
-        Manual With format found here - I believe its the same for our 8104 model
+        Manual With file format found here - I believe its the same for our 8104 model (hopefully...)
         https://cdn.teledynelecroy.com/files/manuals/waverunner9000-om-eng.pdf
         """
 
@@ -87,18 +87,26 @@ class LecroyReader:
         # now scale the ADC values
         self.y = self.convert_dac_value(y).reshape(-1, self.points_per_frame)
         
+        # HORZ OFF used in time offset (between channels), See doc string for explanation of time offset between channels
         _, horz_off = self.segment_times
         self.x = horz_off[:,np.newaxis] + self.horizInterval * np.linspace(
             np.zeros(self.n_events),  
             np.ones(self.n_events)*(self.points_per_frame-1), 
             self.points_per_frame, 
-            axis=-1)    
-        
+            axis=-1) 
+    
     @property
     def segment_times(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Look at todo to reduce open times and increase simplicity!
-        Returns the trigger_times and the horizontal offsets
+        Gets the two arrays from running oscilliscope in sequential mode
+        
+        ---TIMEOFFSET (BETWEEN CHANNELS) CALCULATION from this Horizontal Offset extracted here---
+        This horizontal offset array is used as the starting point of the time axis for every event (followed from legacy file conversion.py, I do not know why), 
+        then counting up by "horizontal_interval" which is also in this binary file
+        until you reach the number of points in a frame (calculated from binary file variables). 
+        Now time time offset is simply the difference between these two arrays for different channels. 
+        So if I take for granted that this array is the starting point (still cant find why), 
+        then when you subtract the two you get time difference between the starting points of different channels
         """
         dtype = np.dtype([('trigger_times', np.float64), ('horizontal_offset', np.float64)])
         with open(self.path, 'rb') as my_file:

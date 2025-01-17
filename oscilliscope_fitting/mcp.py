@@ -3,6 +3,7 @@ import numpy as np
 
 class MCPSignalScaler:
     """
+    Contains the routines to scale the MCP signal to be between 0 and 1. Does so by (min=baseline),(max=mcp peak) scaling
     Only works for negative mcp peaks
     """
     @staticmethod
@@ -67,9 +68,6 @@ class MCPSignalScaler:
             raise ValueError(f"Peak times and peak volts need to be a flat array, each integer corresponds to the peak of the mcp for that waveform.")
         
         x_peaks_expanded = peak_times[:, np.newaxis]
-        # window_mask = (
-        #     (seconds < (x_peaks_expanded - pulse_window_estimate)) | (seconds > (x_peaks_expanded + pulse_window_estimate))
-        # )
         window_mask = seconds < (x_peaks_expanded - pulse_window_estimate)
         
         base_x = ak.drop_none(ak.mask(seconds, window_mask))
@@ -111,3 +109,22 @@ class MCPSignalScaler:
         volts_scaled = (volts - v_mins) / (v_maxs-v_mins)
 
         return seconds, volts_scaled
+
+
+def linear_interpolation(time: np.ndarray, volts: np.ndarray, peak_times: np.ndarray, threshold:float=0.4) -> np.ndarray:
+    """
+
+    Performs an linear interpolation between two points around a threshold to get the crossing time of said threshold
+    """
+    rising_volts_mask = time < peak_times[:, np.newaxis]
+    rising_ns = np.where(rising_volts_mask, time, np.NaN)
+    rising_v = np.where(rising_volts_mask, volts, np.NaN)
+    
+    upper_idx = np.argmax(rising_v > threshold, axis=1)
+    lower_idx = upper_idx - 1
+
+    event_idx = range(len(upper_idx))
+    # NOTE: x is voltages so we can use the formula below and plug in the threshold, too lazy to invert it haha
+    x1, x2 = rising_v[event_idx, lower_idx], rising_v[event_idx, upper_idx]
+    y1, y2 = rising_ns[event_idx, lower_idx], rising_ns[event_idx, upper_idx]
+    return ((y2 - y1)*threshold + x2*y1 - x1*y2) / (x2 - x1)

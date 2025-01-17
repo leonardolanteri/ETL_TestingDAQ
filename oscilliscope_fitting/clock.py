@@ -57,8 +57,8 @@ def get_rising_edge_after_first_fall(nanoseconds: ak.Array, volts_scaled: ak.Arr
     e2mask = edge_mask(sw_rising_pff.V) #need to recut to just get rising edge
     return sw_rising_pff[e2mask].t, sw_rising_pff[e2mask].V
 
-def calc_clock(seconds: ak.Array, volts: ak.Array, thresh_low: float, thresh_high: float, measurement_level: float) -> ak.Array:
-    nanoseconds = seconds[:,0]*10**9 # [:,0] -> THIS IS BAD REMOVE IT!!!
+def calc_clock(nanoseconds: ak.Array, volts: ak.Array, thresh_low: float, thresh_high: float, measurement_level: float) -> ak.Array:
+
     #SCALE the voltage so values are between 0 and 1
     v_mins = ak.min(volts, axis=1, keepdims=True)
     v_maxs = ak.max(volts, axis=1, keepdims=True)
