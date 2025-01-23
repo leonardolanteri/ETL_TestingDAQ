@@ -105,7 +105,7 @@ class LecroyReader:
         then counting up by "horizontal_interval" which is also in this binary file
         until you reach the number of points in a frame (calculated from binary file variables). 
         Now time time offset is simply the difference between these two arrays for different channels. 
-        So if I take for granted that this array is the starting point (still cant find why), 
+        So if I take for granted that this array is the starting point (still cant find why I think it does some sort of calculation to line up the waveforms), 
         then when you subtract the two you get time difference between the starting points of different channels
         """
         dtype = np.dtype([('trigger_times', np.float64), ('horizontal_offset', np.float64)])
