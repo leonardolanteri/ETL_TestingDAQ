@@ -1,16 +1,11 @@
 import struct
-import argparse
 import numpy as np
 import pandas as pd
 import awkward as ak
 from awkward import Array as akArray
-import json
-import yaml
-from yaml import Dumper, Loader
 from module_test_sw.tamalero.DataFrame import DataFrame
 from tqdm import tqdm
 from emoji import emojize
-from functools import wraps
 import logging
 
 logger = logging.getLogger("etroc_decoder")

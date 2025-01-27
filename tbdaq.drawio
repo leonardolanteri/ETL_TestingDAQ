@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="BcdBhgSi6_46abqgLctY" name="Page-1">
-        <mxGraphModel dx="3798" dy="2212" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="4932" dy="2696" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -11,10 +11,10 @@
                     <mxGeometry x="35" y="-40" width="750" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="4" value="&lt;b style=&quot;font-size: 18px;&quot;&gt;telescope.py&lt;br&gt;&lt;/b&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;b&gt;--configuration cern_test --kcu 192.168.0.10 --offset $3 --delay 32&lt;br&gt;&lt;/b&gt;module_test_sw/telescope.py&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
-                    <mxGeometry x="-460" y="188" width="420" height="82" as="geometry"/>
+                    <mxGeometry x="-849" y="161" width="420" height="82" as="geometry"/>
                 </mxCell>
                 <mxCell id="5" value="&lt;b&gt;poke_board.py&lt;br&gt;--configuration modulev1 --etrocs 0 --kcu 192.168.0.10 --darkmode&lt;br&gt;&lt;/b&gt;&lt;font size=&quot;1&quot;&gt;module_test_sw/telescope.py&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
-                    <mxGeometry x="90" y="188" width="540" height="82" as="geometry"/>
+                    <mxGeometry x="-389" y="161" width="540" height="82" as="geometry"/>
                 </mxCell>
                 <mxCell id="9" value="" style="endArrow=classic;html=1;fontSize=15;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.478;exitY=1.057;exitDx=0;exitDy=0;exitPerimeter=0;shape=flexArrow;fillColor=#FF33FF;" parent="1" source="3" target="5" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
@@ -24,13 +24,13 @@
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="12" value="&lt;div style=&quot;&quot;&gt;&lt;font size=&quot;1&quot; style=&quot;background-color: initial;&quot;&gt;&lt;b style=&quot;font-size: 18px;&quot;&gt;(INTEGER) NEXT RUN NUMBER&lt;/b&gt;&lt;/font&gt;&lt;font style=&quot;background-color: initial; font-size: 10px;&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/font&gt;&lt;/div&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;background-color: initial; font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace;&quot;&gt;../ETROC2_Test_Stand/ScopeHandler/Lecroy/Acquisition/next_run_number.txt&lt;/span&gt;&lt;/div&gt;&lt;/font&gt;" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" parent="1" vertex="1">
-                    <mxGeometry x="-200" y="-211" width="500" height="45" as="geometry"/>
+                    <mxGeometry x="200" y="-230" width="500" height="45" as="geometry"/>
                 </mxCell>
                 <mxCell id="16" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;font style=&quot;font-size: 18px;&quot;&gt;&lt;b&gt;Load Telescope Configuration&lt;/b&gt;&lt;/font&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;color: rgb(51, 51, 51); font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px; font-size: 12px;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;&lt;span style=&quot;color: rgb(122, 62, 157);&quot;&gt;config&lt;/span&gt; &lt;span style=&quot;color: rgb(119, 119, 119);&quot;&gt;=&lt;/span&gt; &lt;span style=&quot;color: rgb(170, 55, 49); font-weight: bold;&quot;&gt;load_yaml&lt;/span&gt;&lt;span style=&quot;color: rgb(119, 119, 119);&quot;&gt;(&lt;/span&gt;&lt;span style=&quot;color: rgb(122, 62, 157);&quot;&gt;f&lt;/span&gt;&lt;span style=&quot;color: rgb(68, 140, 39);&quot;&gt;&quot;configs/telescope_&lt;/span&gt;&lt;span style=&quot;color: rgb(156, 93, 39);&quot;&gt;{&lt;/span&gt;&lt;span style=&quot;color: rgb(122, 62, 157);&quot;&gt;args&lt;/span&gt;&lt;span style=&quot;color: rgb(119, 119, 119);&quot;&gt;.&lt;/span&gt;configuration&lt;span style=&quot;color: rgb(156, 93, 39);&quot;&gt;}&lt;/span&gt;&lt;span style=&quot;color: rgb(68, 140, 39);&quot;&gt;.yaml&quot;&lt;/span&gt;&lt;span style=&quot;color: rgb(119, 119, 119);&quot;&gt;)&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=10;fillColor=#d5e8d4;strokeColor=#82b366;" parent="1" vertex="1">
-                    <mxGeometry x="-900" y="90" width="570" height="53.5" as="geometry"/>
+                    <mxGeometry x="-924" y="35" width="570" height="53.5" as="geometry"/>
                 </mxCell>
                 <mxCell id="20" value="&lt;b style=&quot;font-size: 17px;&quot;&gt;autopilot.sh&lt;br&gt;--Nevents --ThreshOffset&lt;br&gt;&lt;/b&gt;&lt;font style=&quot;font-size: 10px;&quot;&gt;module_test_sw/autopilot.sh&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" parent="1" vertex="1">
-                    <mxGeometry x="900" y="188" width="280" height="60" as="geometry"/>
+                    <mxGeometry x="270" y="170" width="280" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="21" value="" style="endArrow=classic;html=1;fontSize=15;entryX=0.5;entryY=0;entryDx=0;entryDy=0;shape=flexArrow;fillColor=#FF33FF;" parent="1" source="3" target="20" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
@@ -40,7 +40,7 @@
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="22" value="&lt;b style=&quot;font-size: 19px;&quot;&gt;&lt;font style=&quot;font-size: 26px;&quot;&gt;daq.py&lt;/font&gt;&lt;br&gt;&lt;span style=&quot;&quot;&gt;--l1a_rate 0 --ext_l1a --kcu 192.168.0.10 --rb 0 --run $run_numer --lock &lt;/span&gt;&lt;font style=&quot;font-size: 19px;&quot;&gt;&quot;/home/etl/Test_Stand/ETROC2_Test_Stand/ScopeHandler/Lecroy/Acquisition/runnng_acquisition.txt&quot;&lt;/font&gt;&lt;br&gt;&lt;/b&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;module_test_sw/daq.py&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
-                    <mxGeometry x="-227.5" y="474.88" width="960" height="90.25" as="geometry"/>
+                    <mxGeometry x="-502.5" y="480" width="960" height="90.25" as="geometry"/>
                 </mxCell>
                 <mxCell id="23" value="" style="endArrow=classic;html=1;fontSize=15;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.348;exitY=0.994;exitDx=0;exitDy=0;exitPerimeter=0;shape=flexArrow;fillColor=#FF33FF;" parent="1" source="20" target="22" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
@@ -50,7 +50,7 @@
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="25" value="&lt;b&gt;&lt;font style=&quot;font-size: 21px;&quot;&gt;acquisition_wrapper.py&lt;br&gt;&lt;/font&gt;--Nevents&lt;/b&gt;&lt;br&gt;&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;/home/etl/Test_Stand/ETROC2_Test_Stand/ScopeHandler/Lecroy/Acquisition/acquisition_wrapper.py&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
-                    <mxGeometry x="822.5" y="474.88" width="680" height="80" as="geometry"/>
+                    <mxGeometry x="530" y="485.12" width="680" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="26" value="" style="endArrow=classic;html=1;fontSize=14;fontColor=#000000;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.601;exitY=1.014;exitDx=0;exitDy=0;exitPerimeter=0;shape=flexArrow;fillColor=#FF33FF;" parent="1" source="20" target="25" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
@@ -58,28 +58,22 @@
                         <mxPoint x="440" y="840" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="27" value="&lt;b style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 22px;&quot;&gt;data_dumper.py&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;--input next_run_number_file_path --rbs 0 --skip_trigger_check&lt;/span&gt;&lt;br&gt;&lt;/b&gt;&lt;font style=&quot;font-size: 14px;&quot;&gt;module_test_sw/data_dumper.py&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
-                    <mxGeometry x="1792.5" y="482.45000000000005" width="670" height="75.12" as="geometry"/>
-                </mxCell>
-                <mxCell id="28" value="" style="endArrow=classic;html=1;fontSize=14;fontColor=#000000;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.853;exitY=0.992;exitDx=0;exitDy=0;exitPerimeter=0;shape=flexArrow;fillColor=#FF33FF;" parent="1" source="20" target="27" edge="1">
-                    <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="425" y="850" as="sourcePoint"/>
-                        <mxPoint x="425" y="900" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
                 <mxCell id="30" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;b&gt;&lt;font style=&quot;font-size: 19px;&quot;&gt;MODULE/ETROC THRESHOLDS&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div style=&quot;font-weight: normal;&quot;&gt;f'{telescope_config_data/{args.configuration}*}/thresholds_module_{etroc.module_id}_etroc_{etroc.chip_no}.yaml'&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" parent="1" vertex="1">
-                    <mxGeometry x="-810" y="340" width="940" height="50" as="geometry"/>
+                    <mxGeometry x="-1109" y="320" width="940" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="34" value="&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;background-color: initial; font-size: 18px;&quot;&gt;&lt;b&gt;(T/F) RUNNING ETROC AQUISTION&lt;/b&gt;&lt;/font&gt;&lt;font style=&quot;background-color: initial; font-size: 10px;&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/font&gt;&lt;/div&gt;&lt;font size=&quot;1&quot; style=&quot;&quot;&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;span style=&quot;background-color: initial; font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 11px;&quot;&gt;module_test_sw/running_ETROC_acquisition.txt&lt;/span&gt;&lt;/div&gt;&lt;/font&gt;" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" parent="1" vertex="1">
-                    <mxGeometry x="490" y="-220" width="350" height="45" as="geometry"/>
+                    <mxGeometry x="860" y="-220" width="350" height="45" as="geometry"/>
+                </mxCell>
+                <mxCell id="183" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="36" target="179">
+                    <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="36" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b&gt;ETROC_OUTPUT_OUTPUT_RUN.DAT FILE&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;ETROC_output/output_run_{run}_rb{rb}.dat&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" parent="1" vertex="1">
-                    <mxGeometry x="-237.5" y="650" width="480" height="76.5" as="geometry"/>
+                    <mxGeometry x="-530" y="820.24" width="480" height="76.5" as="geometry"/>
                 </mxCell>
                 <mxCell id="39" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b&gt;OUTPUT LOG FILE&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;ETROC_output/log_run_{run}_rb{rb}.yaml&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" parent="1" vertex="1">
-                    <mxGeometry x="302.5" y="650" width="350" height="76.5" as="geometry"/>
+                    <mxGeometry x="27.5" y="820.24" width="350" height="76.5" as="geometry"/>
                 </mxCell>
-                <mxCell id="41" value="" style="endArrow=classic;html=1;fontSize=17;fontColor=#000000;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.475;entryY=-0.04;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="12" target="3" edge="1">
+                <mxCell id="41" value="" style="endArrow=classic;html=1;fontSize=17;fontColor=#000000;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.475;entryY=-0.04;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="12" target="3" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="430" y="-150" as="sourcePoint"/>
                         <mxPoint x="530" y="-150" as="targetPoint"/>
@@ -90,7 +84,7 @@
                         <mxPoint x="-10" y="-7" as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="43" value="" style="endArrow=classic;html=1;fontSize=17;fontColor=#000000;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="16" target="4" edge="1">
+                <mxCell id="43" value="" style="endArrow=classic;html=1;fontSize=17;fontColor=#000000;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="16" target="4" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="-260" y="60" as="sourcePoint"/>
                         <mxPoint x="-260" y="180" as="targetPoint"/>
@@ -114,8 +108,8 @@
                 </mxCell>
                 <mxCell id="47" value="" style="endArrow=classic;html=1;fontSize=17;fontColor=#000000;exitX=0.395;exitY=1.018;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="22" target="36" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="22.5" y="620" as="sourcePoint"/>
-                        <mxPoint x="122.5" y="620" as="targetPoint"/>
+                        <mxPoint x="-563" y="630.24" as="sourcePoint"/>
+                        <mxPoint x="-463" y="630.24" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="48" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontSize=17;fontColor=#000000;" parent="47" vertex="1">
@@ -125,8 +119,8 @@
                 </mxCell>
                 <mxCell id="49" value="" style="endArrow=classic;html=1;fontSize=17;fontColor=#000000;exitX=0.607;exitY=1.031;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="22" target="39" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="381.6999999999998" y="551.6244999999999" as="sourcePoint"/>
-                        <mxPoint x="252.5" y="670" as="targetPoint"/>
+                        <mxPoint x="-203.80000000000018" y="561.8644999999999" as="sourcePoint"/>
+                        <mxPoint x="-333" y="680.24" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="50" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontSize=17;fontColor=#000000;" parent="49" vertex="1">
@@ -134,12 +128,13 @@
                         <mxPoint x="-10" y="-7" as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="51" value="" style="endArrow=classic;html=1;fontSize=17;fontColor=#000000;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="12" target="20" edge="1">
+                <mxCell id="51" value="" style="endArrow=classic;html=1;fontSize=17;fontColor=#000000;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="12" target="20" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="490" y="260" as="sourcePoint"/>
                         <mxPoint x="590" y="260" as="targetPoint"/>
                         <Array as="points">
                             <mxPoint x="870" y="-80"/>
+                            <mxPoint x="630" y="130"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
@@ -148,13 +143,11 @@
                         <mxPoint x="-10" y="-7" as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="53" value="" style="endArrow=classic;html=1;fontSize=17;fontColor=#000000;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="34" target="20" edge="1">
+                <mxCell id="53" value="" style="endArrow=classic;html=1;fontSize=17;fontColor=#000000;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="34" target="20" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="590" y="130" as="sourcePoint"/>
                         <mxPoint x="690" y="130" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="1010" y="-40"/>
-                        </Array>
+                        <Array as="points"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="54" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontSize=17;fontColor=#000000;" parent="53" vertex="1">
@@ -163,17 +156,17 @@
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="55" value="&lt;div style=&quot;&quot;&gt;&lt;font style=&quot;background-color: initial; font-size: 18px;&quot;&gt;&lt;b&gt;(T/F) RUNNING AQUISTION (ScopeHandler)&lt;/b&gt;&lt;/font&gt;&lt;font style=&quot;background-color: initial; font-size: 10px;&quot;&gt;&amp;nbsp;&amp;nbsp;&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;text-align: left;&quot;&gt;&lt;font face=&quot;Droid Sans Mono, monospace, monospace&quot;&gt;&lt;span style=&quot;font-size: 11px;&quot;&gt;/home/etl/Test_Stand/ETROC2_Test_Stand/ScopeHandler/Lecroy/Acquisition/running_acquisition.txt&lt;/span&gt;&lt;/font&gt;&lt;/div&gt;" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" parent="1" vertex="1">
-                    <mxGeometry x="-920" y="-211" width="660" height="45" as="geometry"/>
+                    <mxGeometry x="-577" y="-230" width="660" height="45" as="geometry"/>
                 </mxCell>
-                <mxCell id="56" value="" style="endArrow=classic;html=1;fontSize=17;fontColor=#000000;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="55" target="22" edge="1">
+                <mxCell id="56" value="" style="endArrow=classic;html=1;fontSize=17;fontColor=#000000;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1575.1" y="-208.2449999999999" as="sourcePoint"/>
-                        <mxPoint x="1130" y="441.75" as="targetPoint"/>
+                        <mxPoint x="-346" y="-190" as="sourcePoint"/>
+                        <mxPoint x="184.36697848096446" y="499.7600000000002" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="-990" y="70"/>
-                            <mxPoint x="-950" y="370"/>
-                            <mxPoint x="-530" y="470"/>
-                            <mxPoint x="-240" y="420"/>
+                            <mxPoint x="-1140" y="-15"/>
+                            <mxPoint x="-1140" y="350"/>
+                            <mxPoint x="-1140" y="425"/>
+                            <mxPoint x="-339" y="415"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
@@ -183,27 +176,25 @@
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="64" value="&lt;b&gt;&lt;font style=&quot;font-size: 21px;&quot;&gt;acquisition.py&lt;br&gt;&lt;/font&gt;--runNUm --numEvents --samplerate --horizontalWindow --trigCh --trig --vScale1 --vScale2 --vScale3 --vScale4 --timeoffset --trigSlope&lt;/b&gt;&lt;br&gt;&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;/home/etl/Test_Stand/ETROC2_Test_Stand/ScopeHandler/Lecroy/Acquisition/acquisition_wrapper.py&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
-                    <mxGeometry x="822.5" y="636.5" width="680" height="90" as="geometry"/>
+                    <mxGeometry x="530" y="610.24" width="680" height="90" as="geometry"/>
                 </mxCell>
                 <mxCell id="65" value="" style="endArrow=classic;html=1;fontSize=12;fontColor=#000000;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;shape=flexArrow;fillColor=#FF33FF;" parent="1" source="25" target="64" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="1022.5" y="340" as="sourcePoint"/>
-                        <mxPoint x="1072.5" y="290" as="targetPoint"/>
+                        <mxPoint x="437" y="350.24" as="sourcePoint"/>
+                        <mxPoint x="487" y="300.24" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="66" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;text-align: left; background-color: initial; font-size: 18px;&quot;&gt;&lt;b&gt;OTSDAQ RUN NUMBER&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;/home/daq/etltest_0721/otsdaq_runNumber.txt&lt;/div&gt;&lt;/div&gt;" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" parent="1" vertex="1">
-                    <mxGeometry x="1830" y="-220" width="450" height="45" as="geometry"/>
+                    <mxGeometry x="1320" y="620.24" width="450" height="45" as="geometry"/>
                 </mxCell>
-                <mxCell id="69" value="" style="endArrow=classic;html=1;fontSize=22;fontColor=#000000;" parent="1" source="64" target="66" edge="1">
+                <mxCell id="69" value="" style="endArrow=classic;html=1;fontSize=22;fontColor=#000000;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="64" target="66" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1640" y="830" as="sourcePoint"/>
-                        <mxPoint x="2310" y="-170" as="targetPoint"/>
+                        <mxPoint x="1054.5" y="840.24" as="sourcePoint"/>
+                        <mxPoint x="1724.5" y="-159.76" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="1350" y="900"/>
-                            <mxPoint x="1530" y="720"/>
-                            <mxPoint x="1670" y="410"/>
-                            <mxPoint x="1760" y="280"/>
-                            <mxPoint x="2090" y="-140"/>
+                            <mxPoint x="874.5" y="730.24"/>
+                            <mxPoint x="944.5" y="730.24"/>
+                            <mxPoint x="1554.5" y="740.24"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
@@ -214,11 +205,11 @@
                 </mxCell>
                 <mxCell id="73" value="" style="endArrow=classic;html=1;fontSize=22;fontColor=#000000;" parent="1" source="66" target="64" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1760" y="20" as="sourcePoint"/>
-                        <mxPoint x="1860" y="20" as="targetPoint"/>
+                        <mxPoint x="1174.5" y="30.240000000000002" as="sourcePoint"/>
+                        <mxPoint x="1274.5" y="30.240000000000002" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="1710" y="300"/>
-                            <mxPoint x="1510" y="580"/>
+                            <mxPoint x="1474.5" y="570.24"/>
+                            <mxPoint x="924.5" y="590.24"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
@@ -228,15 +219,15 @@
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="75" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b style=&quot;&quot;&gt;Logbook&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&quot;/home/daq/ETL_Agilent_MSO-X-92004A/Acquisition/Logbook.txt&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" parent="1" vertex="1">
-                    <mxGeometry x="-57.5" y="898.25" width="530" height="76.5" as="geometry"/>
+                    <mxGeometry x="1454.5" y="820.24" width="530" height="76.5" as="geometry"/>
                 </mxCell>
                 <mxCell id="76" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b&gt;RunLog&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;/home/daq/ETL_Agilent_MSO-X-92004A/Acquisition/RunLog.txt&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" parent="1" vertex="1">
-                    <mxGeometry x="542.5" y="910" width="530" height="76.5" as="geometry"/>
+                    <mxGeometry x="2034.5" y="820.24" width="530" height="76.5" as="geometry"/>
                 </mxCell>
-                <mxCell id="77" value="" style="endArrow=classic;html=1;fontSize=22;fontColor=#000000;exitX=0.147;exitY=1.039;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="64" target="75" edge="1">
+                <mxCell id="77" value="" style="endArrow=classic;html=1;fontSize=22;fontColor=#000000;exitX=0.75;exitY=1;exitDx=0;exitDy=0;" parent="1" source="64" target="75" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="662.5" y="810" as="sourcePoint"/>
-                        <mxPoint x="762.5" y="810" as="targetPoint"/>
+                        <mxPoint x="77" y="820.24" as="sourcePoint"/>
+                        <mxPoint x="177" y="820.24" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="78" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontSize=22;fontColor=#000000;" parent="77" vertex="1">
@@ -244,10 +235,10 @@
                         <mxPoint x="-10" y="-7" as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="79" value="" style="endArrow=classic;html=1;fontSize=22;fontColor=#000000;exitX=0.25;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="64" target="76" edge="1">
+                <mxCell id="79" value="" style="endArrow=classic;html=1;fontSize=22;fontColor=#000000;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="64" target="76" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="932.46" y="740.0099999999998" as="sourcePoint"/>
-                        <mxPoint x="769.1474713132175" y="890" as="targetPoint"/>
+                        <mxPoint x="346.96000000000004" y="750.2499999999998" as="sourcePoint"/>
+                        <mxPoint x="183.64747131321747" y="900.24" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="80" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontSize=22;fontColor=#000000;" parent="79" vertex="1">
@@ -257,8 +248,8 @@
                 </mxCell>
                 <mxCell id="81" value="" style="endArrow=classic;html=1;fontSize=22;fontColor=#000000;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="64" target="85" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1372.5" y="880" as="sourcePoint"/>
-                        <mxPoint x="1412.5" y="880" as="targetPoint"/>
+                        <mxPoint x="787" y="890.24" as="sourcePoint"/>
+                        <mxPoint x="827" y="890.24" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="82" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontSize=22;fontColor=#000000;" parent="81" vertex="1">
@@ -266,49 +257,15 @@
                         <mxPoint x="-10" y="-7" as="offset"/>
                     </mxGeometry>
                 </mxCell>
+                <mxCell id="184" style="edgeStyle=none;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="85" target="179">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
                 <mxCell id="85" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px; font-size: 17px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b&gt;SCOPE OUTPUT??&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;DPO SAVE LOC = C:\Users\Public\Documents\Infiniium\Test_March21&lt;/div&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;WAVEFORM CHANNEL = C:\\Users\\Public\\Documents\\AgilentWaveform\\Wavenewscope_CH1_&lt;/div&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;Saves the &quot;C4--Trace&amp;lt;runNumber&amp;gt;.trc&quot; files&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" parent="1" vertex="1">
-                    <mxGeometry x="689.5" y="1010" width="900" height="120" as="geometry"/>
+                    <mxGeometry x="414.5" y="798.49" width="900" height="120" as="geometry"/>
                 </mxCell>
-                <mxCell id="86" value="" style="endArrow=classic;html=1;fontSize=14;fontColor=#000000;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="12" target="27" edge="1">
+                <mxCell id="91" value="" style="endArrow=classic;html=1;strokeWidth=2;fontSize=14;fontColor=#000000;exitX=0.366;exitY=1.055;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" target="89" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="640" y="-310" as="sourcePoint"/>
-                        <mxPoint x="3070" y="190" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="660" y="-360"/>
-                            <mxPoint x="2400" y="-260"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="87" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontSize=14;fontColor=#000000;" parent="86" vertex="1">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="88" value="" style="endArrow=none;dashed=1;html=1;fontSize=14;fontColor=#000000;shape=flexArrow;strokeWidth=3;" parent="1" source="36" target="27" edge="1">
-                    <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="-317.5" y="1010" as="sourcePoint"/>
-                        <mxPoint x="2022.5" y="310" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="-197.5" y="1030"/>
-                            <mxPoint x="200" y="1140"/>
-                            <mxPoint x="660" y="1240"/>
-                            <mxPoint x="1083" y="1260"/>
-                            <mxPoint x="1652.5" y="1210"/>
-                            <mxPoint x="1642.5" y="980"/>
-                            <mxPoint x="1722.5" y="380"/>
-                            <mxPoint x="1872.5" y="240"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="89" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b&gt;JSON EVENT FILE&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;ETROC_output/output_run_{run}_rb{rb}.json&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" parent="1" vertex="1">
-                    <mxGeometry x="1692.5" y="830" width="400" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="90" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b&gt;HEATMAP PREVIEW&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;ETROC_output/output_run_{run}_rb{rb}_heatmap.png&lt;/span&gt;&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" parent="1" vertex="1">
-                    <mxGeometry x="2552.5" y="830" width="425" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="91" value="" style="endArrow=classic;html=1;strokeWidth=2;fontSize=14;fontColor=#000000;exitX=0.366;exitY=1.055;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="27" target="89" edge="1">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1982.5" y="641.5" as="sourcePoint"/>
+                        <mxPoint x="2037.7200000000003" y="561.7015999999994" as="sourcePoint"/>
                         <mxPoint x="2082.5" y="641.5" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
@@ -317,9 +274,9 @@
                         <mxPoint x="-10" y="-7" as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="93" value="" style="endArrow=classic;html=1;strokeWidth=2;fontSize=14;fontColor=#000000;entryX=0.399;entryY=-0.054;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.862;exitY=1.002;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="27" target="90" edge="1">
+                <mxCell id="93" value="" style="endArrow=classic;html=1;strokeWidth=2;fontSize=14;fontColor=#000000;entryX=0.399;entryY=-0.054;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.862;exitY=1.002;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" target="90" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="2047.7200000000003" y="571.7015999999999" as="sourcePoint"/>
+                        <mxPoint x="2370.04" y="557.7202399999996" as="sourcePoint"/>
                         <mxPoint x="2012.5" y="700" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
@@ -328,52 +285,13 @@
                         <mxPoint x="-10" y="-7" as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="95" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b&gt;JSON MERGED EVENT FILE&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;ETROC_output/output_run_{run}_rb{rb}_merged.json&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" parent="1" vertex="1">
-                    <mxGeometry x="2122.5" y="830" width="400" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="97" value="" style="endArrow=classic;html=1;strokeWidth=2;fontSize=14;fontColor=#000000;entryX=0.454;entryY=-0.004;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="27" target="95" edge="1">
+                <mxCell id="97" value="" style="endArrow=classic;html=1;strokeWidth=2;fontSize=14;fontColor=#000000;entryX=0.454;entryY=-0.004;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" target="95" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="2232.5" y="710" as="sourcePoint"/>
+                        <mxPoint x="2148.9198856847615" y="557.5699999999997" as="sourcePoint"/>
                         <mxPoint x="2332.5" y="710" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="98" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontSize=14;fontColor=#000000;" parent="97" vertex="1">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="102" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial; text-align: left; font-size: 18px;&quot;&gt;&lt;b&gt;(T/F) MERGING&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial; font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 11px; text-align: left;&quot;&gt;module_test_sw/merging.txt&lt;/span&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" parent="1" vertex="1">
-                    <mxGeometry x="870" y="-220" width="310" height="45" as="geometry"/>
-                </mxCell>
-                <mxCell id="103" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial; text-align: left; font-size: 18px;&quot;&gt;&lt;b&gt;(T/F) MERGING (Scope Handler)&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, monospace, monospace; font-size: 11px; text-align: left;&quot;&gt;/home/etl/Test_Stand/ETROC2_Test_Stand/ScopeHandler/Lecroy/Acquisition/merging.txt&lt;/span&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" parent="1" vertex="1">
-                    <mxGeometry x="1240" y="-220" width="580" height="45" as="geometry"/>
-                </mxCell>
-                <mxCell id="104" value="" style="endArrow=classic;html=1;strokeWidth=1;fontSize=14;fontColor=#000000;exitX=0.686;exitY=0.988;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="20" target="103" edge="1">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1140" y="-10" as="sourcePoint"/>
-                        <mxPoint x="1240" y="-10" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="1190" y="400"/>
-                            <mxPoint x="1430" y="140"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="105" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontSize=14;fontColor=#000000;" parent="104" vertex="1">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="110" value="" style="endArrow=classic;html=1;strokeWidth=1;fontSize=14;fontColor=#000000;exitX=0.75;exitY=1;exitDx=0;exitDy=0;" parent="1" source="20" target="102" edge="1">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1220" y="340" as="sourcePoint"/>
-                        <mxPoint x="1300" y="150" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="1200" y="330"/>
-                            <mxPoint x="1310" y="230"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="111" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontSize=14;fontColor=#000000;" parent="110" vertex="1">
                     <mxGeometry width="20" height="14" relative="1" as="geometry">
                         <mxPoint x="-10" y="-7" as="offset"/>
                     </mxGeometry>
@@ -383,9 +301,9 @@
                         <mxPoint x="990" y="340" as="sourcePoint"/>
                         <mxPoint x="820" y="230" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="830" y="350"/>
-                            <mxPoint x="860" y="40"/>
-                            <mxPoint x="880" y="-150"/>
+                            <mxPoint x="390" y="320"/>
+                            <mxPoint x="1040" y="320"/>
+                            <mxPoint x="1035" y="30"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
@@ -395,26 +313,25 @@
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="114" value="&lt;b&gt;poke_board.py&lt;br&gt;&lt;/b&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt;--configuration&lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt;modulev1&lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt;--etrocs&lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt;0&lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt;--rbs&lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt;0&lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt;--modules&lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt;0&lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt;--kcu&lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt;192.168.0.10&lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt; &lt;/span&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px;&quot;&gt;--temperature&lt;br&gt;&lt;/span&gt;&lt;font style=&quot;font-size: 13px;&quot;&gt;module_test_sw/telescope.py&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
-                    <mxGeometry x="2280" y="171.5" width="540" height="82" as="geometry"/>
+                    <mxGeometry x="1100" y="159" width="540" height="82" as="geometry"/>
                 </mxCell>
-                <mxCell id="115" value="" style="endArrow=classic;html=1;fontSize=14;fontColor=#000000;shape=flexArrow;fillColor=#FF33FF;entryX=0.431;entryY=-0.048;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.89;exitY=1.041;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="3" target="114" edge="1">
+                <mxCell id="115" value="" style="endArrow=classic;html=1;fontSize=14;fontColor=#000000;shape=flexArrow;fillColor=#FF33FF;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.89;exitY=1.041;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="3" target="114" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="694.325733797813" y="60" as="sourcePoint"/>
                         <mxPoint x="2520" y="150" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="1600" y="190"/>
-                            <mxPoint x="2080" y="110"/>
+                            <mxPoint x="1300" y="140"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="116" value="" style="endArrow=classic;html=1;strokeWidth=1;fontSize=13;fontColor=#000000;fillColor=none;entryX=0.75;entryY=1;entryDx=0;entryDy=0;" parent="1" source="3" target="34" edge="1">
+                <mxCell id="116" value="" style="endArrow=classic;html=1;strokeWidth=1;fontSize=13;fontColor=#000000;fillColor=none;entryX=0.25;entryY=1;entryDx=0;entryDy=0;exitX=0.656;exitY=1;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="3" target="34" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="500" y="120" as="sourcePoint"/>
                         <mxPoint x="870" y="-40" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="570" y="90"/>
-                            <mxPoint x="800" y="80"/>
-                            <mxPoint x="820" y="10"/>
+                            <mxPoint x="527" y="90"/>
+                            <mxPoint x="800" y="90"/>
+                            <mxPoint x="948" y="90"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
@@ -428,7 +345,8 @@
                         <mxPoint x="-80" y="120" as="sourcePoint"/>
                         <mxPoint x="-130" y="100" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="-10" y="110"/>
+                            <mxPoint x="30" y="60"/>
+                            <mxPoint x="-80" y="80"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
@@ -437,57 +355,18 @@
                         <mxPoint x="-10" y="-7" as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="122" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial; text-align: left; font-size: 18px;&quot;&gt;&lt;b&gt;(T/F) Ongoing CONVERSION (Scope Handler)&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, monospace, monospace; font-size: 11px; text-align: left;&quot;&gt;/home/etl/Test_Stand/ETROC2_Test_Stand/ScopeHandler/Lecroy/Conversion/ongoing_conversion.txt&lt;/span&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" parent="1" vertex="1">
-                    <mxGeometry x="680" y="-420" width="630" height="45" as="geometry"/>
-                </mxCell>
-                <mxCell id="123" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial; text-align: left; font-size: 18px;&quot;&gt;&lt;b&gt;(T/F) Ongoing MERGING (Scope Handler)&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, monospace, monospace; font-size: 11px; text-align: left;&quot;&gt;/home/etl/Test_Stand/ETROC2_Test_Stand/ScopeHandler/Lecroy/Merging/ongoing_merging.txt&lt;/span&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" parent="1" vertex="1">
-                    <mxGeometry x="1340" y="-420" width="580" height="45" as="geometry"/>
-                </mxCell>
-                <mxCell id="124" value="" style="endArrow=classic;html=1;strokeWidth=1;fontSize=13;fontColor=#000000;fillColor=none;exitX=0.52;exitY=1.055;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.206;entryY=0.993;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="3" target="122" edge="1">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="450" y="130" as="sourcePoint"/>
-                        <mxPoint x="1190" y="-230" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="570" y="120"/>
-                            <mxPoint x="900" y="80"/>
-                            <mxPoint x="1210"/>
-                            <mxPoint x="1190" y="-240"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="125" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontSize=13;fontColor=#000000;" parent="124" vertex="1">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="126" value="" style="endArrow=classic;html=1;strokeWidth=1;fontSize=13;fontColor=#000000;fillColor=none;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="3" target="123" edge="1">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="440" y="120" as="sourcePoint"/>
-                        <mxPoint x="1160" y="-320" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="580" y="150"/>
-                            <mxPoint x="1230" y="30"/>
-                            <mxPoint x="1210" y="-230"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="127" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontSize=13;fontColor=#000000;" parent="126" vertex="1">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="128" value="&lt;h1 style=&quot;font-size: 23px;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot;&gt;LEGEND&lt;/font&gt;&lt;/span&gt;&lt;/h1&gt;&lt;h1 style=&quot;font-size: 23px;&quot;&gt;&lt;ul&gt;&lt;li&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot; color=&quot;#ffe78f&quot;&gt;YELLOW&lt;/font&gt; = FLAG / BOOK KEEPING TEXT FILES&lt;/font&gt;&lt;/span&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 23px;&quot;&gt;&lt;font style=&quot;background-color: initial; font-weight: 400; font-size: 23px;&quot; color=&quot;#ff0000&quot;&gt;RED&lt;/font&gt;&lt;span style=&quot;background-color: initial; font-weight: 400;&quot;&gt; = SHELL SCRIPTS&lt;/span&gt;&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot; color=&quot;#3333ff&quot;&gt;BLUE&lt;/font&gt; = PYTHON SCRIPTS&lt;/font&gt;&lt;/span&gt;&lt;/li&gt;&lt;li&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot; color=&quot;#ffff00&quot;&gt;GOLDEN&lt;/font&gt; = OUTPUT FILES&lt;/font&gt;&lt;/span&gt;&lt;/li&gt;&lt;li&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot;&gt;&lt;font color=&quot;#663300&quot;&gt;BROWN&lt;/font&gt; = Compiled Executables&lt;/font&gt;&lt;/span&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/h1&gt;" style="text;html=1;strokeColor=#314354;fillColor=#647687;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;labelBackgroundColor=none;fontSize=13;fontColor=#ffffff;align=left;" parent="1" vertex="1">
+                <mxCell id="128" value="&lt;h1 style=&quot;font-size: 23px;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot;&gt;LEGEND&lt;/font&gt;&lt;/span&gt;&lt;/h1&gt;&lt;h1 style=&quot;font-size: 23px;&quot;&gt;&lt;ul&gt;&lt;li&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot; color=&quot;#ffe78f&quot;&gt;YELLOW&lt;/font&gt; = FLAG / BOOK KEEPING TEXT FILES&lt;/font&gt;&lt;/span&gt;&lt;/li&gt;&lt;li&gt;&lt;font style=&quot;font-size: 23px;&quot;&gt;&lt;font style=&quot;background-color: initial; font-weight: 400; font-size: 23px;&quot; color=&quot;#ff0000&quot;&gt;RED&lt;/font&gt;&lt;span style=&quot;background-color: initial; font-weight: 400;&quot;&gt; = SHELL SCRIPTS&lt;/span&gt;&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot; color=&quot;#3333ff&quot;&gt;BLUE&lt;/font&gt; = PYTHON SCRIPTS&lt;/font&gt;&lt;/span&gt;&lt;/li&gt;&lt;li&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot;&gt;&lt;font color=&quot;#bffff9&quot;&gt;Turquoise&lt;/font&gt; = PYTHON MODULE&lt;/font&gt;&lt;/span&gt;&lt;/li&gt;&lt;li&gt;&lt;span style=&quot;font-weight: 400;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot;&gt;&lt;font style=&quot;font-size: 23px;&quot; color=&quot;#ffff00&quot;&gt;GOLDEN&lt;/font&gt; = OUTPUT FILES&lt;/font&gt;&lt;/span&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/h1&gt;" style="text;html=1;strokeColor=#314354;fillColor=#647687;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;labelBackgroundColor=none;fontSize=13;fontColor=#ffffff;align=left;" parent="1" vertex="1">
                     <mxGeometry x="-780" y="-497.5" width="840" height="227.5" as="geometry"/>
                 </mxCell>
                 <mxCell id="129" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b&gt;RUN LOG COMPLETE&amp;nbsp;&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;./run_log_SPS_May2024.csv&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" parent="1" vertex="1">
-                    <mxGeometry x="2950" y="177" width="345" height="76.5" as="geometry"/>
+                    <mxGeometry x="1689.5" y="159" width="345" height="76.5" as="geometry"/>
                 </mxCell>
                 <mxCell id="133" value="" style="endArrow=classic;html=1;strokeWidth=4;fontSize=23;fontColor=#FFFF00;fillColor=none;entryX=0.473;entryY=0.023;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1;exitY=1;exitDx=0;exitDy=0;" parent="1" source="3" target="129" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="1780" y="30" as="sourcePoint"/>
                         <mxPoint x="2570" y="-10" as="targetPoint"/>
                         <Array as="points">
-                            <mxPoint x="2450" y="50"/>
+                            <mxPoint x="1853" y="90"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
@@ -496,222 +375,43 @@
                         <mxPoint x="-245" y="-7" as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="137" value="&lt;font style=&quot;font-size: 34px;&quot;&gt;&lt;b style=&quot;&quot;&gt;recoLoop.py&lt;br&gt;&lt;/b&gt;&lt;font style=&quot;font-size: 34px;&quot;&gt;/ScopeHandler/Lecroy/Conversion/recoLoop.py&lt;/font&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
-                    <mxGeometry x="770" y="1510" width="850" height="202" as="geometry"/>
+                <mxCell id="171" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b style=&quot;&quot;&gt;FINAL ROOT EVENT FILE&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;/home/etl/Test_Stand/ETROC2_Test_Stand/ScopeHandler/ScopeData/LecroyMerged/run_&amp;lt;run_num&amp;gt;_rb0.root&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" parent="1" vertex="1">
+                    <mxGeometry x="-95.5" y="1400.24" width="950" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="138" value="" style="endArrow=classic;html=1;strokeWidth=4;fontSize=34;fontColor=#FFFF00;fillColor=none;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.421;entryY=-0.001;entryDx=0;entryDy=0;entryPerimeter=0;dashed=1;dashPattern=8 8;" parent="1" source="85" target="137" edge="1">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1195" y="1400" as="sourcePoint"/>
-                        <mxPoint x="1355" y="1400" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="139" value="&lt;font style=&quot;background-color: rgb(255, 231, 143);&quot; color=&quot;#000000&quot;&gt;TAKES SCOPE FILE LIKE:&lt;br&gt;&amp;nbsp;/C8--Trace*&lt;/font&gt;" style="edgeLabel;resizable=0;html=1;align=center;verticalAlign=middle;labelBackgroundColor=none;fontSize=34;fontColor=#FFFF00;" parent="138" connectable="0" vertex="1">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="207" y="31" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="141" value="&lt;b&gt;&lt;font style=&quot;font-size: 21px;&quot;&gt;conversion.py&lt;br&gt;&lt;/font&gt;--runNumber&lt;/b&gt;&lt;br&gt;&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;/home/daq/LecroyControl/Reconstruction/conversion.py&lt;/span&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" parent="1" vertex="1">
-                    <mxGeometry x="420" y="1860" width="680" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="142" value="NetScopeStandaloneDat2Root&lt;br&gt;&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;--correctForTimeOffsets --input_file=%s/converted_run%i.root --output_file=%s --config=/home/daq/ScopeTimingDAQ/TimingDAQ/config/Lecroy_BetaSource_v2.config --save_meas&lt;/font&gt;&lt;/div&gt;&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;font color=&quot;#000000&quot; style=&quot;font-size: 16px;&quot;&gt;/home/daq/ScopeTimingDAQ/TimingDAQ/NetScopeStandaloneDat2Root&lt;/font&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=34;fontColor=#ffffff;fillColor=#a0522d;strokeColor=#6D1F00;" parent="1" vertex="1">
-                    <mxGeometry x="1310" y="1850" width="980" height="130" as="geometry"/>
-                </mxCell>
-                <mxCell id="143" value="" style="endArrow=classic;html=1;strokeWidth=4;fontSize=16;fontColor=#FFFFFF;fillColor=none;entryX=0.614;entryY=0.021;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.404;exitY=0.999;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="137" target="141" edge="1">
+                <mxCell id="172" value="" style="endArrow=classic;html=1;fontColor=#000000;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" parent="1" source="179" target="171" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="1440" y="1720" as="sourcePoint"/>
-                        <mxPoint x="1490" y="1670" as="targetPoint"/>
+                        <mxPoint x="379.5" y="1550.24" as="sourcePoint"/>
+                        <mxPoint x="334.5" y="1698.24" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="144" value="" style="endArrow=classic;html=1;strokeWidth=4;fontSize=16;fontColor=#FFFFFF;fillColor=none;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="137" target="142" edge="1">
-                    <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="1300" y="1830" as="sourcePoint"/>
-                        <mxPoint x="1350" y="1780" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="147" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b&gt;run_scope&amp;lt;run_num&amp;gt;.root&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;/home/daq/ScopeData/LecroyTimingDAQ&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" vertex="1" parent="1">
-                    <mxGeometry x="1600" y="2070" width="400" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="148" value="" style="endArrow=classic;html=1;" edge="1" parent="1" source="142" target="147">
-                    <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="1510" y="2080" as="sourcePoint"/>
-                        <mxPoint x="1560" y="2030" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="149" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b&gt;converted_run&amp;lt;run_num&amp;gt;.root&lt;/b&gt;&lt;/span&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;/home/daq/ScopeData/LecroyConverted/converted_run&amp;lt;run_num&amp;gt;.root&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" vertex="1" parent="1">
-                    <mxGeometry x="385" y="2040" width="750" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="150" value="" style="endArrow=classic;html=1;" edge="1" parent="1" source="141" target="149">
-                    <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="590" y="2050" as="sourcePoint"/>
-                        <mxPoint x="640" y="2000" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="151" value="" style="endArrow=classic;html=1;exitX=0.696;exitY=1.054;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="149" target="142">
+                <mxCell id="177" value="" style="endArrow=classic;html=1;fontColor=#000000;exitX=0.171;exitY=1.011;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" target="173" edge="1">
                     <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1050" y="2000" as="sourcePoint"/>
-                        <mxPoint x="1270" y="1770" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="930" y="2170"/>
-                            <mxPoint x="1210" y="2170"/>
-                            <mxPoint x="1220" y="2130"/>
-                            <mxPoint x="1230" y="1760"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="152" value="" style="shape=message;html=1;outlineConnect=0;" vertex="1" parent="151">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="153" value="&lt;font style=&quot;font-size: 34px;&quot;&gt;&lt;b style=&quot;&quot;&gt;merge_scope_etroc.py&lt;br&gt;&lt;/b&gt;&lt;font style=&quot;font-size: 34px;&quot;&gt;/ScopeHandler/Lecroy/Merging/merge_scope_etroc.py&lt;/font&gt;&lt;/font&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-                    <mxGeometry x="860" y="2500" width="850" height="202" as="geometry"/>
-                </mxCell>
-                <mxCell id="154" value="" style="endArrow=classic;html=1;fontColor=#000000;exitX=0.451;exitY=1.054;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="149" target="153">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="830" y="2400" as="sourcePoint"/>
-                        <mxPoint x="930" y="2400" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="155" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=#FFE78F;fontColor=#000000;" vertex="1" parent="154">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="156" value="" style="endArrow=classic;html=1;fontColor=#000000;entryX=0.672;entryY=0.008;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="147" target="153">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1320" y="2310" as="sourcePoint"/>
-                        <mxPoint x="1420" y="2310" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="157" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=#FFE78F;fontColor=#000000;" vertex="1" parent="156">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="158" value="&lt;b style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 22px;&quot;&gt;root_dumper.py&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;--input input_json --nEvents&lt;/span&gt;&lt;br&gt;&lt;/b&gt;&lt;span style=&quot;font-size: 14px;&quot;&gt;/ETROC_output/output_run_{run}_rb{rb}.json&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
-                    <mxGeometry x="2500" y="1270" width="460" height="75.12" as="geometry"/>
-                </mxCell>
-                <mxCell id="159" value="" style="endArrow=classic;html=1;fontColor=#000000;" edge="1" parent="1" source="89" target="158">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1910" y="1080" as="sourcePoint"/>
-                        <mxPoint x="2010" y="1080" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="160" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=#FFE78F;fontColor=#000000;" vertex="1" parent="159">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="161" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b style=&quot;&quot;&gt;ROOT EVENT FILE&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;/home/etl/Test_Stand/ETROC2_Test_Stand/ScopeHandler/ScopeData/ETROCData/output_run_{run}_rb{rb}.root&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" vertex="1" parent="1">
-                    <mxGeometry x="2270" y="1510" width="950" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="162" value="" style="endArrow=classic;html=1;fontColor=#000000;exitX=0.535;exitY=1.009;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="158" target="161">
-                    <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="2450" y="1490" as="sourcePoint"/>
-                        <mxPoint x="2500" y="1440" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="163" value="" style="endArrow=classic;html=1;fontColor=#000000;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.869;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="161" target="153">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="2590" y="2120" as="sourcePoint"/>
-                        <mxPoint x="2690" y="2120" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="2260" y="2170"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="164" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=#FFE78F;fontColor=#000000;" vertex="1" parent="163">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="165" value="" style="endArrow=classic;html=1;fontColor=#000000;exitX=0.75;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="102" target="153">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1130" y="-110" as="sourcePoint"/>
-                        <mxPoint x="3250" y="2060" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="1180" y="-70"/>
-                            <mxPoint x="2110" y="-80"/>
-                            <mxPoint x="3500" y="-120"/>
-                            <mxPoint x="3410" y="1740"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="166" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontColor=#000000;" vertex="1" parent="165">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="167" value="" style="endArrow=classic;html=1;fontColor=#000000;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="103" target="153">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="1580" y="-120" as="sourcePoint"/>
-                        <mxPoint x="3550" y="2270" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="1740" y="-110"/>
-                            <mxPoint x="3670" y="-160"/>
-                            <mxPoint x="3560" y="1780"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="168" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontColor=#000000;" vertex="1" parent="167">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="169" value="" style="endArrow=classic;html=1;fontColor=#000000;" edge="1" parent="1" source="153" target="12">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="750" y="2950" as="sourcePoint"/>
-                        <mxPoint x="-1290" y="-20" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="820" y="2870"/>
-                            <mxPoint x="-1340" y="180"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="170" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontColor=#000000;" vertex="1" parent="169">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="171" value="&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-size: 19px;&quot;&gt;&lt;b style=&quot;&quot;&gt;FINAL ROOT EVENT FILE&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;/home/etl/Test_Stand/ETROC2_Test_Stand/ScopeHandler/ScopeData/LecroyMerged/run_&amp;lt;run_num&amp;gt;_rb0.root&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;labelBackgroundColor=none;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;gradientColor=#ffd966;" vertex="1" parent="1">
-                    <mxGeometry x="810" y="2950" width="950" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="172" value="" style="endArrow=classic;html=1;fontColor=#000000;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="153" target="171">
-                    <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="1190" y="2900" as="sourcePoint"/>
-                        <mxPoint x="1240" y="2850" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="173" value="&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;background-color: initial; text-align: left; font-size: 18px;&quot;&gt;&lt;b&gt;(T/F)&amp;nbsp; MERGING (Scope Handler)&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, monospace, monospace; font-size: 11px; text-align: left;&quot;&gt;/home/etl/Test_Stand/ETROC2_Test_Stand/ScopeHandler/Lecroy/Conversion/merging.txt&lt;/span&gt;&lt;br&gt;&lt;/div&gt;" style="text;html=1;strokeColor=#d6b656;fillColor=#fff2cc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=15;" vertex="1" parent="1">
-                    <mxGeometry x="-200" y="2455" width="630" height="45" as="geometry"/>
-                </mxCell>
-                <mxCell id="175" value="" style="endArrow=classic;html=1;fontColor=#000000;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="173" target="153">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="280" y="2360" as="sourcePoint"/>
-                        <mxPoint x="800" y="2370" as="targetPoint"/>
-                        <Array as="points">
-                            <mxPoint x="580" y="2290"/>
-                        </Array>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="176" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontColor=#000000;" vertex="1" parent="175">
-                    <mxGeometry width="20" height="14" relative="1" as="geometry">
-                        <mxPoint x="-10" y="-7" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="177" value="" style="endArrow=classic;html=1;fontColor=#000000;exitX=0.171;exitY=1.011;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="153" target="173">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="-80" y="2760" as="sourcePoint"/>
+                        <mxPoint x="1005.3499999999985" y="2704.2219999999998" as="sourcePoint"/>
                         <mxPoint x="540" y="2840" as="targetPoint"/>
                         <Array as="points">
                             <mxPoint x="340" y="2850"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="178" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontColor=#000000;" vertex="1" parent="177">
+                <mxCell id="178" value="" style="shape=message;html=1;outlineConnect=0;labelBackgroundColor=none;fontColor=#000000;" parent="177" vertex="1">
                     <mxGeometry width="20" height="14" relative="1" as="geometry">
                         <mxPoint x="-10" y="-7" as="offset"/>
                     </mxGeometry>
+                </mxCell>
+                <mxCell id="179" value="&lt;b&gt;&lt;font style=&quot;font-size: 21px;&quot;&gt;consolidate_acquisition.py&lt;/font&gt;&lt;/b&gt;&lt;br&gt;&lt;div style=&quot;font-family: &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; line-height: 19px;&quot;&gt;&lt;font style=&quot;font-size: 12px;&quot;&gt;/ETL_TestingDAQ/consolidate_acquisition.py&lt;/font&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;fontSize=16;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+                    <mxGeometry x="39.5" y="1200.24" width="680" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="189" style="edgeStyle=none;html=1;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;fontSize=24;" edge="1" parent="1" source="185" target="179">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="185" value="&lt;font style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;Lecroy Oscilliscope and ETROC Binary Converters&lt;br&gt;&lt;/font&gt;ETL_TestingDAQ/binary_decoders/&lt;br&gt;&lt;/font&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#BFFFF9;" vertex="1" parent="1">
+                    <mxGeometry x="770" y="1020" width="590" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="190" style="edgeStyle=none;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0;entryDx=0;entryDy=0;fontSize=24;" edge="1" parent="1" source="186" target="179">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="186" value="&lt;font style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;Clock and MCP fitting&lt;br&gt;&lt;/font&gt;ETL_TestingDAQ/oscilliscope_fitting/&lt;br&gt;&lt;/font&gt;" style="ellipse;whiteSpace=wrap;html=1;fillColor=#BFFFF9;" vertex="1" parent="1">
+                    <mxGeometry x="855" y="1140" width="360" height="110" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>
