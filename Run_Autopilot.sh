@@ -42,7 +42,6 @@ biasHelper(){
     biasV=$(echo $biasV | awk '{print int(($biasV / 5) + 0.5) * 5}')
 }
 
-# 1) Number of runs
 # 2) Threshold offset
 # 3) Number of events
 # 4) The number of the PCb board, use "-" to separate boards id in multilayer setup
@@ -63,9 +62,12 @@ isMulti=$9
 run_number=`cat ScopeHandler/Lecroy/Acquisition/next_run_number.txt`
 
 echo -e "Starting configuration for run $run_number on KCU. ${RED}Turn beam OFF!!${NC}"
-/usr/bin/python3 $TAMALERO_BASE/telescope.py  --configuration cern_1 --kcu 192.168.0.10 --offset $3 --delay 14 
+cd module_test_sw
+source setup.sh
+/usr/bin/python3 telescope.py  --configuration cern_1 --kcu 192.168.0.10 --offset $3 --delay 14 
 #/usr/bin/python3 poke_board.py --configuration modulev1 --etrocs 0 --kcu 192.168.0.10 --dark_mode --mask telescope_config_data/cern_test_2024-05-13-20-07-26/noise_width_module_106_etroc_2.yaml
-/usr/bin/python3 $TAMALERO_BASE/poke_board.py --configuration modulev1 --etrocs 2 --kcu 192.168.0.10 --dark_mode
+/usr/bin/python3 poke_board.py --configuration modulev1 --etrocs 2 --kcu 192.168.0.10 --dark_mode
+cd ..
 
 if [ "$isTrack" = true ]
 then
@@ -85,8 +87,8 @@ v_scale_2=0.2
 v_scale_3=0.2
 v_position_2=3
 v_position_3="-3"
-time_offset="NEG"
-trigger_slope=0
+time_offset=0
+trigger_slope="NEG"
 
 for (( i = 1; i <= $1; i++ )); do
     run_number=`cat ScopeHandler/Lecroy/Acquisition/next_run_number.txt`
@@ -101,20 +103,15 @@ for (( i = 1; i <= $1; i++ )); do
         echo -e "${RED}ERROR${NC}: Path to HV file: ${BLUE}$HOME/CAENGECO2020.log${NC}"
         echo -e "${RED}ERROR: Check that the HV supply has not tripped${NC}"
     fi
-    continue
+
     #/usr/bin/python3 poke_board.py --configuration modulev0b --etrocs 0  --kcu 192.168.0.10 --rb 1 --bitslip
     #/usr/bin/python3 poke_board.py --configuration modulev1  --etrocs 2  --kcu 192.168.0.10 --rb 2 --bitslip
     #/usr/bin/python3 poke_board.py --configuration modulev1  --etrocs 2  --kcu 192.168.0.10 --rb 1 --bitslip
-    ./autopilot.sh \ 
-        $n_events $offset \
-        $sample_rate $horizontal_window \
-        $trigger_channel $trigger \
-        $v_scale_2 $v_scale_3 \
-        $v_position_2 $v_position_3 \
-        $time_offset $trigger_slope \
-    /
+    ./autopilot.sh $n_events $offset $sample_rate $horizontal_window $trigger_channel $trigger $v_scale_2 $v_scale_3 $v_position_2 $v_position_3 $time_offset $trigger_slope
 
-    temperature=$(/usr/bin/python3 $TAMALERO_BASE/poke_board.py --configuration modulev1 --etrocs 2 --rbs 0 --modules 1 --kcu 192.168.0.10 --temperature)
+    cd module_test_sw
+    temperature=$(/usr/bin/python3 poke_board.py --configuration modulev1 --etrocs 2 --rbs 0 --modules 1 --kcu 192.168.0.10 --temperature)
+    cd ..
 
     sleep 7s
     kcu=`cat ${TAMALERO_BASE}/running_ETROC_acquisition.txt`
