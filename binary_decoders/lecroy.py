@@ -108,11 +108,13 @@ class LecroyReader:
         So if I take for granted that this array is the starting point (still cant find why I think it does some sort of calculation to line up the waveforms), 
         then when you subtract the two you get time difference between the starting points of different channels
         """
+
+        # calleld trigger_offset in the manual
         dtype = np.dtype([('trigger_times', np.float64), ('horizontal_offset', np.float64)])
         with open(self.path, 'rb') as my_file:
             my_file.seek(self.offset)
             # Read the data into a buffer
-            buffer = my_file.read(self.n_events * dtype.itemsize) # 5000 * 16
+            buffer = my_file.read(self.n_events * dtype.itemsize)
         seg_times = np.frombuffer(buffer, dtype=dtype, count=self.n_events)
         trigger_times, horizontal_offsets = zip(*seg_times)
         return np.array(trigger_times), np.array(horizontal_offsets)

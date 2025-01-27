@@ -62,15 +62,15 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]
              mcp_waveform.y, 
              clock_waveform.y], 
             axis=1),
-        "time": clock_waveform.x, # I should save all out right?!
+        "time": ref_horz_offset.x, # I should save all out right?!
         "timeoffsets": np.stack( # see timeoffset calculation in binary_decoders/lecroy.py 
             [ref_horz_offset-ref_horz_offset, 
              mcp_horz_offset-ref_horz_offset, 
              clock_horz_offset-ref_horz_offset], 
             axis=1),
-        "mcp_amp": peak_volts,
+        "amp": [peak_volts],
         "Clock": clock_timestamps, 
-        "LP1_40": mcp_timestamps
+        "LP2_20": mcp_timestamps #actually LP1_40
     }
 
     consolidated_array = etroc_data_map | oscilliscope_merged_map
