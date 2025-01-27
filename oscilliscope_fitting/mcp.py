@@ -83,7 +83,7 @@ class MCPSignalScaler:
     def normalize(cls, seconds: np.ndarray, volts: np.ndarray, signal_saturation_level:float=-0.52) -> tuple[np.ndarray, np.ndarray]:
         """
         Normalize signal to be between 0 and 1 by calculating the baseline and peak maximum!
-        It also removes any saturated signals by setting the arrays to np.NaN
+        It also removes any saturated signals by setting the arrays to np.nan
         """
         # Gaurd Conditions
         if seconds.shape != volts.shape:
@@ -97,8 +97,8 @@ class MCPSignalScaler:
         # REMOVE SATURATED SIGNALS
         # using np.where to preserve array length and np.min because the signal is negative \/
         # have to do [:,np.newaxis], just takes the array and wraps arrays around the inner values (float)
-        volts   = np.where(np.min(volts, axis=1)[:,np.newaxis] > signal_saturation_level, volts, np.NaN)
-        seconds = np.where(np.min(volts, axis=1)[:,np.newaxis] > signal_saturation_level, seconds, np.NaN)
+        volts   = np.where(np.min(volts, axis=1)[:,np.newaxis] > signal_saturation_level, volts, np.nan)
+        seconds = np.where(np.min(volts, axis=1)[:,np.newaxis] > signal_saturation_level, seconds, np.nan)
         #-----------------------------------------------------------------------------#
 
         peak_times, peak_volts = cls._calc_mcp_peaks(seconds, volts)
@@ -117,8 +117,8 @@ def linear_interpolation(time: np.ndarray, volts: np.ndarray, peak_times: np.nda
     Performs an linear interpolation between two points around a threshold to get the crossing time of said threshold
     """
     rising_volts_mask = time < peak_times[:, np.newaxis]
-    rising_ns = np.where(rising_volts_mask, time, np.NaN)
-    rising_v = np.where(rising_volts_mask, volts, np.NaN)
+    rising_ns = np.where(rising_volts_mask, time, np.nan)
+    rising_v = np.where(rising_volts_mask, volts, np.nan)
     
     upper_idx = np.argmax(rising_v > threshold, axis=1)
     lower_idx = upper_idx - 1

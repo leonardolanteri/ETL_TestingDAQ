@@ -181,7 +181,7 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
                         logger.debug("Data stream started with a trailer, that is weird.")
             t_tmp = t
 
-        if not bad_run or force:
+        if (not bad_run or force) and event:
             events = ak.Array({
                 'event': event,
                 'l1counter': l1counter,
@@ -199,10 +199,13 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
                 'bcid': bcid,
                 'counter_a': counter_a,
                 'nhits': ak.singletons(nhits),
-                'nhits_trail': ak.sum(ak.Array(nhits_trail), axis=-1),
+                'nhits_trail': ak.sum(ak.Array(nhits_trail), axis=-1)
             })
 
             total_events = len(events)
+            # NOTE the check below is only valid for single ETROC
+            #consistent_events = len(events[((events.nheaders==2)&(events.ntrailers==2)&(events.nhits==events.nhits_trail))])
+            #print(total_events, consistent_events)
 
             logger.debug(f"Done with {len(events)} events. " + emojize(":check_mark_button:"))
 
@@ -229,8 +232,25 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
 
             events_all_rb.append(events)
 
-
-    if len(events_all_rb)>1 or True:
+            if len(etroc_binary_files) == 1:
+                return events
+        elif len(etroc_binary_files) == 1:
+            return ak.Array({
+                'event': [],
+                'l1counter': [],
+                'row': [],
+                'col': [],
+                'tot_code': [],
+                'toa_code': [],
+                'cal_code': [],
+                'elink': [],
+                'chipid': [],
+                'bcid': [], #just put [:,0] here to get functionality from root dumper?
+                'nhits': [],
+            })
+        else:
+            print("what?", len(etroc_binary_files))
+    if len(events_all_rb)>1:# or True:
         event_number = []
         bcid = []
         nhits = []
@@ -285,9 +305,12 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
             'bcid': bcid, #just put [:,0] here to get functionality from root dumper?
             'nhits': nhits,
         })
-    return events
+        return events
+    raise ValueError("No events returned.")
 
 def root_dumper(events: akArray) -> akArray:
+    if len(events["event"]) == 0:
+        return None
     output_data = []
     for event in events.to_list():
         augmented_event = {
@@ -306,3 +329,4 @@ def root_dumper(events: akArray) -> akArray:
         }
         output_data.append(augmented_event)
     return ak.Array(output_data)
+        

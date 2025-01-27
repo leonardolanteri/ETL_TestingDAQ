@@ -7,11 +7,19 @@ from oscilliscope_fitting import clock, mcp
 import awkward as ak
 import uproot
 import numpy as np
+import time
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 # CLOCK CONFIGURABLES
 CLOCK_THRESH_LOW, CLOCK_THRESH_HIGH = 0.25, 0.8 #used to pick out the edges (between 0 and 1, percentage of the absolute amplitude)
 CLOCK_MEAUREMENT_POINT = 0.5 #between 0 and 1, after the fit, where along the fitted y axis do we take the clock value
 
 def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]=None, mcp_binary_path: str=None, clock_binary_path: str=None, oscilliscope_reference_path: str=None):
+    t_file_reads = time.perf_counter()
+
     def convert_oscilliscope_reference() -> lecroy.LecroyReader:
         """
         This will likely be removed one day. It is used to calculated timeoffset
@@ -24,58 +32,57 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]
         Moreover this should probably be calculated in the analysis part of the code. But for backwards compatability it will be done here...
         """
         return lecroy.LecroyReader(oscilliscope_reference_path)
-    print("Converting Oscilliscope Reference") # AGAIN I DONT THINK THIS IS NECESSARY!!!!!!!!!!!!!!
+    # AGAIN I DONT THINK THIS IS NECESSARY!!!!!!!!!!!!!!
     oscilliscope_reference_wavefrom = convert_oscilliscope_reference()
-
-    print("Converting MCP Channel Binary")
     mcp_waveform = lecroy.LecroyReader(mcp_binary_path)
-
-    print("Converting Clock Channel Binary")
     clock_waveform = lecroy.LecroyReader(clock_binary_path)
+    etroc_unpacked_data = etroc.converter(etroc_binary_paths, skip_trigger_check=True)
+    etroc_data = etroc.root_dumper(etroc_unpacked_data) # root dumper name is due to history 
+    if etroc_data is None:
+        # no etroc data...
+        return
+    
+    logger.info(f"LOADING FILES TOOK {(time.perf_counter()-t_file_reads):.2f} seconds")
+    t_process_files = time.perf_counter()
 
     nanoseconds, scaled_volts = mcp.MCPSignalScaler.normalize(mcp_waveform.x * 1e9, mcp_waveform.y)
     peak_times, peak_volts = mcp.MCPSignalScaler._calc_mcp_peaks(nanoseconds, mcp_waveform.y)
     mcp_timestamps = mcp.linear_interpolation(nanoseconds, scaled_volts, peak_times, threshold=0.4)
-
-    print("Performing Clock Wavefrom Fits")
     clock_timestamps = clock.calc_clock(
         ak.from_numpy(clock_waveform.x*1e9), ak.from_numpy(clock_waveform.y),
         CLOCK_THRESH_LOW, CLOCK_THRESH_HIGH, CLOCK_MEAUREMENT_POINT
     )
+    logger.info(f"PROCESS FILES TOOK {(time.perf_counter()-t_process_files):.2f} seconds")
+    t_write_files = time.perf_counter()
 
-    print("Converting ETROC Binary")
-    etroc_unpacked_data = etroc.converter(etroc_binary_paths, skip_trigger_check=True)
-    etroc_data = etroc.root_dumper(etroc_unpacked_data) # root dumper name is due to history 
     etroc_data_map = dict(zip(
         ak.fields(etroc_data), ak.unzip(etroc_data)
     ))
-    
-    print("Making consolidated array and dumpong to root file")
+
     ref_trigger_times, ref_horz_offset = oscilliscope_reference_wavefrom.segment_times
     _, mcp_horz_offset = mcp_waveform.segment_times
     _, clock_horz_offset = clock_waveform.segment_times
     oscilliscope_merged_map = {
         "i_evt": list(range(len(clock_waveform.x))),
         "segment_time": ref_trigger_times,
-        "channel": np.stack(
-            [oscilliscope_reference_wavefrom.y, 
-             mcp_waveform.y, 
-             clock_waveform.y], 
-            axis=1),
-        "time": ref_horz_offset.x, # I should save all out right?!
-        "timeoffsets": np.stack( # see timeoffset calculation in binary_decoders/lecroy.py 
-            [ref_horz_offset-ref_horz_offset, 
-             mcp_horz_offset-ref_horz_offset, 
-             clock_horz_offset-ref_horz_offset], 
-            axis=1),
-        "amp": [peak_volts],
-        "Clock": clock_timestamps, 
-        "LP2_20": mcp_timestamps #actually LP1_40
+        "mcp_volts": mcp_waveform.y,
+        "mcp_seconds": mcp_waveform.x,
+        "clock_volts": mcp_waveform.y,
+        "clock_seconds": mcp_waveform.x,
+        "mcp_trigger_offset": mcp_horz_offset,
+        "clock_trigger_offset": clock_horz_offset,
+        "ref_trigger_offset": ref_horz_offset,
+        "mcp_amplitude": peak_volts,
+        "clock_timestamp": clock_timestamps, 
+        "mcp_timestamp": mcp_timestamps #actually LP1_40
     }
 
     consolidated_array = etroc_data_map | oscilliscope_merged_map
+
     with uproot.recreate(output_file_path) as output:
         output["pulse"] = consolidated_array
+
+    logger.info(f"WRITE FILE TOOK {(time.perf_counter()-t_write_files):.2f} seconds")
 
 
 # from datetime import datetime
