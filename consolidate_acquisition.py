@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # CLOCK CONFIGURABLES
 CLOCK_THRESH_LOW, CLOCK_THRESH_HIGH = 0.25, 0.8 #used to pick out the edges (between 0 and 1, percentage of the absolute amplitude)
 CLOCK_MEAUREMENT_POINT = 0.5 #between 0 and 1, after the fit, where along the fitted y axis do we take the clock value
-
+MCP_MAX_AMP = -1.35
 def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]=None, mcp_binary_path: str=None, clock_binary_path: str=None, oscilliscope_reference_path: str=None):
     t_file_reads = time.perf_counter()
 
@@ -45,7 +45,7 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]
     logger.info(f"LOADING FILES TOOK {(time.perf_counter()-t_file_reads):.2f} seconds")
     t_process_files = time.perf_counter()
 
-    nanoseconds, scaled_volts = mcp.MCPSignalScaler.normalize(mcp_waveform.x * 1e9, mcp_waveform.y)
+    nanoseconds, scaled_volts = mcp.MCPSignalScaler.normalize(mcp_waveform.x * 1e9, mcp_waveform.y, signal_saturation_level=MCP_MAX_AMP)
     peak_times, peak_volts = mcp.MCPSignalScaler._calc_mcp_peaks(nanoseconds, mcp_waveform.y)
     mcp_timestamps = mcp.linear_interpolation(nanoseconds, scaled_volts, peak_times, threshold=0.4)
     clock_timestamps = clock.calc_clock(

@@ -87,9 +87,9 @@ class LecroyReader:
         # now scale the ADC values
         self.y = self.convert_dac_value(y).reshape(-1, self.points_per_frame)
         
-        # HORZ OFF used in time offset (between channels), See doc string for explanation of time offset between channels
-        _, horz_off = self.segment_times
-        self.x = horz_off[:,np.newaxis] + self.horizInterval * np.linspace(
+        # For sequence waveforms, defined on page 41, https://cdn.teledynelecroy.com/files/manuals/wr2_rcm_revb.pdf :
+        _, trigger_offset = self.segment_times
+        self.x = trigger_offset[:,np.newaxis] + self.horizInterval * np.linspace(
             np.zeros(self.n_events),  
             np.ones(self.n_events)*(self.points_per_frame-1), 
             self.points_per_frame, 
@@ -98,26 +98,31 @@ class LecroyReader:
     @property
     def segment_times(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Gets the two arrays from running oscilliscope in sequential mode
+        From this manual, https://cdn.teledynelecroy.com/files/manuals/wr2_rcm_revb.pdf here are some excerpts:
+        On page 35, Sequence Acquisition Times block (TRIGTIME),
+        "This is needed for sequence acquisitions to record the exact timing information for each segment. 
+        It contains the time of each trigger relative to the trigger of the first segment, 
+        as well as the TIME OF THE FIRST DATA POINT OF EACH SEGMENT RELATIVE TO ITS TRIGGER."
         
-        ---TIMEOFFSET (BETWEEN CHANNELS) CALCULATION from this Horizontal Offset extracted here---
-        This horizontal offset array is used as the starting point of the time axis for every event (followed from legacy file conversion.py, I do not know why), 
-        then counting up by "horizontal_interval" which is also in this binary file
-        until you reach the number of points in a frame (calculated from binary file variables). 
-        Now time time offset is simply the difference between these two arrays for different channels. 
-        So if I take for granted that this array is the starting point (still cant find why I think it does some sort of calculation to line up the waveforms), 
-        then when you subtract the two you get time difference between the starting points of different channels
+        On page 271 you get an explanation of TRIGTIME ARRAY:
+        "This optional time array is only present with SEQNCE waveforms.
+        The following data block is repeated for each segment which makes up the acquired sequence record.
+        < 0> TRIGGER_TIME: double ; for sequence acquisitions, time in seconds from first trigger to this one
+        < 8> TRIGGER_OFFSET: double ; the trigger offset is in seconds from trigger to zeroth data point"
+        ---------------------------------------------------------------------        
+        TIMEOFFSET (BETWEEN CHANNELS) CALCULATION 
+        The time offset is the difference between trigger_offset for different channels. 
+        Subtracting the two arrays reveals the time difference between channel starting points.
         """
 
         # calleld trigger_offset in the manual
-        dtype = np.dtype([('trigger_times', np.float64), ('horizontal_offset', np.float64)])
+        dtype = np.dtype([('trigger_times', np.float64), ('trigger_offset', np.float64)])
         with open(self.path, 'rb') as my_file:
             my_file.seek(self.offset)
-            # Read the data into a buffer
             buffer = my_file.read(self.n_events * dtype.itemsize)
         seg_times = np.frombuffer(buffer, dtype=dtype, count=self.n_events)
-        trigger_times, horizontal_offsets = zip(*seg_times)
-        return np.array(trigger_times), np.array(horizontal_offsets)
+        trigger_times, trigger_offsets = zip(*seg_times)
+        return np.array(trigger_times), np.array(trigger_offsets)
 
     def convert_dac_value(self, dac_val):
         """

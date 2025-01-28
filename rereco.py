@@ -19,9 +19,9 @@ etroc_file = lambda run: Path(f"/home/etl/Test_Stand/module_test_sw/ETROC_output
 MCP_channel = 2
 CLK_channel = 3
 
-output_file_dir = Path(f"rereco_data")
+output_file_dir = Path(f"rereco_data2")
 output_file_dir.parent.mkdir(parents=True, exist_ok=True)
-output_file = lambda run: Path(f"rereco_data/run_{run}.root")
+output_file = lambda run: Path(f"run_{run}.root")
 
 run_start = 12011
 run_stop = 12110
