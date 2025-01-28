@@ -114,8 +114,6 @@ class LecroyReader:
         The time offset is the difference between trigger_offset for different channels. 
         Subtracting the two arrays reveals the time difference between channel starting points.
         """
-
-        # calleld trigger_offset in the manual
         dtype = np.dtype([('trigger_times', np.float64), ('trigger_offset', np.float64)])
         with open(self.path, 'rb') as my_file:
             my_file.seek(self.offset)
