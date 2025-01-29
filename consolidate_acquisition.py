@@ -17,23 +17,9 @@ logger = logging.getLogger(__name__)
 CLOCK_THRESH_LOW, CLOCK_THRESH_HIGH = 0.25, 0.8 #used to pick out the edges (between 0 and 1, percentage of the absolute amplitude)
 CLOCK_MEAUREMENT_POINT = 0.5 #between 0 and 1, after the fit, where along the fitted y axis do we take the clock value
 MCP_MAX_AMP = -1.35
-def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]=None, mcp_binary_path: str=None, clock_binary_path: str=None, oscilliscope_reference_path: str=None):
+def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]=None, mcp_binary_path: str=None, clock_binary_path: str=None):
     t_file_reads = time.perf_counter()
 
-    def convert_oscilliscope_reference() -> lecroy.LecroyReader:
-        """
-        This will likely be removed one day. It is used to calculated timeoffset
-        But this is to get the same output as the previous test beams... 
-        ->To calculate the time offset they take the difference in time between the chosen channel 
-        and an unused channel 1 and NOT the differnece between the clock channel and mcp channel which I feel like makes more sense.
-        BUT for SPS Oct 2024, it was done correctly because only the mcp and clock channels were inputted
-        So you might have to give the same path for the clock or mcp here if you want to get the same output as before.
-
-        Moreover this should probably be calculated in the analysis part of the code. But for backwards compatability it will be done here...
-        """
-        return lecroy.LecroyReader(oscilliscope_reference_path)
-    # AGAIN I DONT THINK THIS IS NECESSARY!!!!!!!!!!!!!!
-    oscilliscope_reference_wavefrom = convert_oscilliscope_reference()
     mcp_waveform = lecroy.LecroyReader(mcp_binary_path)
     clock_waveform = lecroy.LecroyReader(clock_binary_path)
     etroc_unpacked_data = etroc.converter(etroc_binary_paths, skip_trigger_check=True)
@@ -59,19 +45,14 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]
         ak.fields(etroc_data), ak.unzip(etroc_data)
     ))
 
-    ref_trigger_times, ref_horz_offset = oscilliscope_reference_wavefrom.segment_times
-    _, mcp_horz_offset = mcp_waveform.segment_times
-    _, clock_horz_offset = clock_waveform.segment_times
+    mcp_trigger_times, _ = mcp_waveform.segment_times
     oscilliscope_merged_map = {
         "i_evt": list(range(len(clock_waveform.x))),
-        "segment_time": ref_trigger_times,
+        "segment_time": mcp_trigger_times,
         "mcp_volts": mcp_waveform.y,
         "mcp_seconds": mcp_waveform.x,
-        "clock_volts": mcp_waveform.y,
-        "clock_seconds": mcp_waveform.x,
-        "mcp_trigger_offset": mcp_horz_offset,
-        "clock_trigger_offset": clock_horz_offset,
-        "ref_trigger_offset": ref_horz_offset,
+        "clock_volts": clock_waveform.y,
+        "clock_seconds": clock_waveform.x,
         "mcp_amplitude": peak_volts,
         "clock_timestamp": clock_timestamps, 
         "mcp_timestamp": mcp_timestamps #actually LP1_40

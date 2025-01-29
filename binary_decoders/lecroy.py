@@ -54,8 +54,8 @@ class LecroyReader:
         self.horizOffset      = self.parseDouble(180)
         
         # after these points, the signals saturate!
-        self.maxVerticalValue = self.convert_dac_value(self.maxDACValue)
-        self.minVerticalValue = self.convert_dac_value(self.minDACValue)
+        self.maxVerticalValue = self.convert_adc_value(self.maxDACValue)
+        self.minVerticalValue = self.convert_adc_value(self.minDACValue)
 
         # 502 points for 10Gs sampling
         self.points_per_frame = int(self.waveArrayCount / self.n_events) 
@@ -85,7 +85,7 @@ class LecroyReader:
             offset=self.offset + self.trigTimeArray
         )[0]
         # now scale the ADC values
-        self.y = self.convert_dac_value(y).reshape(-1, self.points_per_frame)
+        self.y = self.convert_adc_value(y).reshape(-1, self.points_per_frame)
         
         # For sequence waveforms, defined on page 41, https://cdn.teledynelecroy.com/files/manuals/wr2_rcm_revb.pdf :
         _, trigger_offset = self.segment_times
@@ -109,10 +109,6 @@ class LecroyReader:
         The following data block is repeated for each segment which makes up the acquired sequence record.
         < 0> TRIGGER_TIME: double ; for sequence acquisitions, time in seconds from first trigger to this one
         < 8> TRIGGER_OFFSET: double ; the trigger offset is in seconds from trigger to zeroth data point"
-        ---------------------------------------------------------------------        
-        TIMEOFFSET (BETWEEN CHANNELS) CALCULATION 
-        The time offset is the difference between trigger_offset for different channels. 
-        Subtracting the two arrays reveals the time difference between channel starting points.
         """
         dtype = np.dtype([('trigger_times', np.float64), ('trigger_offset', np.float64)])
         with open(self.path, 'rb') as my_file:
@@ -122,12 +118,12 @@ class LecroyReader:
         trigger_times, trigger_offsets = zip(*seg_times)
         return np.array(trigger_times), np.array(trigger_offsets)
 
-    def convert_dac_value(self, dac_val):
+    def convert_adc_value(self, adc_val):
         """
         See vertical offset calculation in manual, byte 160
         https://cdn.teledynelecroy.com/files/manuals/waverunner9000-om-eng.pdf
         """
-        return self.verticalGain * dac_val - self.verticalOffset
+        return self.verticalGain * adc_val - self.verticalOffset
 
     def unpack(self, pos, formatSpecifier, length):
         """ a wrapper that reads binary data
