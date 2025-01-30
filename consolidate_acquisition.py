@@ -1,16 +1,25 @@
 """
 Decodes the ETROC and Oscilliscope binary
 Performs fit on the KCU Clock and MCP signals
+
+Simple processing routine that uses multiprocessing
+Please watch this video if you are new to multiprocessing:
+https://www.youtube.com/watch?v=X7vBbelRXn0 
 """
 from binary_decoders import etroc, lecroy
 from oscilliscope_fitting import clock, mcp
 import awkward as ak
 import uproot
 import numpy as np
-import time
+import asyncio
 import logging
+import time
+from multiprocessing import Pool
+from pathlib import Path
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# idea is to get it darn fast with multithreading
+
+logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # CLOCK CONFIGURABLES
@@ -66,16 +75,36 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]
     logger.info(f"WRITE FILE TOOK {(time.perf_counter()-t_write_files):.2f} seconds")
 
 
-# from datetime import datetime
+trace_file = lambda chnl, run: Path(f'/media/etl/Storage/SPS_October_2024/LecroyRaw/C{chnl}--Trace{run}.trc')
+etroc_file = lambda run: Path(f"/home/etl/Test_Stand/module_test_sw/ETROC_output/output_run_{run}_rb0.dat")
 
-# start = datetime.now()
-# consolidate_acquisition(
-#     "run_5100_new.root",
-#     etroc_binary_paths=["unit_test/input_data/run_6000/output_run_6000_rb0.dat"],
-#     mcp_binary_path="/home/users/hswanson13/ETL_TestingDAQ/unit_test/input_data/run_6000/C2--Trace6000.trc", #MCP
-#     clock_binary_path="/home/users/hswanson13/ETL_TestingDAQ/unit_test/input_data/run_6000/C3--Trace6000.trc",  #CLOCK
-#     oscilliscope_reference_path="/home/users/hswanson13/ETL_TestingDAQ/unit_test/input_data/run_6000/C1--Trace6000.trc"
-# )
-# elapsed_time = datetime.now()-start
-# print(elapsed_time.total_seconds())
+MCP_channel = 2
+CLK_channel = 3
 
+output_file_dir = Path(f"rereco_data2")
+output_file_dir.parent.mkdir(parents=True, exist_ok=True)
+output_file = lambda run: Path(f"run_{run}.root")
+
+run_start = 12011
+run_stop = 12110
+
+def consolidate_acquisition_task(run):
+    print(f'Consolidating run: {run}')
+    consolidate_acquisition(
+        output_file_dir / output_file(run),
+        etroc_binary_paths=[etroc_file(run)],
+        mcp_binary_path=trace_file(MCP_channel, run),
+        clock_binary_path=trace_file(CLK_channel, run),
+        oscilliscope_reference_path=trace_file(MCP_channel, run)
+    )
+
+t_consolidated = time.perf_counter()
+with Pool() as pool:
+    results = pool.imap_unordered(
+        consolidate_acquisition_task, range(run_start, run_stop + 1)
+    )
+
+    for _ in results:
+        ...
+
+print(f"COMPLETED IN: {(time.perf_counter()-t_consolidated):.2f} seconds")
