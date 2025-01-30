@@ -107,7 +107,22 @@ for (( i = 1; i <= $1; i++ )); do
     #/usr/bin/python3 poke_board.py --configuration modulev0b --etrocs 0  --kcu 192.168.0.10 --rb 1 --bitslip
     #/usr/bin/python3 poke_board.py --configuration modulev1  --etrocs 2  --kcu 192.168.0.10 --rb 2 --bitslip
     #/usr/bin/python3 poke_board.py --configuration modulev1  --etrocs 2  --kcu 192.168.0.10 --rb 1 --bitslip
-    ./autopilot.sh $n_events $offset $sample_rate $horizontal_window $trigger_channel $trigger $v_scale_2 $v_scale_3 $v_position_2 $v_position_3 $time_offset $trigger_slope
+
+    #----------------------------------------------------#
+    # ./autopilot.sh $n_events $offset $sample_rate $horizontal_window $trigger_channel $trigger $v_scale_2 $v_scale_3 $v_position_2 $v_position_3 $time_offset $trigger_slope
+    #!/bin/bash
+    index=`cat daq/next_run_number.txt`
+    #i/usr/bin/python3 telescope.py -- --kcu 192.168.0.10 --offset $2 --delay 32
+    echo -n "True" > daq/running_ETROC_acquisition.txt
+    (/usr/bin/python3 daq/etroc.py --l1a_rate 0 --ext_l1a --kcu 192.168.0.10 --rb 0 --run $index --lock "daq/running_acquisition.txt") &
+    (sleep 15
+    /usr/bin/python3 daq/scope_wrapper.py --nevents $n_events --sample_rate $sample_rate --horizontal_window $horizontal_window --trigger_channel $trigger_channel --trigger $trigger --v_scale_2 $v_scale_2  --v_scale_3 $v_scale_3 --v_position_2 $v_position_2 --v_position_3 $v_position_3 --time_offset $time_offset --trigger_slope $trigger_slope)
+    # remember: 0,1,2
+    #/usr/bin/python3 root_dumper.py --input ${index} #_rb0 # Run in other shell with root configured
+    echo -n "False" > daq/running_ETROC_acquisition.txt
+    echo -n "True" > daq/etroc_merging.txt
+    echo -n "True" > daq/merging.txt
+    #----------------------------------------------------#
 
     cd module_test_sw
     temperature=$(/usr/bin/python3 poke_board.py --configuration modulev1 --etrocs 2 --rbs 0 --modules 1 --kcu 192.168.0.10 --temperature)
