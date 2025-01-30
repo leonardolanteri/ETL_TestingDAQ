@@ -7,7 +7,6 @@ Please watch this video if you are new to multiprocessing:
 https://www.youtube.com/watch?v=X7vBbelRXn0 
 """
 from binary_decoders import etroc, lecroy
-from oscilliscope_fitting import clock, mcp
 import awkward as ak
 import uproot
 import numpy as np
@@ -23,9 +22,9 @@ logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %
 logger = logging.getLogger(__name__)
 
 # CLOCK CONFIGURABLES
-CLOCK_THRESH_LOW, CLOCK_THRESH_HIGH = 0.25, 0.8 #used to pick out the edges (between 0 and 1, percentage of the absolute amplitude)
-CLOCK_MEAUREMENT_POINT = 0.5 #between 0 and 1, after the fit, where along the fitted y axis do we take the clock value
-MCP_MAX_AMP = -1.35
+# CLOCK_THRESH_LOW, CLOCK_THRESH_HIGH = 0.25, 0.8 #used to pick out the edges (between 0 and 1, percentage of the absolute amplitude)
+# CLOCK_MEAUREMENT_POINT = 0.5 #between 0 and 1, after the fit, where along the fitted y axis do we take the clock value
+# MCP_MAX_AMP = -1.35
 def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]=None, mcp_binary_path: str=None, clock_binary_path: str=None):
     t_file_reads = time.perf_counter()
 
@@ -40,13 +39,13 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]
     logger.info(f"LOADING FILES TOOK {(time.perf_counter()-t_file_reads):.2f} seconds")
     t_process_files = time.perf_counter()
 
-    nanoseconds, scaled_volts = mcp.MCPSignalScaler.normalize(mcp_waveform.x * 1e9, mcp_waveform.y, signal_saturation_level=MCP_MAX_AMP)
-    peak_times, peak_volts = mcp.MCPSignalScaler._calc_mcp_peaks(nanoseconds, mcp_waveform.y)
-    mcp_timestamps = mcp.linear_interpolation(nanoseconds, scaled_volts, peak_times, threshold=0.4)
-    clock_timestamps = clock.calc_clock(
-        ak.from_numpy(clock_waveform.x*1e9), ak.from_numpy(clock_waveform.y),
-        CLOCK_THRESH_LOW, CLOCK_THRESH_HIGH, CLOCK_MEAUREMENT_POINT
-    )
+    # nanoseconds, scaled_volts = mcp.MCPSignalScaler.normalize(mcp_waveform.x * 1e9, mcp_waveform.y, signal_saturation_level=MCP_MAX_AMP)
+    # peak_times, peak_volts = mcp.MCPSignalScaler._calc_mcp_peaks(nanoseconds, mcp_waveform.y)
+    # mcp_timestamps = mcp.linear_interpolation(nanoseconds, scaled_volts, peak_times, threshold=0.4)
+    # clock_timestamps = clock.calc_clock(
+    #     ak.from_numpy(clock_waveform.x*1e9), ak.from_numpy(clock_waveform.y),
+    #     CLOCK_THRESH_LOW, CLOCK_THRESH_HIGH, CLOCK_MEAUREMENT_POINT
+    # )
     logger.info(f"PROCESS FILES TOOK {(time.perf_counter()-t_process_files):.2f} seconds")
     t_write_files = time.perf_counter()
 
@@ -62,9 +61,6 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]
         "mcp_seconds": mcp_waveform.x,
         "clock_volts": clock_waveform.y,
         "clock_seconds": clock_waveform.x,
-        "mcp_amplitude": peak_volts,
-        "clock_timestamp": clock_timestamps, 
-        "mcp_timestamp": mcp_timestamps #actually LP1_40
     }
 
     consolidated_array = etroc_data_map | oscilliscope_merged_map
