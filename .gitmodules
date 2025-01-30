@@ -1,9 +1,9 @@
-[submodule "ScopeHandler"]
-	path = ScopeHandler
-	url = git@github.com:CMS-MTD/ScopeHandler.git
-[submodule "TimingDAQ"]
-	path = TimingDAQ
-	url = git@github.com:CMS-MTD/TimingDAQ.git
+# [submodule "ScopeHandler"]
+# 	path = ScopeHandler
+# 	url = git@github.com:CMS-MTD/ScopeHandler.git
+# [submodule "TimingDAQ"]
+# 	path = TimingDAQ
+# 	url = git@github.com:CMS-MTD/TimingDAQ.git
 [submodule "module_test_sw"]
 	path = module_test_sw
 	url = https://gitlab.cern.ch/cms-etl-electronics/module_test_sw.git
