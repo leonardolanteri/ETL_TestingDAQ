@@ -1,6 +1,7 @@
 
 import sys
 import numpy as np
+import matplotlib.pyplot as plt
 
 class LecroyReader:
     def __init__(self, path, secondDigits = 3):
@@ -20,7 +21,6 @@ class LecroyReader:
     
         self.endianness = "<"
 
-        waveSourceList = ["Channel 1", "Channel 2", "Channel 3", "Channel 4", "Unknown"]
         verticalCouplingList = ["DC50", "GND", "DC1M", "GND", "AC1M"]
         bandwidthLimitList = ["off", "on"]
         recordTypeList = ["single_sweep", "interleaved", "histogram", "graph",
@@ -70,7 +70,7 @@ class LecroyReader:
         self.timeBase         = self.parseTimeBase(324)
         self.verticalCoupling = verticalCouplingList[self.parseInt16(326)]
         self.bandwidthLimit   = bandwidthLimitList[self.parseInt16(334)]
-        self.waveSource       = waveSourceList[self.parseInt16(344)]
+        self.channel          = self.parseInt16(344) + 1
         self.offset           = self.posWAVEDESC + self.waveDescriptor + self.userText  
 
         if self.commType == 0: # data is stored in 8bit integers
@@ -184,19 +184,46 @@ class LecroyReader:
         elif timeBaseNumber == 100:
             return "EXTERNAL"
 
+    def plot_event(self, event_num:int):
+        t, v = self.x[event_num]*1e9, self.y[event_num]
+        plt.figure(figsize=(8,8))
+        plt.xticks(np.linspace(t[0], t[-1], self.points_per_frame // 100))
+        plt.scatter(t,v, marker='.')
+        plt.axvline(0, label="trigger (t=0)", color='black')
+        plt.axhline(self.minVerticalValue, 
+                    label=f'Min Vertical Level = {self.minVerticalValue:.3}V', 
+                    color='red',
+                    linestyle='--')
+        plt.axhline(self.maxVerticalValue, 
+                    label=f'Max Vertical Level = {self.maxVerticalValue:.3}V',
+                    color='red',
+                    linestyle='--')
+
+        plt.ylabel("Volts")
+        plt.xlabel("time (nanoseconds)")
+        plt.legend()
+        plt.title(f"Channel {self.channel} Waveform, t_start={t[0]:.2f}ns, t_end={t[-1]:.2f}ns")
+        plt.grid()
+
     def __repr__(self):
-        string = "Le Croy Scope Data\n"
-        string += "Path: " + self.path + "\n"
-        string += "Endianness: " + self.endianness + "\n"
-        string += "Instrument: " + self.instrumentName + "\n"
-        string += "Instrument Number: " + str(self.instrumentNumber) + "\n"
-        string += "Template Name: " + self.templateName + "\n"
-        string += "Channel: " + self.waveSource + "\n"
-        string += "WaveArrayCount: " + str(self.waveArrayCount) + "\n"
-        string += "Vertical Coupling: " + self.verticalCoupling + "\n"
-        string += "Bandwidth Limit: " + self.bandwidthLimit + "\n"
-        string += "Record Type: " + self.recordType + "\n"
-        string += "Processing: " + self.processingDone + "\n"
-        string += "TimeBase: " + self.timeBase + "\n"
-        string += "TriggerTime: " + self.triggerTime + "\n"
-        return string
+        return (
+            f"LeCroy Scope Data\n"
+            f"Path: {self.path}\n"
+            f"Instrument: {self.instrumentName }\n"
+            f"Instrument Number: {self.instrumentNumber}\n"
+            f"Template Name: {self.templateName} \n"
+            f"Channel: {self.channel}\n"
+            f"WaveArrayCount: {self.waveArrayCount}\n"
+            f"Vertical Coupling: {self.verticalCoupling}\n"
+            f"Bandwidth Limit: {self.bandwidthLimit}\n"
+            f"Record Type: {self.recordType}\n"
+            f"Processing: {self.processingDone }\n"
+            f"TimeBase: {self.timeBase}\n"
+            f"TriggerTime: {self.triggerTime}\n" 
+            f"Minimum Vertical Value: {self.minVerticalValue:3f}V\n"    
+            f"Maximunm Vertical Value: {self.maxVerticalValue:3f}V\n"  
+            f"Maximunm Vertical Value: {self.maxVerticalValue:3f}V\n"  
+            f"Horizontal Interval: {self.horizInterval*1e9:.4f} ns\n" 
+            f"Sample Rate: {1 / self.horizInterval / 1e9} Gigasamples per second \n"       
+            f"Total Number of Events: {self.n_events}\n"
+        )

@@ -23,21 +23,25 @@ logger = logging.getLogger(__name__)
 
 def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]=None, mcp_binary_path: str=None, clock_binary_path: str=None):
     t_file_reads = time.perf_counter()
-
     mcp_waveform = lecroy.LecroyReader(mcp_binary_path)
     clock_waveform = lecroy.LecroyReader(clock_binary_path)
     etroc_unpacked_data = etroc.converter(etroc_binary_paths, skip_trigger_check=True)
     etroc_data = etroc.root_dumper(etroc_unpacked_data) # root dumper name is due to history 
     if etroc_data is None:
         return
-    
     logger.info(f"LOADING FILES TOOK {(time.perf_counter()-t_file_reads):.2f} seconds")
+
+    oscillicsope_waveforms = {
+        'mcp_volts': mcp_waveform.y,
+        'mcp_seconds': mcp_waveform.x,
+        'clock_volts': clock_waveform.y,
+        'clock_seconds': clock_waveform.x,
+    } 
+    etroc_data = dict(zip(ak.fields(etroc_data), ak.unzip(etroc_data)))
 
     t_write_files = time.perf_counter()
     with uproot.recreate(output_file_path) as output:
-        output["clock_waveforms"] = {'volts': clock_waveform.y, 'seconds': clock_waveform.x}
-        output["mcp_waveforms"]   = {'volts': mcp_waveform.y,   'seconds': mcp_waveform.x}
-        output["etroc_data"] = dict(zip(ak.fields(etroc_data), ak.unzip(etroc_data))) #silly uproot, need to unpack awk array
+        output["pulse"] = oscillicsope_waveforms | etroc_data
 
     
     logger.info(f"WRITE FILE TOOK {(time.perf_counter()-t_write_files):.2f} seconds")
@@ -49,9 +53,9 @@ etroc_file = lambda run: Path(f"/home/etl/Test_Stand/module_test_sw/ETROC_output
 MCP_channel = 2
 CLK_channel = 3
 
-output_file_dir = Path(f"rereco_data")
+output_file_dir = Path(f"rereco_data2")
 output_file_dir.parent.mkdir(parents=True, exist_ok=True)
-output_file = lambda run: Path(f"run_{run}.root")
+output_file = lambda run: Path(f"run_{run}.parquet")
 
 run_start = 12011
 run_stop = 12110
