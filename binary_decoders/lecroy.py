@@ -222,7 +222,6 @@ class LecroyReader:
             f"TriggerTime: {self.triggerTime}\n" 
             f"Minimum Vertical Value: {self.minVerticalValue:3f}V\n"    
             f"Maximunm Vertical Value: {self.maxVerticalValue:3f}V\n"  
-            f"Maximunm Vertical Value: {self.maxVerticalValue:3f}V\n"  
             f"Horizontal Interval: {self.horizInterval*1e9:.4f} ns\n" 
             f"Sample Rate: {1 / self.horizInterval / 1e9} Gigasamples per second \n"       
             f"Total Number of Events: {self.n_events}\n"

@@ -1,0 +1,56 @@
+
+[test_beam]
+test_beam_name = "DESY March 2025"
+beam_energy = 120 # GeV
+project_path = "/home/etl/Test_Stand/Test_Stand/ETL_TestingDAQ"
+
+[test_beam.run]
+num_events = 5000
+num_runs = 200
+etroc_binary_data_path = "/home/etl/Test_Stand/Test_Stand/ETL_TestingDAQ/module_test_sw/ETROC_output"
+
+[kcu]
+    ip_address = "192.168.0.10"
+    firmware_version = "abc123"
+
+[telescope_setup]
+    readout_board_version = "2.2"
+
+    [[telescope_setup.readout_board]] # following the telescope_<name>.yaml format
+        rb_name = 15
+        type = "modulev1" # config for readoutboard!
+        modules = [[110], [], []]
+        bias_voltage = 260 #V
+        l1a_delay = 14 # units ns??
+        offset = 10 # vth
+        power_mode = "i1"
+        low_voltage_psu = "Siglent SPD3303X_E" #Optional
+        high_voltage_psu = "CAEN HV Power Supply" # Optional
+
+[oscilliscope]
+    name = "Teledyne LeCroy Waverunner 8104"
+    binary_data_path = "/home/etl/Test_Stand/daq/LecroyMount/"
+    sample_rate = 20 # Gs/s
+    horizontal_window = 50 # ns
+    mcp_channel = "C2"
+    clock_channel = "C3"
+    trigger = -0.3 # V
+    v_scale_2 = 0.2
+    v_scale_3 = 0.2
+    v_position_2 = 3
+    v_position_3 = -3
+    time_offset = 0
+    trigger_slope = "NEG"
+
+[power_supplies]
+    [[power_supplies.high_voltage]]
+        name = "CAEN HV Power Supply"
+        log_path = "/home/etl/CAENGECO2020.log"
+    #Optional Definitions of the LV powersupplies
+    [[power_supplies.low_voltage]]
+        psu_name = "Siglent SPD3303X-E"
+        psu_ipadress = "192.168.0.25"
+
+[file_processing]
+    merged_etroc_scope_path = "/home/etl/Test_Stand/Test_Stand/Test_Beam_Data" # will add test beam name
+    backup_path = "/media/etl/Storage/"

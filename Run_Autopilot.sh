@@ -59,7 +59,7 @@ energy=$6
 isTrack=$7
 powerMode=$8 # I1 (high) to I4 (low)
 isMulti=$9
-run_number=`cat ScopeHandler/Lecroy/Acquisition/next_run_number.txt`
+run_number=`cat daq/next_run_number.txt`
 
 echo -e "Starting configuration for run $run_number on KCU. ${RED}Turn beam OFF!!${NC}"
 cd module_test_sw
@@ -75,7 +75,7 @@ then
     read dummy
 fi
 
-scope_path="ScopeHandler/Lecroy/"
+scope_path="daq/"
 merging_dir="ScopeHandler/ScopeData/LecroyMerged/"
 
 # Scope variables
@@ -91,7 +91,7 @@ time_offset=0
 trigger_slope="NEG"
 
 for (( i = 1; i <= $1; i++ )); do
-    run_number=`cat ScopeHandler/Lecroy/Acquisition/next_run_number.txt`
+    run_number=`cat daq/next_run_number.txt`
     echo -e "---------------------------------"
     echo -e "Batch Run ${i} of ${1}"
     echo -e "Overall Run Number: ${run_number}"
@@ -130,8 +130,8 @@ for (( i = 1; i <= $1; i++ )); do
 
     sleep 7s
     kcu=`cat ${TAMALERO_BASE}/running_ETROC_acquisition.txt`
-    scope=`cat ${scope_path}Acquisition/running_acquisition.txt`
-    conversion=`cat ${scope_path}Conversion/ongoing_conversion.txt`
+    scope=`cat ${scope_path}/running_acquisition.txt`
+    conversion=`cat ${scope_path}/ongoing_conversion.txt`
     merging=`cat ${scope_path}Merging/ongoing_merging.txt`
     nicerStatus "Running ETROC acquisition: " $kcu
     nicerStatus "Running SCOPE acquisition: " $scope
@@ -142,9 +142,9 @@ for (( i = 1; i <= $1; i++ )); do
         echo "Waiting..."
         sleep 1s
         kcu=`cat ${TAMALERO_BASE}/running_ETROC_acquisition.txt`
-        scope=`cat ${scope_path}Acquisition/running_acquisition.txt`
-        conversion=`cat ${scope_path}Conversion/ongoing_conversion.txt`
-        merging=`cat ${scope_path}Merging/ongoing_merging.txt`
+        scope=`cat ${scope_path}/running_acquisition.txt`
+        conversion=`cat ${scope_path}/ongoing_conversion.txt`
+        merging=`cat ${scope_path}/ongoing_merging.txt`
         nicerStatus "Running ETROC acquisition: " $kcu
         nicerStatus "Running SCOPE acquisition: " $scope
         nicerStatus "Converting files:          " $conversion
