@@ -1,35 +1,38 @@
 
 [test_beam]
-test_beam_name = "DESY March 2025"
-beam_energy = 120 # GeV
-project_path = "/home/etl/Test_Stand/Test_Stand/ETL_TestingDAQ"
+    name = "DESY March 2025"
+    beam_energy = 120 # GeV
+    project_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/"
 
-[test_beam.run]
-num_events = 5000
-num_runs = 200
-etroc_binary_data_path = "/home/etl/Test_Stand/Test_Stand/ETL_TestingDAQ/module_test_sw/ETROC_output"
-
-[kcu]
-    ip_address = "192.168.0.10"
-    firmware_version = "abc123"
+[run_config]
+    comment = "Temperature -20C at new trigger threshold"
+    kcu_ip_address = "192.168.0.10"
+    kcu_firmware_version = "abc123"
+    num_events = 5000
+    num_runs = 200
+    etroc_binary_data_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/etroc_binaries"
 
 [telescope_setup]
-    readout_board_version = "2.2"
-
-    [[telescope_setup.readout_board]] # following the telescope_<name>.yaml format
-        rb_name = 15
-        type = "modulev1" # config for readoutboard!
+    # following the telescope_<name>.yaml format
+    [[telescope_setup.service_hybrids]] 
+        readout_board_name = 15
+        readout_board_version = "2.2"
+        module_config_name = "modulev1" # to select the right config in module_test_sw
         modules = [[110], [], []]
+
+        # ETROC Parameters
         bias_voltage = 260 #V
         l1a_delay = 14 # units ns??
         offset = 10 # vth
         power_mode = "i1"
-        low_voltage_psu = "Siglent SPD3303X_E" #Optional
-        high_voltage_psu = "CAEN HV Power Supply" # Optional
 
-[oscilliscope]
+        #Optional
+        LV_psu = "Siglent SPD3303X_E"
+        HV_psu = "CAEN HV Power Supply"
+
+[oscilloscope]
     name = "Teledyne LeCroy Waverunner 8104"
-    binary_data_path = "/home/etl/Test_Stand/daq/LecroyMount/"
+    binary_data_directory = "/home/etl/Test_Stand/daq/LecroyMount/"
     sample_rate = 20 # Gs/s
     horizontal_window = 50 # ns
     mcp_channel = "C2"
@@ -42,15 +45,16 @@ etroc_binary_data_path = "/home/etl/Test_Stand/Test_Stand/ETL_TestingDAQ/module_
     time_offset = 0
     trigger_slope = "NEG"
 
-[power_supplies]
-    [[power_supplies.high_voltage]]
-        name = "CAEN HV Power Supply"
-        log_path = "/home/etl/CAENGECO2020.log"
-    #Optional Definitions of the LV powersupplies
-    [[power_supplies.low_voltage]]
-        psu_name = "Siglent SPD3303X-E"
-        psu_ipadress = "192.168.0.25"
-
 [file_processing]
-    merged_etroc_scope_path = "/home/etl/Test_Stand/Test_Stand/Test_Beam_Data" # will add test beam name
-    backup_path = "/media/etl/Storage/"
+    merged_data_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/merged" # will add test beam name
+    backup_directory = "/media/etl/Storage/"
+
+# Power Supplies
+[[power_supplies]]
+    name = "CAEN HV Power Supply"
+    log_path = "/home/etl/CAENGECO2020.log"
+
+#Optional Definitions of the LV powersupplies
+[[power_supplies]]
+    name = "Siglent SPD3303X-E"
+    ip_address = "192.168.0.25"

@@ -12,7 +12,6 @@ except ImportError:
     from yaml import Loader, Dumper
 
 here = os.path.dirname(os.path.abspath(__file__))
-DAQ_PATH = "/home/etl/Test_Stand/ETL_TestingDAQ/daq/"
 
 class MultiThread:
     def __init__(self, fun, args):
@@ -40,7 +39,7 @@ def stream_daq_multi(fun, args):
     t.start()
     return mon
 
-def get_kcu_flag(lock=os.path.expandvars(f'{DAQ_PATH}/running_acquitision.txt')):
+def get_kcu_flag(lock=os.path.expandvars(f'{here}/running_acquitision.txt')):
     # NOTE where to put the locks?
     with open(lock) as f:
         res = f.read()
