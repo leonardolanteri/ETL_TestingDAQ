@@ -23,6 +23,9 @@ class RunConfig(BaseModel):
     etroc_binary_data_directory: DirectoryPath
     num_runs: int #should I get rid of this????
     num_events: int
+    l1a_delay: int
+    offset: int
+    power_mode: str
 
 class ServiceHybrid(BaseModel):
     readout_board_name: int | str
@@ -31,10 +34,8 @@ class ServiceHybrid(BaseModel):
     modules: Annotated[List[List[int]], AfterValidator(rb_module_select)] = Field(..., description="modules have to be an integer due to the way the chip id is set for etrocs. See tamalero/Module.py line 57")
     LV_psu: Optional[str] = Field(None, description="Power Supply name, should be the same name given in the power supply model (this is so it gets any needed information like IP Address)")
     HV_psu: Optional[str] = Field(None, description="Power Supply name, should be the same name given in the power supply model (this is so it gets any needed information like IP Address)")
-    l1a_delay: int
-    offset: int
+
     bias_voltage: float
-    power_mode: str
 
 class TelescopeSetup(BaseModel):
     service_hybrids: List[ServiceHybrid]

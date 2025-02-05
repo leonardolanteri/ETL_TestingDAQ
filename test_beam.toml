@@ -10,7 +10,12 @@
     kcu_firmware_version = "abc123"
     num_events = 5000
     num_runs = 200
+
+    # Global ETROC configurations
     etroc_binary_data_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/etroc_binaries"
+    l1a_delay = 14 # units ns??
+    offset = 10 # vth
+    power_mode = "i1"
 
 [telescope_setup]
     # following the telescope_<name>.yaml format
@@ -22,9 +27,6 @@
 
         # ETROC Parameters
         bias_voltage = 260 #V
-        l1a_delay = 14 # units ns??
-        offset = 10 # vth
-        power_mode = "i1"
 
         #Optional
         LV_psu = "Siglent SPD3303X_E"
