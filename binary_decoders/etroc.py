@@ -108,6 +108,7 @@ def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_c
                     else:
                         uuid.append(d['l1counter'] | d['bcid']<<8)
 
+                    # Checks if current event bcid close in value to previous value or if the bcid looped over
                     if (((abs(d['bcid']-bcid_t)<150) or (abs(d['bcid']+3564-bcid_t)<50)) and not (d['bcid'] == bcid_t) and not skip_trigger_check):
                         skip_event = True
                         logger.debug("Skipping event", d['l1counter'], d['bcid'], bcid_t)

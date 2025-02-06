@@ -55,7 +55,7 @@ CLK_channel = 3
 
 output_file_dir = Path(f"rereco_data2")
 output_file_dir.parent.mkdir(parents=True, exist_ok=True)
-output_file = lambda run: Path(f"run_{run}.parquet")
+output_file = lambda run: Path(f"run_{run}.root")
 
 run_start = 12011
 run_stop = 12110
