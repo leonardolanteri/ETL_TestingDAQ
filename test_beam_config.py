@@ -24,7 +24,7 @@ class RunConfig(BaseModel):
     num_runs: int #should I get rid of this????
     num_events: int
     l1a_delay: int
-    offset: int
+    offset: int | Literal['auto']
     power_mode: str
 
 class ServiceHybrid(BaseModel):
@@ -53,6 +53,7 @@ class TelescopeSetup(BaseModel):
 
 class Oscilloscope(BaseModel):
     name: str
+    ip_address: IPvAnyAddress
     binary_data_directory: DirectoryPath
     sample_rate: int 
     horizontal_window: int

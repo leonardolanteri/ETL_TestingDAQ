@@ -6,28 +6,6 @@ import pyvisa as visa
 import glob
 import pdb
 
-"""#################SEARCH/CONNECT#################"""
-# establish communication with scope
-initial = time.time()
-rm = visa.ResourceManager("@py")
-lecroy = rm.open_resource('TCPIP0::192.168.0.6::INSTR')
-lecroy.timeout = 3000000
-lecroy.encoding = 'latin_1'
-lecroy.clear()
-
-DAQ_PATH = "/home/etl/Test_Stand/ETL_TestingDAQ/daq/"
-run_log_path = f"{DAQ_PATH}/RunLog.txt"
-
-def GetNextNumber():
-    run_num_file = f"{DAQ_PATH}/next_run_number.txt"
-    with open(run_num_file) as file:
-        nextNumber = int(file.read().strip())
-    with open(run_num_file, "w") as file:
-        file.write(f"{nextNumber + 1}\n")
-    return nextNumber
-
-nchan=4
-
 parser = argparse.ArgumentParser(description='Run info.')
 
 parser.add_argument('--numEvents',metavar='Events', type=str,default = 500, help='numEvents (default 500)',required=False)
@@ -59,11 +37,27 @@ parser.add_argument('--vPos4',metavar='vPos4', type=float, default= 3, help='Ver
 
 parser.add_argument('--display',metavar='display', type=int, default= 0, help='enable display',required=False)
 parser.add_argument('--timeoffset',metavar='timeoffset', type=float, default=0, help='Offset to compensate for trigger delay. This is the delta T between the center of the acquisition window and the trigger. (default for NimPlusX: -160 ns)',required=False)
+parser.add_argument('--ip_address', action='store', type=str, help='IP address for the oscilliscope',required=True)
+parser.add_argument('--lock', action='store', type=str, help='Lock file for the etroc acquisition status (relative or absolute path)',required=True)
+parser.add_argument('--run_log_path', action='store', type=str, help='Run log for oscilliscope',required=True)
 
 # parser.add_argument('--save',metavar='save', type=int, default= 1, help='Save waveforms',required=False)
 # parser.add_argument('--timeout',metavar='timeout', type=float, default= -1, help='Max run duration [s]',required=False)
 
 args = parser.parse_args()
+
+initial = time.time()
+rm = visa.ResourceManager("@py")
+lecroy = rm.open_resource(f'TCPIP0::{args.ip_address}::INSTR')
+lecroy.timeout = 3000000
+lecroy.encoding = 'latin_1'
+lecroy.clear()
+
+run_log_path = args.run_log_path
+
+nchan=4
+
+
 trigCh = str(args.trigCh)
 runNumber = int(args.runNumber)
 if trigCh != "AUX": trigCh = 'CHANnel'+trigCh
@@ -76,9 +70,8 @@ date = datetime.datetime.now()
 # timeout = float(args.timeout)
 # print savewaves
 # print "timeout is ",timeout
+     
 
-if runNumber==-1:
-	runNumber=GetNextNumber()
 #### Initial preparation
 print(f"Next run number: {runNumber}")
 print(f"\n \nPreparing {nchan}-channel scope. \n")
@@ -167,6 +160,20 @@ start = time.time()
 now = datetime.datetime.now()
 current_time = now.strftime("%H:%M:%S")
 # pdb.set_trace()
+#------------LOCK-------------#
+
+is_etroc_ready=False
+iteration = 0
+while not is_etroc_ready:
+    #if args.force_acquisition: break
+    if iteration == 0:
+        print(f"Waiting for the KCU.")
+    with open(args.lock) as f:
+        is_etroc_ready = f.read() == 'True'
+    iteration+=1
+
+#-----------------------------#
+
 print("\n \n \n  -------------  Starting acquisition for run %i at %s. ---------------"%(runNumber,current_time))
 lecroy.write("*TRG")
 #prewait = time.time()
