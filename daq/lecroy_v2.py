@@ -73,7 +73,9 @@ class Lecroy:
         self._conn.write("BANDWIDTH_LIMIT OFF")
 
         self.active_channels = [1,2,3,4] if active_channels is None else active_channels
-        self.channels = {chnl: Channel(chnl, self._conn) for chnl in active_channels}        
+        self.channels = {chnl: Channel(chnl, self._conn) for chnl in active_channels}   
+        #self._conn.write(f"DISPlay OFF")
+
 
         self.num_horizontal_divs = 10
 
@@ -125,7 +127,7 @@ class Lecroy:
         The command has more options, please visit the documentation if you wish to do something more complicated.
         FIXME: If another channel is set as trigger channel, change it.
         """
-        assert all(not chnl.is_trigger_channel for chnl in self.channels.values()), "For simplicity, only channel can be desiginated as the trigger channel"
+        assert all(not chnl.is_trigger_channel for chnl in self.channels.values()), "For simplicity, only one channel can be desiginated as the trigger channel"
         channel.is_trigger_channel = True
         self._conn.write(f"TRIG_SELECT {condition},SR,C{channel.number}")
         self._conn.write(f'C{channel.number}:TRIG_LEVEL {level}{units}')
@@ -133,9 +135,28 @@ class Lecroy:
     def set_sample_rate(self, value):
         ...
 
+    def set_display(self, status: Literal["ON", "OFF"]):
+        """This can only be changed programmatically!"""
+        self._conn.write(f"DISPlay {status}")
+
     def reset(self):
         """Same as hitting default on the scope."""
         self._conn.write("*RST")
+
+    ################ ACQUISITION METHODS ######################
+    def enable_sequence_mode(self, num_events: int):
+        """
+        Using Sequence Mode, thousands of trigger events can be stored as segments into the oscilloscope's acquisition memory 
+        (the exact number depends on oscilloscope model and memory options). This is ideal when capturing many fast pulses in 
+        quick succession with minimum dead time or when capturing few events separated by long time periods. The instrument 
+        can capture complicated sequences of events over large time intervals in fine detail, while ignoring the uninteresting 
+        periods between the events. You can also make time measurements between events on selected segments using the full 
+        precision of the acquisition timebase. 
+
+        https://www.teledynelecroy.com/doc/tutorial-sequence-mode
+        """
+        self._conn.write(f"SEQ ON,{num_events}")
+
 
     def __repr__(self):
         """
@@ -154,7 +175,7 @@ class Lecroy:
 rm = visa.ResourceManager("@py")
 with rm.open_resource(f'TCPIP0::192.168.0.6::INSTR') as scope_conn:
     lecroy = Lecroy(scope_conn, active_channels=[2,3])
-    lecroy.set_horizontal_axis(25.8, units='NS') # set_horizontal_axis()
+    lecroy.set_horizontal_axis(25, units='NS') # set_horizontal_axis()
 
     # Set up Trigger Channel
     lecroy.channels[2].set_coupling('D50')
@@ -167,6 +188,7 @@ with rm.open_resource(f'TCPIP0::192.168.0.6::INSTR') as scope_conn:
     lecroy.channels[3].set_coupling('D50')
     lecroy.channels[3].set_vertical_axis(-2,2, units='V') 
 
+    lecroy._conn.write("DISPlay ON")
 
 
 
