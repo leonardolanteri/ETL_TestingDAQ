@@ -16,6 +16,7 @@ import logging
 import time
 from multiprocessing import Pool
 from pathlib import Path
+import os
 
 # idea is to get it darn fast with multithreading
 
@@ -34,6 +35,7 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]
     etroc_unpacked_data = etroc.converter(etroc_binary_paths, skip_trigger_check=True)
     etroc_data = etroc.root_dumper(etroc_unpacked_data) # root dumper name is due to history 
     if etroc_data is None:
+        print("no etroc data")
         # no etroc data...
         return
     
@@ -70,13 +72,21 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]
     consolidated_array = etroc_data_map | oscilliscope_merged_map
 
     with uproot.recreate(output_file_path) as output:
-        output["pulse"] = consolidated_array
+        try:
+            output["pulse"] = consolidated_array
+        except:
+            N_events_etroc = len(etroc_data_map[list(etroc_data_map.keys())[0]])
+            N_events_scope = len(oscilliscope_merged_map[list(oscilliscope_merged_map.keys())[0]])
+            print(f"The length of the branches doesn't match for run: {output_file_path}, {N_events_etroc} vs {N_events_scope}")
 
     logger.info(f"WRITE FILE TOOK {(time.perf_counter()-t_write_files):.2f} seconds")
 
 
-trace_file = lambda chnl, run: Path(f'/media/etl/Storage/SPS_October_2024/LecroyRaw/C{chnl}--Trace{run}.trc')
-etroc_file = lambda run: Path(f"/home/etl/Test_Stand/module_test_sw/ETROC_output/output_run_{run}_rb0.dat")
+# trace_file = lambda chnl, run: Path(f'/media/etl/Storage/SPS_October_2024/LecroyRaw/C{chnl}--Trace{run}.trc')
+# etroc_file = lambda run: Path(f"/home/etl/Test_Stand/module_test_sw/ETROC_output/output_run_{run}_rb0.dat")
+
+trace_file = lambda chnl, run: f"/eos/uscms/store/group/cmstestbeam/ETL_DESY_March_2024/LecroyRaw/C{chnl}--Trace{run}.trc"
+etroc_file = lambda run: f"/eos/uscms/store/group/cmstestbeam/ETL_DESY_March_2024/rawDat/output_run_{run}_rb0.dat"
 
 MCP_channel = 2
 CLK_channel = 3
@@ -85,26 +95,33 @@ output_file_dir = Path(f"rereco_data2")
 output_file_dir.parent.mkdir(parents=True, exist_ok=True)
 output_file = lambda run: Path(f"run_{run}.root")
 
-run_start = 12011
-run_stop = 12110
+run_start = 2800 # 12011
+run_stop = 3000 # 12110
 
 def consolidate_acquisition_task(run):
+    if (os.path.exists(f"{output_file_dir}/{output_file(run)}")):
+        print(f"The file: {output_file(run)}, is already created.")
+        return
     print(f'Consolidating run: {run}')
-    consolidate_acquisition(
-        output_file_dir / output_file(run),
-        etroc_binary_paths=[etroc_file(run)],
-        mcp_binary_path=trace_file(MCP_channel, run),
-        clock_binary_path=trace_file(CLK_channel, run),
-        oscilliscope_reference_path=trace_file(MCP_channel, run)
-    )
+    try:
+        consolidate_acquisition(
+            output_file_dir / output_file(run),
+            etroc_binary_paths=[etroc_file(run)],
+            mcp_binary_path=trace_file(MCP_channel, run),
+            clock_binary_path=trace_file(CLK_channel, run)
+            # oscilliscope_reference_path=trace_file(MCP_channel, run)
+        )
+    except:
+        print("AN ERROR HAS OCCURED DURING CONVERSION!")
 
 t_consolidated = time.perf_counter()
 with Pool() as pool:
     results = pool.imap_unordered(
         consolidate_acquisition_task, range(run_start, run_stop + 1)
     )
-
-    for _ in results:
-        ...
+    # for i in range(run_start, run_stop + 1):
+    #     consolidate_acquisition_task(i)
+    for r in results:
+        pass # print(r)
 
 print(f"COMPLETED IN: {(time.perf_counter()-t_consolidated):.2f} seconds")
