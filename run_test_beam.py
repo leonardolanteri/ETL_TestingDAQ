@@ -4,6 +4,22 @@ from test_beam_config import Config as TBConfig
 from functools import wraps
 import time
 
+class TestBeam:
+    # is this needed? like, everything could run one after another...
+    def __init__(self, config_path):
+        # open config, say not implemented if it isnt a toml file
+        self.config_path = config_path
+
+        self.observers = {
+            'configure_telescope': [],
+            'daq': [],
+
+        }
+        ...
+
+    def attach(self, event_type, observer):
+        ...
+
 def ensure_path_exists(func):
     @wraps(func)
     def wrapper(path: Path, *args, **kwargs):
