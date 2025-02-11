@@ -59,6 +59,11 @@ class Channel:
 
 class Lecroy:
     """
+    ---------------------------------------------------------------
+    WARNING: This CLASS METHODS NEED A MASSIVE REFACTOR
+    - add querying
+    - change from Set methods to properties with setters defined
+    ----------------------------------------------------------------
     This is the manual for all of the commands:
     https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf 
 
@@ -172,6 +177,8 @@ class Lecroy:
         n_active_channels = self._conn.query(rf"""vbs? 'return=app.Acquisition.Horizontal.ActiveChannels' """)
         if n_active_channels.strip() != '2' and gigasamples_per_second==20:
             raise ValueError(f"Can only set 20GS/s if there only two active channels, you have: {n_active_channels}. You can set that with a method.")
+        if set(self.active_channel_numbers) != set([2,3]) and gigasamples_per_second==20:
+            raise ValueError(f"20 GS/s mode can only be applied for using channels 2 and 3. See page 46 for more information on how the channels actually combine to allow for this upsampling: https://cdn.teledynelecroy.com/files/manuals/waverunner-8000-operators-manual.pdf")
         self._conn.write(rf"""vbs 'app.Acquisition.Horizontal.Maximize = "FixedSampleRate"' """)
         self._conn.write(rf"""vbs 'app.Acquisition.Horizontal.SampleRate = "{gigasamples_per_second} GS/s"' """)
 
@@ -193,14 +200,32 @@ class Lecroy:
         """
         self._conn.write(fr"""vbs app.Acquisition.Horizontal.SampleMode = "{mode}" """)
 
+
+    def is_sequence_mode(self):
+        sample_mode = self._conn.query(r"""vbs? 'return=app.Acquisition.Horizontal.SampleMode' """)
+        if sample_mode.strip() != 'Sequence':
+            raise ValueError("You should only set this if you are in sequence mode.")        
+        return True
+
     def set_number_of_segments(self, num_segments):
         """
         Sets the number of segments for sequence mode.
         """
-        sample_mode = self._conn.query(r"""vbs? 'return=app.Acquisition.Horizontal.SampleMode' """)
-        if sample_mode.strip() != 'Sequence':
-            raise ValueError("You should only set this if you are in sequence mode.")
+        self.is_sequence_mode()
         self._conn.write(fr"""vbs app.Acquisition.Horizontal.NumSegments = "{num_segments}" """)
+    
+    def set_segment_display(self, mode: Literal["Adjacent","Overlay","Waterfall","Perspective","Mosaic"]):
+        """Options to view the segments on the display."""
+        self.is_sequence_mode()
+        self._conn.write(fr"""vbs app.Display.SegmentMode = "{mode}" """)
+
+    def sequence_timeout(self, seconds: int, disable_timeout=False):
+        """Following valid trigger of first segment, use sequence timout to automatically interrupt the sequence acquisition if the timout value is exceeded without a valid trigger."""
+        self.is_sequence_mode()
+        if disable_timeout:
+            self._conn.write(fr"""vbs app.Acquisition.Horizontal.SequenceTimoutEnable = "{not disable_timeout}" """)
+        else:
+            self._conn.write(fr"""vbs app.Acquisition.Horizontal.SequenceTimeout = "{seconds}" """)
 
     def stop_acquistion(self):
         return self._conn.write(r"""vbs 'app.acquisition.triggermode = "stopped" ' """)
@@ -254,6 +279,8 @@ with rm.open_resource(f'TCPIP0::192.168.0.6::INSTR') as scope_conn:
 
     #lecroy._conn.write("DISPlay ON")
     lecroy.set_sample_mode("Sequence")
+    lecroy.set_segment_display("Overlay")
+    lecroy.sequence_timeout(2e-9)
     lecroy.set_number_of_segments(20)
     lecroy.set_sample_rate(20)
 
