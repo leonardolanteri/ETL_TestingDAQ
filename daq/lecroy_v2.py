@@ -14,7 +14,6 @@ class Channel:
         self._conn = lecroy_connection
         # This is standard for oscilliscopes (number of boxes on the screen in vert and horz direction)
         self.num_vertical_divs = 8
-        self.is_trigger_channel = False
 
     def set_vertical_axis(self, lower_bound:float, upper_bound:float, units:Literal['V', 'MV']='V'):
         """
@@ -39,7 +38,7 @@ class Channel:
         """Sets the coupling, """
         self._conn.write(f"C{self.number}:OFFSET {offset}{units}")
 
-    def set_coupling(self, coupling:Literal['D50', 'D1M']):
+    def set_coupling(self, coupling:Literal['A1M', 'D1M', 'D50', 'GND']):
         """
         https://blog.teledynelecroy.com/2020/08/how-do-you-choose-whether-to-use-50-ohm.html
 
@@ -52,32 +51,64 @@ class Channel:
         """
         self._conn.write(f"C{self.number}:COUPLING {coupling}")
 
+    def show(self):
+        self._conn.write(rf"""vbs 'app.acquisition.C{self.number}.View=True' """)
+
+    def hide(self):
+        self._conn.write(rf"""vbs 'app.acquisition.C{self.number}.View=False' """)
+
 class Lecroy:
     """
     This is the manual for all of the commands:
-    https://cdn.teledynelecroy.com/files/manuals/wr2_rcm_revb.pdf
+    https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf 
+
+    Page 4-3 (or 99 in pdf) shows the app strucutre for commands
+
+    EVEN BETTER is to go on the scope, in the XStream Browser (on the homepage), and you can see ALL
+    the available methods :))
     """
     def __init__(self, lecroy_connection: visa.resources.Resource, active_channels:list[int] = None):
+        self.num_horizontal_divs = 10
         self._conn = lecroy_connection
-        self._conn.timeout = 3000000
+        
+        # Timeout = will wait X ms for operatioins to complete, see page 2-15
+        self._conn.timeout = 5000 # millisceconds
         self._conn.encoding = 'latin_1'
+        
+        # Clears out the buffers on the scope listing the commands sent to it and also responses sent from it. 
+        # Clear removes anything leftover from a previous use
         self._conn.clear()
-        # This is important to always put the scope back in the same starting place
+        
+        # This is important to always put the scope back in the same starting place, makes the program STATELESS
         self.reset()
-
-        self._conn.write('STOP') #Stops any acquisition processes
+        self.wait_til_idle(5) # recommended by documentation
+        # this is just good to stop any previous acquisitions, unlikely but to be safe!
+        self.stop_acquistion()
         self._conn.write("*CLS") # Clears all status registers, not sure why important?
 
         # This makes it so the scope just returns the number and not extra information
         self._conn.write("COMM_HEADER OFF")
         self._conn.write("BANDWIDTH_LIMIT OFF")
 
-        self.active_channels = [1,2,3,4] if active_channels is None else active_channels
-        self.channels = {chnl: Channel(chnl, self._conn) for chnl in active_channels}   
+        self.channels = {
+            1: Channel(1, self._conn),
+            2: Channel(2, self._conn),
+            3: Channel(3, self._conn),
+            4: Channel(4, self._conn)
+        }
+
+        self.active_channel_numbers = active_channels if active_channels is not None else []
+        self.active_channels = []
+        for chnl in self.channels.values():
+            if chnl.number in self.active_channel_numbers:
+                self.active_channels.append(chnl)
+                chnl.show()
+            else:
+                chnl.hide()
+        self.set_active_channels(len(self.active_channels))
+
         #self._conn.write(f"DISPlay OFF")
-
-
-        self.num_horizontal_divs = 10
+        self.trigger_channel: Channel = None
 
     def set_horizontal_axis(self, bound: Literal[5,10,25,50,100,250,500,1000,2500], units:Literal['S', 'NS', 'US', 'MS', 'KS'] = 'NS') -> None:
         """
@@ -113,10 +144,13 @@ class Lecroy:
         self._conn.write(f"TRIG_DELAY {delay}{units}")
 
     def set_trigger_mode(self, mode: Literal['SINGLE', 'NORM', 'AUTO', 'STOP']):
-        self._conn.write(f'TRIG_MODE {mode}')
+        # self._conn.write(f'TRIG_MODE {mode}')
+        self._conn.write(rf"""vbs 'app.acquisition.triggermode = "{mode.upper()}" ' """)
     
     def set_trigger_slope(self, slope:Literal["POS", "NEG", "WINDOW"]):
-        self._conn.write(f"TRIG_SLOPE {slope}")
+        if self.trigger_channel is None:
+            raise ValueError("Please set the trigger channel using the trigger select method before setting the trigger slope!")
+        self._conn.write(f"C{self.trigger_channel.number}:TRIG_SLOPE {slope}")
 
     def set_trigger_select(self, channel:Channel, condition:Literal["EDGE"]=None, level:float=-0.1, units:Literal['V', 'MV'] = 'V'):
         """
@@ -125,27 +159,29 @@ class Lecroy:
         condition: You can set how you wish the oscilliscope to trigger (ex: edge is on the pulse edge)
 
         The command has more options, please visit the documentation if you wish to do something more complicated.
-        FIXME: If another channel is set as trigger channel, change it.
         """
-        assert all(not chnl.is_trigger_channel for chnl in self.channels.values()), "For simplicity, only one channel can be desiginated as the trigger channel"
-        channel.is_trigger_channel = True
+        self.trigger_channel = channel
         self._conn.write(f"TRIG_SELECT {condition},SR,C{channel.number}")
         self._conn.write(f'C{channel.number}:TRIG_LEVEL {level}{units}')
 
-    def set_sample_rate(self, value):
-        ...
+    def set_active_channels(self, n_active_channels: int):
+        self._conn.write(rf"""vbs 'app.Acquisition.Horizontal.ActiveChannels = "{n_active_channels}"' """)
+
+    def set_sample_rate(self, gigasamples_per_second: Literal[10,20]):
+        # need to make condition for nactive channels for the set rate!
+        n_active_channels = self._conn.query(rf"""vbs? 'return=app.Acquisition.Horizontal.ActiveChannels' """)
+        if n_active_channels.strip() != '2' and gigasamples_per_second==20:
+            raise ValueError(f"Can only set 20GS/s if there only two active channels, you have: {n_active_channels}. You can set that with a method.")
+        self._conn.write(rf"""vbs 'app.Acquisition.Horizontal.Maximize = "FixedSampleRate"' """)
+        self._conn.write(rf"""vbs 'app.Acquisition.Horizontal.SampleRate = "{gigasamples_per_second} GS/s"' """)
 
     def set_display(self, status: Literal["ON", "OFF"]):
         """This can only be changed programmatically!"""
         self._conn.write(f"DISPlay {status}")
 
-    def reset(self):
-        """Same as hitting default on the scope."""
-        self._conn.write("*RST")
-
-    ################ ACQUISITION METHODS ######################
-    def enable_sequence_mode(self, num_events: int):
+    def set_sample_mode(self, mode: Literal[0, "RealTime", "Sequence", "RIS"]):
         """
+        ## Sequence Mode
         Using Sequence Mode, thousands of trigger events can be stored as segments into the oscilloscope's acquisition memory 
         (the exact number depends on oscilloscope model and memory options). This is ideal when capturing many fast pulses in 
         quick succession with minimum dead time or when capturing few events separated by long time periods. The instrument 
@@ -155,8 +191,35 @@ class Lecroy:
 
         https://www.teledynelecroy.com/doc/tutorial-sequence-mode
         """
-        self._conn.write(f"SEQ ON,{num_events}")
+        self._conn.write(fr"""vbs app.Acquisition.Horizontal.SampleMode = "{mode}" """)
 
+    def set_number_of_segments(self, num_segments):
+        """
+        Sets the number of segments for sequence mode.
+        """
+        sample_mode = self._conn.query(r"""vbs? 'return=app.Acquisition.Horizontal.SampleMode' """)
+        if sample_mode.strip() != 'Sequence':
+            raise ValueError("You should only set this if you are in sequence mode.")
+        self._conn.write(fr"""vbs app.Acquisition.Horizontal.NumSegments = "{num_segments}" """)
+
+    def stop_acquistion(self):
+        return self._conn.write(r"""vbs 'app.acquisition.triggermode = "stopped" ' """)
+    
+    def reset(self):
+        """
+        Same as hitting default on the scope.
+        
+        An equal command is:         
+        self._conn.write(r\"\"\"vbs 'app.settodefaultsetup' \"\"\")
+        """
+        self._conn.write("*RST")
+
+    
+    def wait_til_idle(self, seconds):
+        """
+        This will wait until the application is idle for 5 seconds (the default unit for this command) before going on
+        """
+        self._conn.query(rf"""vbs? 'return=app.WaitUntilIdle({seconds})' """)
 
     def __repr__(self):
         """
@@ -175,24 +238,28 @@ class Lecroy:
 rm = visa.ResourceManager("@py")
 with rm.open_resource(f'TCPIP0::192.168.0.6::INSTR') as scope_conn:
     lecroy = Lecroy(scope_conn, active_channels=[2,3])
-    lecroy.set_horizontal_axis(25, units='NS') # set_horizontal_axis()
-
+    
     # Set up Trigger Channel
+
     lecroy.channels[2].set_coupling('D50')
     lecroy.channels[2].set_vertical_axis(-2,2, units='V')
+    lecroy.set_trigger_mode('NORM')
     lecroy.set_trigger_select(lecroy.channels[2], condition="EDGE", level=-0.2, units='V')
-    lecroy.set_trigger_mode('NORMAL')
     lecroy.set_trigger_slope('NEG')
+    lecroy.set_horizontal_axis(25, units='NS') # set_horizontal_axis()
 
     # Set up Channel 3
     lecroy.channels[3].set_coupling('D50')
     lecroy.channels[3].set_vertical_axis(-2,2, units='V') 
 
-    lecroy._conn.write("DISPlay ON")
+    #lecroy._conn.write("DISPlay ON")
+    lecroy.set_sample_mode("Sequence")
+    lecroy.set_number_of_segments(20)
+    lecroy.set_sample_rate(20)
 
-
-
-
+    # Follow acuqisition steps in manual
+    # Follow seq steps to left
+    # then return and save data
 
 
 #lecroy._conn.write("GRID QUAD")
