@@ -61,7 +61,7 @@ class Channel:
 class Lecroy:
     """
     ---------------------------------------------------------------
-    WARNING: This CLASS METHODS NEED A MASSIVE REFACTOR
+    WARNING: This CLASS METHODS NEED A MASSIVE REFACTOR FOR BETTER NAMESPACE
     - add querying
     - change from Set methods to properties with setters defined
     ----------------------------------------------------------------
@@ -83,7 +83,7 @@ class Lecroy:
         self._conn.clear()
         # This makes it so the scope just returns the number and not extra information
         self.stop_acquistion()
-        self._conn.write("*CLS")
+        self._conn.write("*CLS") # clears status registers
 
         self._conn.write("COMM_HEADER OFF")
         self._conn.write("BANDWIDTH_LIMIT OFF")
@@ -299,8 +299,8 @@ if __name__ == '__main__':
         lecroy.channels[3].set_vertical_axis(-2,2, units='V') 
 
         lecroy.set_sample_mode("Sequence")
-        lecroy.set_number_of_segments(30)
-        lecroy.set_segment_display("Adjacent")
+        lecroy.set_number_of_segments(5000)
+        lecroy.set_segment_display("Overlay")
 
         # Sequence Mode Acquisition Routine (184 or 6-16) or (185 or 6-17)
         acq_time = time.perf_counter()
@@ -310,5 +310,5 @@ if __name__ == '__main__':
 
         save_time = time.perf_counter()
         for channel in lecroy.active_channels:
-            channel.save(run_number=100)
+            channel.save(run_number=111)
         print("save complete", time.perf_counter()-save_time)
