@@ -1,11 +1,5 @@
-from pathlib import Path
-import argparse
-import os
 import time
-import datetime
 import pyvisa as visa
-import glob
-import pdb
 from typing import Literal
 
 class Channel:
@@ -57,6 +51,13 @@ class Channel:
     def hide(self):
         self._conn.write(rf"""vbs 'app.acquisition.C{self.number}.View=False' """)
 
+    def save(self, run_number:int=0, file_format:Literal['Binary', 'ACII', 'Excel', 'MATLAB', 'MathCad']='Binary'):
+        """ Saves the aquired waveforms displayed on the screen."""
+        lecroy._conn.write(rf"""vbs app.SaveRecall.Waveform.SaveSource = "C{self.number}" """)
+        lecroy._conn.write(r"""vbs app.SaveRecall.Waveform.WaveFormat = "{file_format}" """)
+        lecroy._conn.write(rf"""vbs 'app.SaveRecall.Waveform.TraceTitle = "Trace{run_number}"' """)
+        lecroy._conn.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
+
 class Lecroy:
     """
     ---------------------------------------------------------------
@@ -75,25 +76,23 @@ class Lecroy:
     def __init__(self, lecroy_connection: visa.resources.Resource, active_channels:list[int] = None):
         self.num_horizontal_divs = 10
         self._conn = lecroy_connection
-        
         # Timeout = will wait X ms for operatioins to complete, see page 2-15
-        self._conn.timeout = 5000 # millisceconds
+        self._conn.timeout = 60*60*1e3 # 1 hour
         self._conn.encoding = 'latin_1'
-        
         # Clears out the buffers on the scope listing the commands sent to it and also responses sent from it. 
-        # Clear removes anything leftover from a previous use
         self._conn.clear()
-        
-        # This is important to always put the scope back in the same starting place, makes the program STATELESS
-        self.reset()
-        self.wait_til_idle(5) # recommended by documentation
-        # this is just good to stop any previous acquisitions, unlikely but to be safe!
-        self.stop_acquistion()
-        self._conn.write("*CLS") # Clears all status registers, not sure why important?
-
         # This makes it so the scope just returns the number and not extra information
+        self.stop_acquistion()
+        self._conn.write("*CLS")
+
         self._conn.write("COMM_HEADER OFF")
         self._conn.write("BANDWIDTH_LIMIT OFF")
+        # This is important to always put the scope back in the same starting place, makes the program STATELESS
+        self.reset()
+        # Recommended by documentation page 2-16 in maui-remote control manual
+        setup_wait = self.wait_til_idle(5) 
+        print(f"Scope reset complete: {setup_wait}")
+        # this is just good to stop any previous acquisitions, unlikely but to be safe!
 
         self.channels = {
             1: Channel(1, self._conn),
@@ -103,7 +102,7 @@ class Lecroy:
         }
 
         self.active_channel_numbers = active_channels if active_channels is not None else []
-        self.active_channels = []
+        self.active_channels: list[Channel] = []
         for chnl in self.channels.values():
             if chnl.number in self.active_channel_numbers:
                 self.active_channels.append(chnl)
@@ -149,7 +148,16 @@ class Lecroy:
         self._conn.write(f"TRIG_DELAY {delay}{units}")
 
     def set_trigger_mode(self, mode: Literal['SINGLE', 'NORM', 'AUTO', 'STOP']):
-        # self._conn.write(f'TRIG_MODE {mode}')
+        """
+        ## Auto
+        which triggers the oscilloscope after a set time, even if the trigger conditions are not met.
+        ## Normal 
+        Which triggers the oscilloscope each time a signal is present that meets the trigger conditions.
+        ## Single 
+        The first press readies the oscilloscope to trigger. The second press arms and triggers the oscilloscope once (single-shot acquisition) when the input signal meets the trigger conditions.
+        ## Stop 
+        Stop prevents the scope from triggering on a signal
+        """
         self._conn.write(rf"""vbs 'app.acquisition.triggermode = "{mode.upper()}" ' """)
     
     def set_trigger_slope(self, slope:Literal["POS", "NEG", "WINDOW"]):
@@ -228,31 +236,43 @@ class Lecroy:
             self._conn.write(fr"""vbs app.Acquisition.Horizontal.SequenceTimeout = "{seconds}" """)
 
     def stop_acquistion(self):
-        return self._conn.write(r"""vbs 'app.acquisition.triggermode = "stopped" ' """)
+        return self._conn.write("STOP")
     
+    def do_acquisition(self):
+        """
+        Following routine on page 185 or 6-17, this method start the acquisition and wait for it to complete.
+
+        WARNING: **Only tested for sequence sample mode!!** but might be general
+        For single acquisitions, there are better methods in the manual!
+        """
+        self.stop_acquistion()
+        self._conn.write("*CLS") # clear status regisers
+        self._conn.write("*TRG") # executes arm command, Group Execute Trigger
+        self._conn.write("WAIT") # wait for acquistion to complete, can accept a timeout command
+        # When you try to send *OPC? command it won't read it until acquisition is complete because of the wait command!
+        # Important because we want to program to hang while we do acquisition, so *OPC? is needed to get that behavior
+        self._conn.query("*OPC?") # Operation Complete Query, always returns 1
+
     def reset(self):
         """
         Same as hitting default on the scope.
-        
-        An equal command is:         
-        self._conn.write(r\"\"\"vbs 'app.settodefaultsetup' \"\"\")
         """
         self._conn.write("*RST")
 
     
-    def wait_til_idle(self, seconds):
+    def wait_til_idle(self, timeout):
         """
-        This will wait until the application is idle for 5 seconds (the default unit for this command) before going on
+        This will wait until the application is idle or until specified timeout
+        Units: Seconds
         """
-        self._conn.query(rf"""vbs? 'return=app.WaitUntilIdle({seconds})' """)
-
+        response = self._conn.query(rf"""vbs? 'return=app.WaitUntilIdle({timeout})' """)
+        if isinstance(response, str) and response.strip() != '1':
+            raise TimeoutError("Timedout, still not sure about this method, COME ON MAN!")
+        return True
+    
     def __repr__(self):
         """
-        The *IDN? query identifies the instrument type
-        and software version. The response consists of
-        four different fields providing information on the
-        manufacturer, the scope model, the serial
-        number and the firmware revision.
+        The *IDN? query identifies the instrument type and software version. The response consists of four different fields providing information on the manufacturer, the scope model, the serial number and the firmware revision.
         """
         idn = self._conn.query("*IDN?").split(',')
         names = ['manufacturer', 'scope model', 'serial number', 'firmware version']
@@ -260,41 +280,35 @@ class Lecroy:
             raise ValueError("Unexpected response format")
         return '\n'.join(f"{name} = {value}" for name, value in zip(names, idn))
 
-rm = visa.ResourceManager("@py")
-with rm.open_resource(f'TCPIP0::192.168.0.6::INSTR') as scope_conn:
-    lecroy = Lecroy(scope_conn, active_channels=[2,3])
-    
-    # Set up Trigger Channel
+if __name__ == '__main__':
+    rm = visa.ResourceManager("@py")
+    with rm.open_resource(f'TCPIP0::192.168.0.6::INSTR') as scope_conn:
+        lecroy = Lecroy(scope_conn, active_channels=[2,3])
+        lecroy.set_sample_rate(20)
 
-    lecroy.channels[2].set_coupling('D50')
-    lecroy.channels[2].set_vertical_axis(-2,2, units='V')
-    lecroy.set_trigger_mode('NORM')
-    lecroy.set_trigger_select(lecroy.channels[2], condition="EDGE", level=-0.2, units='V')
-    lecroy.set_trigger_slope('NEG')
-    lecroy.set_horizontal_axis(25, units='NS') # set_horizontal_axis()
+        # Set up Trigger Channel
+        lecroy.channels[2].set_coupling('D50')
+        lecroy.channels[2].set_vertical_axis(-2,2, units='V')
+        lecroy.set_trigger_mode('NORM')
+        lecroy.set_trigger_select(lecroy.channels[2], condition="EDGE", level=-0.2, units='V')
+        lecroy.set_trigger_slope('NEG')
+        lecroy.set_horizontal_axis(25, units='NS') # set_horizontal_axis()
 
-    # Set up Channel 3
-    lecroy.channels[3].set_coupling('D50')
-    lecroy.channels[3].set_vertical_axis(-2,2, units='V') 
+        # Set up Channel 3
+        lecroy.channels[3].set_coupling('D50')
+        lecroy.channels[3].set_vertical_axis(-2,2, units='V') 
 
-    #lecroy._conn.write("DISPlay ON")
-    lecroy.set_sample_mode("Sequence")
-    lecroy.set_segment_display("Overlay")
-    lecroy.sequence_timeout(2e-9)
-    lecroy.set_number_of_segments(20)
-    lecroy.set_sample_rate(20)
+        lecroy.set_sample_mode("Sequence")
+        lecroy.set_number_of_segments(30)
+        lecroy.set_segment_display("Adjacent")
 
-    # Follow acuqisition steps in manual
-    # Follow seq steps to left
-    # then return and save data
+        # Sequence Mode Acquisition Routine (184 or 6-16) or (185 or 6-17)
+        acq_time = time.perf_counter()
+        lecroy.stop_acquistion()
+        lecroy.do_acquisition()
+        print("acq complete", time.perf_counter()-acq_time)
 
-
-#lecroy._conn.write("GRID QUAD")
-
-# lecroy.horizontal_axis(-25, 25, units='NS')
-
-# lecroy.trigger_mode('NORMAL')
-# lecroy.trigger_slope('NEG')
-# lecroy.trigger_select(lecroy.channels[2], condition="EDGE", level=-0.2, units='V')
-
-# START ON LINE 153
+        save_time = time.perf_counter()
+        for channel in lecroy.active_channels:
+            channel.save(run_number=100)
+        print("save complete", time.perf_counter()-save_time)
