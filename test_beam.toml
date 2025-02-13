@@ -23,7 +23,7 @@
         readout_board_version = "2.2"
         module_config_name = "modulev1" # to select the right config in module_test_sw
         modules = [[110], [], []]
-        bias = [260, "V"]
+        bias_voltage = 260
 
         #Optional
         LV_psu = "Siglent SPD3303X_E"
@@ -32,9 +32,9 @@
 [oscilloscope]
     name = "Teledyne LeCroy Waverunner 8104"
     ip_address = "192.168.0.6"
-    binary_data_directory = "/home/etl/Test_Stand/daq/LecroyMount"
+    binary_data_directory = "/home/etl/Test_Stand/daq/"
     sample_rate = [20, "GS/s"]
-    horizontal_window = [50, "ns"]
+    horizontal_window = [50, "NS"]
     segment_display = "Overlay"
     sample_mode = "Sequence"
     number_of_segments = 5000

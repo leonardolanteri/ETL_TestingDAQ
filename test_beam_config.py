@@ -1,6 +1,6 @@
 from typing import List, Optional, Literal, Dict, Annotated
 from pydantic import BaseModel, Field, AfterValidator, FilePath, DirectoryPath, IPvAnyAddress, model_validator
-from lecroy import config as ScopeConfig
+from lecroy.config import LecroyConfig as ScopeConfig
 
 ################# VALIDATORS ###################
 def rb_module_select(rb_positions: list):
@@ -19,8 +19,7 @@ class RunConfig(BaseModel):
     kcu_ip_address: IPvAnyAddress
     kcu_firmware_version: Optional[str] = None
     etroc_binary_data_directory: DirectoryPath
-    num_runs: int #should I get rid of this????
-    num_events: int
+    num_runs: int 
     l1a_delay: int
     offset: int | Literal['auto']
     power_mode: str
@@ -54,12 +53,9 @@ class Config(BaseModel):
     power_supplies: list[PowerSupply]
     file_processing: FileProcessing
 
-# with open('test_beam.toml', 'rb') as f:
-#     data = tomllib.load(f)
-# tb_run = Config.model_validate(data)
+import tomllib
+with open('test_beam.toml', 'rb') as f:
+    data = tomllib.load(f)
+tb_run = Config.model_validate(data)
 
-# module_temp = {
-#     'rb_name': 15,
-#     'type': 'modulev1',
-#     'modules': [[211],[],[]]
-# }
+print(tb_run.oscilloscope)

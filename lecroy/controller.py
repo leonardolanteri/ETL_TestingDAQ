@@ -1,12 +1,12 @@
 import pyvisa as visa
-from typing import Literal
-from pydantic import validate_call
+from typing import Literal, Annotated
+from pydantic import validate_call, ConfigDict, BeforeValidator
 
 type SegmentDisplayMode = Literal["Adjacent","Overlay","Waterfall","Perspective","Mosaic"]
 type VoltageUnits = Literal["V", "MV"]
 type Coupling = Literal['A1M', 'D1M', 'D50', 'GND']
 type FileFormat = Literal['Binary', 'ACII', 'Excel', 'MATLAB', 'MathCad']
-type TimeUnits = Literal['S', 'NS', 'US', 'MS', 'KS']
+type TimeUnits = Annotated[Literal['S', 'NS', 'US', 'MS', 'KS'], BeforeValidator(lambda t: t.upper())]
 type TriggerMode = Literal['SINGLE', 'NORM', 'AUTO', 'STOP']
 type HorizontalWindow = Literal[5,10,25,50,100,250,500,1000,2500]
 type TimeDiv = Literal[1,2,5,10,20,50,100,200,500]
@@ -188,7 +188,7 @@ class LecroyController:
             raise ValueError("Please set the trigger channel using the trigger select method before setting the trigger slope!")
         self._conn.write(f"C{self.trigger_channel.number}:TRIG_SLOPE {slope}")
 
-    @validate_call
+    @validate_call(config=ConfigDict(arbitrary_types_allowed=True))
     def set_trigger_select(self, channel:Channel, condition:TriggerCondition=None, level:float=-0.1, units:VoltageUnits = 'V'):
         """
         Select what channel to use as trigger and selects the condition that will trigger acquisition. Right now, only edge is supported

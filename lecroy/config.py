@@ -1,4 +1,4 @@
-from typing import List, Dict, Annotated
+from typing import List, Dict, Annotated, Literal, Tuple, Any
 from pydantic import BaseModel, Field, IPvAnyAddress, DirectoryPath, model_validator
 from .controller import (
     SegmentDisplayMode,
@@ -40,11 +40,21 @@ class LecroyConfig(BaseModel):
     name: str
     ip_address: IPvAnyAddress
     binary_data_directory: DirectoryPath
-    sample_rate: List[SampleRate, str] = Field(20, max_length=2, min_length=2)
-    horizontal_window: List[HorizontalWindow, TimeUnits] = Field(20, max_length=2, min_length=2)
+    sample_rate: Tuple[SampleRate, Literal["GS/s"]] = Field((20, "GS/s"), max_length=2, min_length=2)
+    horizontal_window: Tuple[HorizontalWindow, TimeUnits] = Field((50, "ns"), max_length=2, min_length=2)
     segment_display: SegmentDisplayMode
     sample_mode: SampleMode
     channels: Dict[int, ChannelConfig]
+
+    @model_validator(mode='before')
+    @classmethod
+    def convert_list_to_tuple(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if 'horizontal_window' in data and isinstance(data['horizontal_window'], list):
+                data['horizontal_window'] = tuple(data['horizontal_window'])
+            if 'sample_rate' in data and isinstance(data['sample_rate'], list):
+                data['sample_rate'] = tuple(data['sample_rate'])
+        return data
 
     @model_validator(mode='after')
     def single_trigger_channel(self):
