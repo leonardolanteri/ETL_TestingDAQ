@@ -1,6 +1,17 @@
-from typing import List, Optional, Literal, Dict, Annotated
+from typing import List, Optional, Literal, Dict, Annotated, Any, Tuple
 from pydantic import BaseModel, Field, AfterValidator, FilePath, DirectoryPath, IPvAnyAddress, model_validator
-from lecroy.config import LecroyConfig as ScopeConfig
+from lecroy.controller import (
+    # if you had another scope you could duck type these units :)
+    SegmentDisplayMode,
+    SampleMode,
+    Coupling,
+    TriggerMode,
+    VoltageUnits,
+    TimeUnits,
+    TriggerCondition,
+    SampleRate,
+    HorizontalWindow
+)
 
 ################# VALIDATORS ###################
 def rb_module_select(rb_positions: list):
@@ -45,17 +56,71 @@ class FileProcessing(BaseModel):
     merged_data_directory: DirectoryPath
     backup_directory: DirectoryPath
 
-class Config(BaseModel):
+
+class Trigger(BaseModel):
+    mode: TriggerMode
+    condition: TriggerCondition
+    level: float
+    unit: VoltageUnits
+
+class VerticalAxis(BaseModel):
+    lower: float = Field(..., alias='min')
+    upper: float = Field(..., alias='max')
+    unit: VoltageUnits
+
+    # Write a validator that ensure lower is less than upper
+    @model_validator(mode='after')
+    def lower_less_upper(self):
+        if self.lower > self.upper:
+            raise ValueError("Min value needs to be less than max value")
+        return self
+
+class ChannelConfig(BaseModel):
+    name: str = Field(..., alias="for")
+    coupling: Coupling
+    vertical_axis: VerticalAxis
+    trigger: Trigger = None
+
+class Oscilliscope(BaseModel):
+    name: str
+    ip_address: IPvAnyAddress
+    binary_data_directory: DirectoryPath
+    sample_rate: Tuple[SampleRate, Literal["GS/s"]] = Field((20, "GS/s"), max_length=2, min_length=2)
+    horizontal_window: Tuple[HorizontalWindow, TimeUnits] = Field((50, "ns"), max_length=2, min_length=2)
+    segment_display: SegmentDisplayMode
+    sample_mode: SampleMode
+    channels: Dict[int, ChannelConfig]
+
+    @model_validator(mode='before')
+    @classmethod
+    def convert_list_to_tuple(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if 'horizontal_window' in data and isinstance(data['horizontal_window'], list):
+                data['horizontal_window'] = tuple(data['horizontal_window'])
+            if 'sample_rate' in data and isinstance(data['sample_rate'], list):
+                data['sample_rate'] = tuple(data['sample_rate'])
+        return data
+
+    @model_validator(mode='after')
+    def single_trigger_channel(self):
+        trigger_channels = [chnl for chnl in self.channels.values() if chnl.trigger is not None]
+        if len(trigger_channels) != 1:
+            raise ValueError(f"There must be exactly one trigger channel specified. You have specified {len(trigger_channels)}")
+        return self
+
+
+
+class TBConfig(BaseModel):
     test_beam: TestBeam
     run_config: RunConfig
     telescope_setup: TelescopeSetup
-    oscilloscope: ScopeConfig
+    oscilloscope: Oscilliscope
     power_supplies: list[PowerSupply]
     file_processing: FileProcessing
 
-import tomllib
-with open('test_beam.toml', 'rb') as f:
-    data = tomllib.load(f)
-tb_run = Config.model_validate(data)
+# import tomllib
+# with open('test_beam.toml', 'rb') as f:
+#     data = tomllib.load(f)
+# tb_run = Config.model_validate(data)
 
-print(tb_run.oscilloscope)
+# print(tb_run.oscilloscope)
