@@ -82,6 +82,7 @@ class ChannelConfig(BaseModel):
     trigger: Trigger = None
 
 class Oscilliscope(BaseModel):
+    # This should try to be general for any scope, i think its possible! But we will likely never have to go there...
     name: str
     ip_address: IPvAnyAddress
     binary_data_directory: DirectoryPath

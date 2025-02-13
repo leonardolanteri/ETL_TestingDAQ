@@ -1,33 +1,29 @@
 """
 Decodes the ETROC and Oscilliscope binary
-Performs fit on the KCU Clock and MCP signals
 
 Simple processing routine that uses multiprocessing
 Please watch this video if you are new to multiprocessing:
 https://www.youtube.com/watch?v=X7vBbelRXn0 
 """
-from binary_decoders import etroc, lecroy
+from lecroy import LecroyReader
+from etroc import converter, root_dumper
 import awkward as ak
 import uproot
-import numpy as np
-import asyncio
 import logging
 import time
 import os
 from multiprocessing import Pool
 from pathlib import Path
 
-# idea is to get it darn fast with multithreading
-
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]=None, mcp_binary_path: str=None, clock_binary_path: str=None):
     t_file_reads = time.perf_counter()
-    mcp_waveform = lecroy.LecroyReader(mcp_binary_path)
-    clock_waveform = lecroy.LecroyReader(clock_binary_path)
-    etroc_unpacked_data = etroc.converter(etroc_binary_paths, skip_trigger_check=True)
-    etroc_data = etroc.root_dumper(etroc_unpacked_data) # root dumper name is due to history 
+    mcp_waveform = LecroyReader(mcp_binary_path)
+    clock_waveform = LecroyReader(clock_binary_path)
+    etroc_unpacked_data = converter(etroc_binary_paths, skip_trigger_check=True)
+    etroc_data = root_dumper(etroc_unpacked_data) # root dumper name is due to history 
     if etroc_data is None:
         print("no etroc data")
         return

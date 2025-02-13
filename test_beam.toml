@@ -1,4 +1,3 @@
-
 [test_beam]
     name = "DESY March 2025"
     beam_energy = 120 # GeV
