@@ -1,6 +1,19 @@
-import time
 import pyvisa as visa
 from typing import Literal
+from pydantic import validate_call
+
+type SegmentDisplayMode = Literal["Adjacent","Overlay","Waterfall","Perspective","Mosaic"]
+type VoltageUnits = Literal["V", "MV"]
+type Coupling = Literal['A1M', 'D1M', 'D50', 'GND']
+type FileFormat = Literal['Binary', 'ACII', 'Excel', 'MATLAB', 'MathCad']
+type TimeUnits = Literal['S', 'NS', 'US', 'MS', 'KS']
+type TriggerMode = Literal['SINGLE', 'NORM', 'AUTO', 'STOP']
+type HorizontalWindow = Literal[5,10,25,50,100,250,500,1000,2500]
+type TimeDiv = Literal[1,2,5,10,20,50,100,200,500]
+type TriggerSlope = Literal["POS", "NEG", "WINDOW"]
+type SampleMode = Literal[0, "RealTime", "Sequence", "RIS"]
+type SampleRate = Literal[10,20]
+type TriggerCondition = Literal["EDGE"]
 
 class Channel:
     def __init__(self, channel:int, lecroy_connection: visa.resources.Resource):
@@ -9,10 +22,11 @@ class Channel:
         # This is standard for oscilliscopes (number of boxes on the screen in vert and horz direction)
         self.num_vertical_divs = 8
 
-    def set_vertical_axis(self, lower_bound:float, upper_bound:float, units:Literal['V', 'MV']='V'):
+    @validate_call # makes sure units of the right type!
+    def set_vertical_axis(self, lower_bound:float, upper_bound:float, units:VoltageUnits='V'):
         """
         Specifies the set up of the vertical axis for the oscillisope. The start and 
-        stop arguments specify the range of voltage values for the vertical axis.
+        stop arguments specify the range of VoltageUnits values for the vertical axis.
 
         Arguments
         channel: Oscillsicope channel 
@@ -24,20 +38,23 @@ class Channel:
         # You want the opposite sign of offset to get correct display
         self.set_vertical_offset(-offset, units=units)
 
-    def set_volts_div(self, volts_div:float, units:Literal['V', 'MV'] = 'V'):
+    @validate_call
+    def set_volts_div(self, volts_div:float, units:VoltageUnits = 'V'):
         """Set volts per div for a channel"""
         self._conn.write(f"C{self.number}:VOLT_DIV {volts_div}{units}")
     
-    def set_vertical_offset(self, offset:float, units:Literal['V', 'MV'] = 'V'):
+    @validate_call
+    def set_vertical_offset(self, offset:float, units:VoltageUnits = 'V'):
         """Sets the coupling, """
         self._conn.write(f"C{self.number}:OFFSET {offset}{units}")
-
-    def set_coupling(self, coupling:Literal['A1M', 'D1M', 'D50', 'GND']):
+    
+    @validate_call
+    def set_coupling(self, coupling:Coupling):
         """
         https://blog.teledynelecroy.com/2020/08/how-do-you-choose-whether-to-use-50-ohm.html
 
         DANGER, DANGER
-        However, if your input DC or RMS voltage is close to or above 5 V, DO NOT USE the 50 Ohm input to the scope!
+        However, if your input DC or RMS VoltageUnits is close to or above 5 V, DO NOT USE the 50 Ohm input to the scope!
         Inside the scope, in front of the amplifier, is a 50 Ohm resistor. 
         This resistor is capable of dissipating only 0.5 watts of power. 
         If the resistor consumes more than 0.5 watts, it will heat up too much. 
@@ -51,14 +68,15 @@ class Channel:
     def hide(self):
         self._conn.write(rf"""vbs 'app.acquisition.C{self.number}.View=False' """)
 
-    def save(self, run_number:int=0, file_format:Literal['Binary', 'ACII', 'Excel', 'MATLAB', 'MathCad']='Binary'):
+    @validate_call
+    def save(self, run_number:int=0, file_format:FileFormat='Binary'):
         """ Saves the aquired waveforms displayed on the screen."""
-        lecroy._conn.write(rf"""vbs app.SaveRecall.Waveform.SaveSource = "C{self.number}" """)
-        lecroy._conn.write(r"""vbs app.SaveRecall.Waveform.WaveFormat = "{file_format}" """)
-        lecroy._conn.write(rf"""vbs 'app.SaveRecall.Waveform.TraceTitle = "Trace{run_number}"' """)
-        lecroy._conn.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
+        self._conn.write(rf"""vbs app.SaveRecall.Waveform.SaveSource = "C{self.number}" """)
+        self._conn.write(rf"""vbs app.SaveRecall.Waveform.WaveFormat = "{file_format}" """)
+        self._conn.write(rf"""vbs 'app.SaveRecall.Waveform.TraceTitle = "Trace{run_number}"' """)
+        self._conn.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
 
-class Lecroy:
+class LecroyController:
     """
     ---------------------------------------------------------------
     WARNING: This CLASS METHODS NEED A MASSIVE REFACTOR FOR BETTER NAMESPACE
@@ -114,7 +132,8 @@ class Lecroy:
         #self._conn.write(f"DISPlay OFF")
         self.trigger_channel: Channel = None
 
-    def set_horizontal_axis(self, bound: Literal[5,10,25,50,100,250,500,1000,2500], units:Literal['S', 'NS', 'US', 'MS', 'KS'] = 'NS') -> None:
+    @validate_call
+    def set_horizontal_window(self, bound: HorizontalWindow, units:TimeUnits = 'NS') -> None:
         """
         Specifies the set up of the horizontal axis for the oscillisope. The the bound is used to make an axis symmetric about 0. 
         And can only be the accepted values ex: -25 and 25 Units
@@ -130,7 +149,8 @@ class Lecroy:
         time_div = 2*bound/self.num_horizontal_divs
         self.set_time_div(time_div, units=units)
 
-    def set_time_div(self, time_div:Literal[1,2,5,10,20,50,100,200,500], units:Literal['S', 'NS', 'US', 'MS', 'KS'] = 'S'):
+    @validate_call
+    def set_time_div(self, time_div:TimeDiv, units:TimeUnits = 'S'):
         """
         Set time per div for a channel. Due to some limitation by the scope, only these are allowed time_divs. If you understand please comment here!
         NS for nanoseconds, US for microseconds, MS for milliseconds, S for seconds, or KS for kiloseconds.
@@ -139,7 +159,8 @@ class Lecroy:
             raise ValueError(f"The time/div you chose is not one of the accepted time/divs 1,2,5,10,20,50,100,200,500. It will not produce the expected time/div of ({time_div}){units}/div. ")
         self._conn.write(f"TIME_DIV {time_div}{units}")
     
-    def set_trigger_delay(self, delay:float, units:Literal['S', 'NS', 'US', 'MS', 'KS'] = 'S'):
+    @validate_call
+    def set_trigger_delay(self, delay:float, units:TimeUnits = 'S'):
         """
         Sets the time at which the trigger is to  occur in respect of the first acquired data 
         point (displayed at the left-hand edge of the screen).
@@ -147,7 +168,8 @@ class Lecroy:
         """
         self._conn.write(f"TRIG_DELAY {delay}{units}")
 
-    def set_trigger_mode(self, mode: Literal['SINGLE', 'NORM', 'AUTO', 'STOP']):
+    @validate_call
+    def set_trigger_mode(self, mode: TriggerMode):
         """
         ## Auto
         which triggers the oscilloscope after a set time, even if the trigger conditions are not met.
@@ -160,12 +182,14 @@ class Lecroy:
         """
         self._conn.write(rf"""vbs 'app.acquisition.triggermode = "{mode.upper()}" ' """)
     
-    def set_trigger_slope(self, slope:Literal["POS", "NEG", "WINDOW"]):
+    @validate_call
+    def set_trigger_slope(self, slope:TriggerSlope):
         if self.trigger_channel is None:
             raise ValueError("Please set the trigger channel using the trigger select method before setting the trigger slope!")
         self._conn.write(f"C{self.trigger_channel.number}:TRIG_SLOPE {slope}")
 
-    def set_trigger_select(self, channel:Channel, condition:Literal["EDGE"]=None, level:float=-0.1, units:Literal['V', 'MV'] = 'V'):
+    @validate_call
+    def set_trigger_select(self, channel:Channel, condition:TriggerCondition=None, level:float=-0.1, units:VoltageUnits = 'V'):
         """
         Select what channel to use as trigger and selects the condition that will trigger acquisition. Right now, only edge is supported
         Channel: what channel you wish to set the trigger on.
@@ -177,10 +201,12 @@ class Lecroy:
         self._conn.write(f"TRIG_SELECT {condition},SR,C{channel.number}")
         self._conn.write(f'C{channel.number}:TRIG_LEVEL {level}{units}')
 
+    @validate_call
     def set_active_channels(self, n_active_channels: int):
         self._conn.write(rf"""vbs 'app.Acquisition.Horizontal.ActiveChannels = "{n_active_channels}"' """)
 
-    def set_sample_rate(self, gigasamples_per_second: Literal[10,20]):
+    @validate_call
+    def set_sample_rate(self, gigasamples_per_second:SampleRate):
         # need to make condition for nactive channels for the set rate!
         n_active_channels = self._conn.query(rf"""vbs? 'return=app.Acquisition.Horizontal.ActiveChannels' """)
         if n_active_channels.strip() != '2' and gigasamples_per_second==20:
@@ -190,11 +216,13 @@ class Lecroy:
         self._conn.write(rf"""vbs 'app.Acquisition.Horizontal.Maximize = "FixedSampleRate"' """)
         self._conn.write(rf"""vbs 'app.Acquisition.Horizontal.SampleRate = "{gigasamples_per_second} GS/s"' """)
 
+    @validate_call
     def set_display(self, status: Literal["ON", "OFF"]):
         """This can only be changed programmatically!"""
         self._conn.write(f"DISPlay {status}")
 
-    def set_sample_mode(self, mode: Literal[0, "RealTime", "Sequence", "RIS"]):
+    @validate_call
+    def set_sample_mode(self, mode: SampleMode):
         """
         ## Sequence Mode
         Using Sequence Mode, thousands of trigger events can be stored as segments into the oscilloscope's acquisition memory 
@@ -208,26 +236,28 @@ class Lecroy:
         """
         self._conn.write(fr"""vbs app.Acquisition.Horizontal.SampleMode = "{mode}" """)
 
-
     def is_sequence_mode(self):
         sample_mode = self._conn.query(r"""vbs? 'return=app.Acquisition.Horizontal.SampleMode' """)
         if sample_mode.strip() != 'Sequence':
             raise ValueError("You should only set this if you are in sequence mode.")        
         return True
 
-    def set_number_of_segments(self, num_segments):
+    @validate_call
+    def set_number_of_segments(self, num_segments: int):
         """
         Sets the number of segments for sequence mode.
         """
         self.is_sequence_mode()
         self._conn.write(fr"""vbs app.Acquisition.Horizontal.NumSegments = "{num_segments}" """)
     
-    def set_segment_display(self, mode: Literal["Adjacent","Overlay","Waterfall","Perspective","Mosaic"]):
+    @validate_call
+    def set_segment_display(self, mode: SegmentDisplayMode):
         """Options to view the segments on the display."""
         self.is_sequence_mode()
         self._conn.write(fr"""vbs app.Display.SegmentMode = "{mode}" """)
 
-    def sequence_timeout(self, seconds: int, disable_timeout=False):
+    @validate_call
+    def sequence_timeout(self, seconds: int, disable_timeout:bool=False):
         """Following valid trigger of first segment, use sequence timout to automatically interrupt the sequence acquisition if the timout value is exceeded without a valid trigger."""
         self.is_sequence_mode()
         if disable_timeout:
@@ -259,8 +289,8 @@ class Lecroy:
         """
         self._conn.write("*RST")
 
-    
-    def wait_til_idle(self, timeout):
+    @validate_call
+    def wait_til_idle(self, timeout:int):
         """
         This will wait until the application is idle or until specified timeout
         Units: Seconds
@@ -281,34 +311,36 @@ class Lecroy:
         return '\n'.join(f"{name} = {value}" for name, value in zip(names, idn))
 
 if __name__ == '__main__':
-    rm = visa.ResourceManager("@py")
-    with rm.open_resource(f'TCPIP0::192.168.0.6::INSTR') as scope_conn:
-        lecroy = Lecroy(scope_conn, active_channels=[2,3])
-        lecroy.set_sample_rate(20)
+    ...
 
-        # Set up Trigger Channel
-        lecroy.channels[2].set_coupling('D50')
-        lecroy.channels[2].set_vertical_axis(-2,2, units='V')
-        lecroy.set_trigger_mode('NORM')
-        lecroy.set_trigger_select(lecroy.channels[2], condition="EDGE", level=-0.2, units='V')
-        lecroy.set_trigger_slope('NEG')
-        lecroy.set_horizontal_axis(25, units='NS') # set_horizontal_axis()
+    # rm = visa.ResourceManager("@py")
+    # with rm.open_resource(f'TCPIP0::192.168.0.6::INSTR') as scope_conn:
+    #     lecroy = LecroyController(scope_conn, active_channels=[2,3])
+    #     lecroy.set_sample_rate(20)
 
-        # Set up Channel 3
-        lecroy.channels[3].set_coupling('D50')
-        lecroy.channels[3].set_vertical_axis(-2,2, units='V') 
+    #     # Set up Trigger Channel
+    #     lecroy.channels[2].set_coupling('D50')
+    #     lecroy.channels[2].set_vertical_axis(-2,2, units='V')
+    #     lecroy.set_trigger_mode('NORM')
+    #     lecroy.set_trigger_select(lecroy.channels[2], condition="EDGE", level=-0.2, units='V')
+    #     lecroy.set_trigger_slope('NEG')
+    #     lecroy.set_horizontal_window(25, units='NS')
 
-        lecroy.set_sample_mode("Sequence")
-        lecroy.set_number_of_segments(5000)
-        lecroy.set_segment_display("Overlay")
+    #     # Set up Channel 3
+    #     lecroy.channels[3].set_coupling('D50')
+    #     lecroy.channels[3].set_vertical_axis(-2,2, units='V') 
 
-        # Sequence Mode Acquisition Routine (184 or 6-16) or (185 or 6-17)
-        acq_time = time.perf_counter()
-        lecroy.stop_acquistion()
-        lecroy.do_acquisition()
-        print("acq complete", time.perf_counter()-acq_time)
+    #     lecroy.set_sample_mode("Sequence")
+    #     lecroy.set_number_of_segments(5000)
+    #     lecroy.set_segment_display("Overlay")
 
-        save_time = time.perf_counter()
-        for channel in lecroy.active_channels:
-            channel.save(run_number=111)
-        print("save complete", time.perf_counter()-save_time)
+    #     # Sequence Mode Acquisition Routine (184 or 6-16) or (185 or 6-17)
+    #     acq_time = time.perf_counter()
+    #     lecroy.stop_acquistion()
+    #     lecroy.do_acquisition()
+    #     print("acq complete", time.perf_counter()-acq_time)
+
+    #     save_time = time.perf_counter()
+    #     for channel in lecroy.active_channels:
+    #         channel.save(run_number=111)
+    #     print("save complete", time.perf_counter()-save_time)
