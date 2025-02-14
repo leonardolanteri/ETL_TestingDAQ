@@ -1,5 +1,5 @@
 import pyvisa as visa
-from typing import Literal, Annotated
+from typing import Literal, Annotated, Self
 from pydantic import validate_call, ConfigDict, BeforeValidator
 
 type SegmentDisplayMode = Literal["Adjacent","Overlay","Waterfall","Perspective","Mosaic"]
@@ -91,10 +91,16 @@ class LecroyController:
     EVEN BETTER is to go on the scope, in the XStream Browser (on the homepage), and you can see ALL
     the available methods :))
     """
-    def __init__(self, lecroy_connection: visa.resources.Resource, active_channels:list[int] = None):
+    def __init__(self, ip_address: str, active_channels:list[int] = None):
+        self.rm = visa.ResourceManager("@py")
+        self.ip_address = ip_address
         self.num_horizontal_divs = 10
-        self._conn = lecroy_connection
-        # Timeout = will wait X ms for operatioins to complete, see page 2-15
+        self._conn = None
+        self.active_channel_numbers = active_channels if active_channels is not None else []
+
+    def __enter__(self) -> Self:
+        self._conn = self.rm.open_resource(f'TCPIP0::{self.ip_address}::INSTR')
+                # Timeout = will wait X ms for operatioins to complete, see page 2-15
         self._conn.timeout = 60*60*1e3 # 1 hour
         self._conn.encoding = 'latin_1'
         # Clears out the buffers on the scope listing the commands sent to it and also responses sent from it. 
@@ -119,7 +125,6 @@ class LecroyController:
             4: Channel(4, self._conn)
         }
 
-        self.active_channel_numbers = active_channels if active_channels is not None else []
         self.active_channels: list[Channel] = []
         for chnl in self.channels.values():
             if chnl.number in self.active_channel_numbers:
@@ -131,6 +136,15 @@ class LecroyController:
 
         #self._conn.write(f"DISPlay OFF")
         self.trigger_channel: Channel = None
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type == KeyboardInterrupt:
+            print("If running a scope acquisioin and you Cntrl-C'ed out of it, you will need to manually stop the scope or wait for the acquisition to finish on the scope before setting up a new connection.")
+
+        if self._conn is not None:
+            self._conn.close()
+        self.rm.close()
 
     @validate_call
     def set_horizontal_window(self, bound: HorizontalWindow, units:TimeUnits = 'NS') -> None:

@@ -14,11 +14,12 @@
     l1a_delay = 14 # units ns??
     offset = 10 # vth
     power_mode = "i1"
+    #reuse_thresholds_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/thresholds"
 
 [telescope_setup]
     [[telescope_setup.service_hybrids]]
         telescope_layer = 'first'
-        readout_board_name = 15
+        readout_board_id = 15
         readout_board_version = "2.2"
         readout_board_config = "modulev1"
         module_select = [[110], [], []]
@@ -30,7 +31,7 @@
 
     [[telescope_setup.service_hybrids]]
         telescope_layer = 'second'
-        readout_board_name = 27
+        readout_board_id = 27
         readout_board_version = "2.2"
         readout_board_config = "modulev1"
         module_select = [[], [111], []]
@@ -53,13 +54,13 @@
     [oscilloscope.channels.2]
         for = "MCP"
         coupling = 'D50'
-        vertical_axis =  { min=-2, max=2, unit="V" }
-        trigger = {mode="NORM", condition="EDGE", level=-0.2, unit="V"}
+        vertical_axis =  { min=-2, max=2, units="V" }
+        trigger = {mode="NORM", condition="EDGE", slope="NEG", level=-0.2, units="V"}
 
     [oscilloscope.channels.3]
         for = "Clock"
         coupling = 'D50'
-        vertical_axis = { min=-2, max=2, unit="V" }
+        vertical_axis = { min=-2, max=2, units="V" }
 
 [file_processing]
     merged_data_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/merged" # will add test beam name

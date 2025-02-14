@@ -10,7 +10,8 @@ from lecroy.controller import (
     TimeUnits,
     TriggerCondition,
     SampleRate,
-    HorizontalWindow
+    HorizontalWindow,
+    TriggerSlope
 )
 
 StrippedStr = Annotated[str, StringConstraints(strip_whitespace=True)]
@@ -47,10 +48,11 @@ class RunConfig(BaseModel):
     l1a_delay: int
     offset: int | Literal['auto']
     power_mode: StrippedStr
+    reuse_thresholds_directory: Optional[DirectoryPath] = None
 
 class ServiceHybrid(BaseModel):
     telescope_layer: Literal['first', 'second', 'third'] = Field(..., description="Which gets hit by the beam first, second, third. ")
-    readout_board_name: int | StrippedStr
+    readout_board_id: int
     readout_board_version: Optional[StrippedStr] = None
     readout_board_config: StrippedStr = Field(..., description="This is the readoutout board configuration, called type due to naming convention in module_test_sw. The rb configs have the format: module_test_sw/configs/<type>_<version>.yaml")
     module_select: Annotated[List[List[int]], AfterValidator(check_single_module_selected)] = Field(..., description="modules have to be an integer due to the way the chip id is set for etrocs. See tamalero/Module.py line 57")
@@ -109,12 +111,13 @@ class Trigger(BaseModel):
     mode: TriggerMode
     condition: TriggerCondition
     level: float
-    unit: VoltageUnits
+    slope: TriggerSlope
+    units: VoltageUnits
 
 class VerticalAxis(BaseModel):
     lower: float = Field(..., alias='min')
     upper: float = Field(..., alias='max')
-    unit: VoltageUnits
+    units: VoltageUnits
 
     # Write a validator that ensure lower is less than upper
     @model_validator(mode='after')
@@ -139,6 +142,7 @@ class Oscilliscope(BaseModel):
     segment_display: SegmentDisplayMode
     sample_mode: SampleMode
     channels: Dict[int, ChannelConfig]
+    number_of_segments: int
 
     @model_validator(mode='before')
     @classmethod
