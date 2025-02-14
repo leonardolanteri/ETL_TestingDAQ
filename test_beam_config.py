@@ -1,5 +1,5 @@
 from typing import List, Optional, Literal, Dict, Annotated, Any, Tuple
-from pydantic import BaseModel, Field, AfterValidator, FilePath, DirectoryPath, IPvAnyAddress, model_validator
+from pydantic import BaseModel, Field, AfterValidator, FilePath, DirectoryPath, IPvAnyAddress, model_validator, field_validator, StringConstraints
 from lecroy.controller import (
     # if you had another scope you could duck type these units :)
     SegmentDisplayMode,
@@ -13,42 +13,90 @@ from lecroy.controller import (
     HorizontalWindow
 )
 
-################# VALIDATORS ###################
-def rb_module_select(rb_positions: list):
+StrippedStr = Annotated[str, StringConstraints(strip_whitespace=True)]
+
+def all_unique(array: list) -> bool:
+    "Returns true if all the elements in an array are unique"
+    return len(array) == len(set(array))
+
+def get_modules(rb_positions: list[list[int]]) -> list[int]:
+    modules = []
     for rb_pos in rb_positions:
-        if len(rb_pos) > 1:
-            raise ValueError("Cannot have more than one module connected in a readout board position. This pattern is to just follow module_test_sw. ")
+        modules += rb_pos # could contain nothing, multiple modules
+    return modules
+
+################# VALIDATORS ###################
+def check_single_module_selected(rb_positions: list):
+    """Logic for handling the format [[110], [], []], checks only 1 module is connected to rb"""
+    if len(get_modules(rb_positions)) != 1:
+        raise ValueError(f"COME ON MAN! Only a single module can be selected for test beam. You selected: {rb_positions}")
     return rb_positions  
+
 ################################################
 class TestBeam(BaseModel):
-    name: str
+    name: StrippedStr
     beam_energy: int
     project_directory: DirectoryPath
 
 class RunConfig(BaseModel):
-    comment: Optional[str] = None
+    comment: Optional[StrippedStr] = None
     kcu_ip_address: IPvAnyAddress
-    kcu_firmware_version: Optional[str] = None
+    kcu_firmware_version: Optional[StrippedStr] = None
     etroc_binary_data_directory: DirectoryPath
     num_runs: int 
     l1a_delay: int
     offset: int | Literal['auto']
-    power_mode: str
+    power_mode: StrippedStr
 
 class ServiceHybrid(BaseModel):
-    readout_board_name: int | str
-    readout_board_version: Optional[str] = None
-    module_config_name: str = Field(..., description="This is the module configuration, called type due to naming convention in module_test_sw. The module configs have the format: module_test_sw/configs/<type>_<version>.yaml")
-    modules: Annotated[List[List[int]], AfterValidator(rb_module_select)] = Field(..., description="modules have to be an integer due to the way the chip id is set for etrocs. See tamalero/Module.py line 57")
-    LV_psu: Optional[str] = Field(None, description="Power Supply name, should be the same name given in the power supply model (this is so it gets any needed information like IP Address)")
-    HV_psu: Optional[str] = Field(None, description="Power Supply name, should be the same name given in the power supply model (this is so it gets any needed information like IP Address)")
+    telescope_layer: Literal['first', 'second', 'third'] = Field(..., description="Which gets hit by the beam first, second, third. ")
+    readout_board_name: int | StrippedStr
+    readout_board_version: Optional[StrippedStr] = None
+    readout_board_config: StrippedStr = Field(..., description="This is the readoutout board configuration, called type due to naming convention in module_test_sw. The rb configs have the format: module_test_sw/configs/<type>_<version>.yaml")
+    module_select: Annotated[List[List[int]], AfterValidator(check_single_module_selected)] = Field(..., description="modules have to be an integer due to the way the chip id is set for etrocs. See tamalero/Module.py line 57")
+    LV_psu: Optional[StrippedStr] = Field(None, description="Power Supply name, should be the same name given in the power supply model (this is so it gets any needed information like IP Address)")
+    HV_psu: Optional[StrippedStr] = Field(None, description="Power Supply name, should be the same name given in the power supply model (this is so it gets any needed information like IP Address)")
     bias_voltage: float
 
+    #lowercase and strip
+    @field_validator('telescope_layer',mode='before')
+    @classmethod
+    def lowercase_n_strip(cls, layer:Any) -> Any:
+        if isinstance(layer, str):
+            layer = layer.strip().lower()
+        return layer
+    
 class TelescopeSetup(BaseModel):
     service_hybrids: List[ServiceHybrid]
 
+    @field_validator('service_hybrids', mode='after')
+    @classmethod
+    def layers_are_unique(cls, service_hybrids: list[ServiceHybrid]) -> list[ServiceHybrid]:
+        layers = [sh.telescope_layer for sh in service_hybrids]
+        if not all_unique(layers):
+            raise ValueError(f"COME ON MAN! You cant have multiple service hybrids in the same layer! You gave: {layers} which has a duplicate.")
+        return service_hybrids
+
+    @field_validator('service_hybrids', mode='after')
+    @classmethod
+    def readout_boards_are_unique(cls, service_hybrids: list[ServiceHybrid]) -> list[ServiceHybrid]:
+        readout_boards = [sh.readout_board_name for sh in service_hybrids]
+        if not all_unique(readout_boards):
+            raise ValueError(f"COME ON MAN! Detected multiple readout boards with the same name, they should be unique! Your input: {readout_boards}")
+        return service_hybrids
+
+    @field_validator('service_hybrids', mode='after')
+    @classmethod
+    def modules_are_unique(cls, service_hybrids: list[ServiceHybrid]) -> list[ServiceHybrid]:
+        modules = []
+        for sh in service_hybrids:
+            modules += get_modules(sh.module_select)
+        if not all_unique(modules):
+            raise ValueError(f"COME ON MAN! Duplicate modules detected in the configuration file. {modules}")
+        return service_hybrids
+    
 class PowerSupply(BaseModel):
-    name: str
+    name: StrippedStr
     log_path: Optional[FilePath] = None
     ip_address: Optional[IPvAnyAddress] = None
 
@@ -72,7 +120,7 @@ class VerticalAxis(BaseModel):
     @model_validator(mode='after')
     def lower_less_upper(self):
         if self.lower > self.upper:
-            raise ValueError("Min value needs to be less than max value")
+            raise ValueError("COME ON MAN! Min value needs to be less than max value")
         return self
 
 class ChannelConfig(BaseModel):
@@ -83,7 +131,7 @@ class ChannelConfig(BaseModel):
 
 class Oscilliscope(BaseModel):
     # This should try to be general for any scope, i think its possible! But we will likely never have to go there...
-    name: str
+    name: StrippedStr
     ip_address: IPvAnyAddress
     binary_data_directory: DirectoryPath
     sample_rate: Tuple[SampleRate, Literal["GS/s"]] = Field((20, "GS/s"), max_length=2, min_length=2)
@@ -106,9 +154,8 @@ class Oscilliscope(BaseModel):
     def single_trigger_channel(self):
         trigger_channels = [chnl for chnl in self.channels.values() if chnl.trigger is not None]
         if len(trigger_channels) != 1:
-            raise ValueError(f"There must be exactly one trigger channel specified. You have specified {len(trigger_channels)}")
+            raise ValueError(f"COME ON MAN! There must be exactly one trigger channel specified. You have specified {len(trigger_channels)}")
         return self
-
 
 
 class TBConfig(BaseModel):
@@ -119,9 +166,11 @@ class TBConfig(BaseModel):
     power_supplies: list[PowerSupply]
     file_processing: FileProcessing
 
+
 # import tomllib
 # with open('test_beam.toml', 'rb') as f:
 #     data = tomllib.load(f)
-# tb_run = Config.model_validate(data)
+# tb_run = TBConfig.model_validate(data)
 
-# print(tb_run.oscilloscope)
+
+# print(tb_run.telescope_setup)

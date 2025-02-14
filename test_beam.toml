@@ -16,12 +16,24 @@
     power_mode = "i1"
 
 [telescope_setup]
-    # following the telescope_<name>.yaml format
-    [[telescope_setup.service_hybrids]] 
+    [[telescope_setup.service_hybrids]]
+        telescope_layer = 'first'
         readout_board_name = 15
         readout_board_version = "2.2"
-        module_config_name = "modulev1" # to select the right config in module_test_sw
-        modules = [[110], [], []]
+        readout_board_config = "modulev1"
+        module_select = [[110], [], []]
+        bias_voltage = 260
+
+        #Optional
+        LV_psu = "Siglent SPD3303X_E"
+        HV_psu = "CAEN HV Power Supply"
+
+    [[telescope_setup.service_hybrids]]
+        telescope_layer = 'second'
+        readout_board_name = 27
+        readout_board_version = "2.2"
+        readout_board_config = "modulev1"
+        module_select = [[], [111], []]
         bias_voltage = 260
 
         #Optional
