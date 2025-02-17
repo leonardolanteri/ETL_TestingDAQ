@@ -75,6 +75,9 @@ class ETL_Telescope:
                         etroc.reset()
     
     def test_etroc_daq(self):
+        """
+        Sends l1a's and checks for data in the FIFO
+        """
         # fifos
         fifos: list[FIFO] = []
         for rb in self.readout_boards:

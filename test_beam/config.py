@@ -68,7 +68,7 @@ class ServiceHybrid(BaseModel):
             layer = layer.strip().lower()
         return layer
     
-class TelescopeSetup(BaseModel):
+class TelescopeConfig(BaseModel):
     service_hybrids: List[ServiceHybrid]
 
     @field_validator('service_hybrids', mode='after')
@@ -107,7 +107,7 @@ class FileProcessing(BaseModel):
     backup_directory: DirectoryPath
 
 
-class Trigger(BaseModel):
+class TriggerConfig(BaseModel):
     mode: TriggerMode
     condition: TriggerCondition
     level: float
@@ -130,7 +130,7 @@ class ChannelConfig(BaseModel):
     name: str = Field(..., alias="for")
     coupling: Coupling
     vertical_axis: VerticalAxis
-    trigger: Trigger = None
+    trigger: TriggerConfig = None
 
 class Oscilliscope(BaseModel):
     # This should try to be general for any scope, i think its possible! But we will likely never have to go there...
@@ -165,7 +165,7 @@ class Oscilliscope(BaseModel):
 class TBConfig(BaseModel):
     test_beam: TestBeam
     run_config: RunConfig
-    telescope_setup: TelescopeSetup
+    telescope_config: TelescopeConfig
     oscilloscope: Oscilliscope
     power_supplies: list[PowerSupply]
     file_processing: FileProcessing
