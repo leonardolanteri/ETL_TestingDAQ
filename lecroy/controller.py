@@ -1,19 +1,20 @@
-import pyvisa as visa
-from typing import Literal, Annotated, Self
-from pydantic import validate_call, ConfigDict, BeforeValidator
+from __future__ import annotations
 
-type SegmentDisplayMode = Literal["Adjacent","Overlay","Waterfall","Perspective","Mosaic"]
-type VoltageUnits = Literal["V", "MV"]
-type Coupling = Literal['A1M', 'D1M', 'D50', 'GND']
-type FileFormat = Literal['Binary', 'ACII', 'Excel', 'MATLAB', 'MathCad']
-type TimeUnits = Annotated[Literal['S', 'NS', 'US', 'MS', 'KS'], BeforeValidator(lambda t: t.upper())]
-type TriggerMode = Literal['SINGLE', 'NORM', 'AUTO', 'STOP']
-type HorizontalWindow = Literal[5,10,25,50,100,250,500,1000,2500]
-type TimeDiv = Literal[1,2,5,10,20,50,100,200,500]
-type TriggerSlope = Literal["POS", "NEG", "WINDOW"]
-type SampleMode = Literal[0, "RealTime", "Sequence", "RIS"]
-type SampleRate = Literal[10,20]
-type TriggerCondition = Literal["EDGE"]
+import pyvisa as visa
+from typing import Literal, List
+from pydantic import validate_call, ConfigDict
+SegmentDisplayMode = Literal["Adjacent","Overlay","Waterfall","Perspective","Mosaic"]
+VoltageUnits = Literal["V", "MV"]
+Coupling = Literal['A1M', 'D1M', 'D50', 'GND']
+FileFormat = Literal['Binary', 'ACII', 'Excel', 'MATLAB', 'MathCad']
+TimeUnits = Literal['S', 'NS', 'US', 'MS', 'KS']
+TriggerMode = Literal['SINGLE', 'NORM', 'AUTO', 'STOP']
+HorizontalWindow = Literal[5,10,25,50,100,250,500,1000,2500]
+TimeDiv = Literal[1,2,5,10,20,50,100,200,500]
+TriggerSlope = Literal["POS", "NEG", "WINDOW"]
+SampleMode = Literal[0, "RealTime", "Sequence", "RIS"]
+SampleRate = Literal[10,20]
+TriggerCondition = Literal["EDGE"]
 
 class Channel:
     def __init__(self, channel:int, lecroy_connection: visa.resources.Resource):
@@ -91,14 +92,14 @@ class LecroyController:
     EVEN BETTER is to go on the scope, in the XStream Browser (on the homepage), and you can see ALL
     the available methods :))
     """
-    def __init__(self, ip_address: str, active_channels:list[int] = None):
+    def __init__(self, ip_address: str, active_channels:List[int] = None):
         self.rm = visa.ResourceManager("@py")
         self.ip_address = ip_address
         self.num_horizontal_divs = 10
         self._conn = None
         self.active_channel_numbers = active_channels if active_channels is not None else []
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> LecroyController:
         self._conn = self.rm.open_resource(f'TCPIP0::{self.ip_address}::INSTR')
                 # Timeout = will wait X ms for operatioins to complete, see page 2-15
         self._conn.timeout = 60*60*1e3 # 1 hour
@@ -125,7 +126,7 @@ class LecroyController:
             4: Channel(4, self._conn)
         }
 
-        self.active_channels: list[Channel] = []
+        self.active_channels: List[Channel] = []
         for chnl in self.channels.values():
             if chnl.number in self.active_channel_numbers:
                 self.active_channels.append(chnl)

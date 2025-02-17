@@ -9,6 +9,7 @@ from emoji import emojize
 import logging
 
 logger = logging.getLogger("etroc_decoder")
+from typing import List
 
 def merge_words(res):
     empty_frame_mask = np.array(res[0::2]) > (2**8) # masking empty fifo entries
@@ -18,7 +19,7 @@ def merge_words(res):
     else:
         return []
 
-def converter(etroc_binary_files:list[str], verbose:bool = False, skip_trigger_check:bool = False, force:bool = False) -> akArray:
+def converter(etroc_binary_files:List[str], verbose:bool = False, skip_trigger_check:bool = False, force:bool = False) -> akArray:
     # NOTE find all files (i.e. layers) for the specified input file
     df = DataFrame('ETROC2')
     events_all_rb = []

@@ -1,4 +1,7 @@
-from yaml import load, CLoader as Loader, CDumper as Dumper
+try:
+    from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+    from yaml import Loader, Dumper
 from module_test_sw.tamalero.KCU import KCU
 from module_test_sw.tamalero.ReadoutBoard import ReadoutBoard
 from module_test_sw.tamalero.utils import get_kcu, load_yaml, header
@@ -38,7 +41,7 @@ class ETL_Telescope:
             rb.VTRX.status()
             print("--------------")
 
-    def connect_module(self, readout_board_id:int, module_select: list[list[int]]):
+    def connect_module(self, readout_board_id:int, module_select: List[List[int]]):
         """connects a module to single readout board by searching for matching id"""
         for rb in self.readout_boards:
             if readout_board_id != rb.rb:
@@ -50,13 +53,13 @@ class ETL_Telescope:
             for mod in rb.modules:
                 mod.show_status()
 
-    def configure_ETROCs(self, l1a_delay=0, offset=10, power_mode='i1', reuse_thresholds_dir: str = None):
+    def configure_ETROCs(self, l1a_delay=0, offset=10, power_mode='i1', reuse_thresholds_dir: str = None, thresholds_filename_prefix: str = None):
         for rb in self.readout_boards:
             for mod in rb.modules:
                 if mod.connected:
                     for etroc in mod.ETROCs:
                         if reuse_thresholds_dir is not None:
-                            with open(f'{reuse_thresholds_dir}/thresholds_module_{etroc.module_id}_etroc_{etroc.chip_no}.yaml', 'r') as f:
+                            with open(f'{reuse_thresholds_dir}/{thresholds_filename_prefix}thresholds_module_{etroc.module_id}_etroc_{etroc.chip_no}.yaml', 'r') as f:
                                 thresholds = load(f, Loader=Loader)
                             etroc.physics_config(
                                 offset=offset, 
@@ -104,7 +107,7 @@ class ETL_Telescope:
                 print(x)
 
     @property
-    def ETROC_temperatures(self) -> list[dict]:
+    def ETROC_temperatures(self) -> List[dict]:
         ...
 
 

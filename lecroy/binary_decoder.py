@@ -2,7 +2,7 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-
+from typing import Tuple
 class LecroyReader:
     def __init__(self, path, secondDigits = 3):
         """
@@ -96,7 +96,7 @@ class LecroyReader:
             axis=-1) 
     
     @property
-    def segment_times(self) -> tuple[np.ndarray, np.ndarray]:
+    def segment_times(self) -> Tuple[np.ndarray, np.ndarray]:
         """
         From this manual, https://cdn.teledynelecroy.com/files/manuals/wr2_rcm_revb.pdf here are some excerpts:
         On page 35, Sequence Acquisition Times block (TRIGTIME),

@@ -14,11 +14,12 @@ import time
 import os
 from multiprocessing import Pool
 from pathlib import Path
+from typing import List
 
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def consolidate_acquisition(output_file_path: str, etroc_binary_paths: list[str]=None, mcp_binary_path: str=None, clock_binary_path: str=None):
+def consolidate_acquisition(output_file_path: str, etroc_binary_paths: List[str]=None, mcp_binary_path: str=None, clock_binary_path: str=None):
     t_file_reads = time.perf_counter()
     mcp_waveform = LecroyReader(mcp_binary_path)
     clock_waveform = LecroyReader(clock_binary_path)

@@ -14,10 +14,10 @@
     l1a_delay = 14 # units ns??
     offset = 10 # vth
     power_mode = "i1"
-    #reuse_thresholds_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/thresholds"
+    thresholds_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/thresholds"
 
-[telescope_setup]
-    [[telescope_setup.service_hybrids]]
+[telescope_config]
+    [[telescope_config.service_hybrids]]
         telescope_layer = 'first'
         readout_board_id = 15
         readout_board_version = "2.2"
@@ -29,7 +29,7 @@
         LV_psu = "Siglent SPD3303X_E"
         HV_psu = "CAEN HV Power Supply"
 
-    [[telescope_setup.service_hybrids]]
+    [[telescope_config.service_hybrids]]
         telescope_layer = 'second'
         readout_board_id = 27
         readout_board_version = "2.2"
@@ -44,7 +44,7 @@
 [oscilloscope]
     name = "Teledyne LeCroy Waverunner 8104"
     ip_address = "192.168.0.6"
-    binary_data_directory = "/home/etl/Test_Stand/daq/"
+    binary_data_directory = "/home/etl/Test_Stand/daq/LecroyMount"
     sample_rate = [20, "GS/s"]
     horizontal_window = [50, "NS"]
     segment_display = "Overlay"
