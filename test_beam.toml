@@ -1,22 +1,21 @@
 [test_beam]
     name = "DESY March 2025"
-    beam_energy = 120 # GeV
     project_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/"
+    beam_energy = 120 # GeV
 
 [run_config]
     comment = "Temperature -20C at new trigger threshold"
+    num_runs = 200
+    etroc_binary_data_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/etroc_binaries"
     kcu_ip_address = "192.168.0.10"
     kcu_firmware_version = "abc123"
-    num_runs = 200
 
-    # Global ETROC configurations
-    etroc_binary_data_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/etroc_binaries"
+[telescope_config]
     l1a_delay = 14 # units ns??
     offset = 10 # vth
     power_mode = "i1"
     thresholds_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/thresholds"
 
-[telescope_config]
     [[telescope_config.service_hybrids]]
         telescope_layer = 'first'
         readout_board_id = 15

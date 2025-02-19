@@ -8,10 +8,12 @@ from module_test_sw.tamalero.utils import get_kcu, load_yaml, header
 from module_test_sw.tamalero.FIFO import FIFO
 from module_test_sw.tamalero.DataFrame import DataFrame
 from emoji import emojize
+from typing import List
+
 
 class ETL_Telescope:
     def __init__(self, kcu_ipaddress:str):
-        self.kcu = get_kcu(kcu_ipaddress, control_hub=True, verbose=True)
+        self.kcu: KCU = get_kcu(kcu_ipaddress, control_hub=True, verbose=True)
         self.readout_boards: ReadoutBoard = []
 
     def add_readout_board(self, readout_board_config:str, readout_board_id:int):
@@ -60,7 +62,7 @@ class ETL_Telescope:
                     for etroc in mod.ETROCs:
                         if reuse_thresholds_dir is not None:
                             with open(f'{reuse_thresholds_dir}/{thresholds_filename_prefix}thresholds_module_{etroc.module_id}_etroc_{etroc.chip_no}.yaml', 'r') as f:
-                                thresholds = load(f, Loader=Loader)
+                                thresholds = load_yaml(f, Loader=Loader)
                             etroc.physics_config(
                                 offset=offset, 
                                 L1Adelay=l1a_delay, 

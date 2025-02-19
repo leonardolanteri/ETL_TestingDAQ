@@ -1,11 +1,10 @@
-import subprocess
 from pathlib import Path
-from test_beam.config import TBConfig, Oscilliscope, ChannelConfig, TriggerConfig, RunConfig, TelescopeConfig
+from config import TBConfig, Oscilliscope, ChannelConfig, TriggerConfig, RunConfig, TelescopeConfig
 from functools import wraps
-from test_beam.tamalero_interface import ETL_Telescope
+from test_beam.etl_telescope import ETL_Telescope
+from test_beam.stream_daq import RunKcuStream
+
 from lecroy import LecroyController
-import time
-from typing import List
 
 def ensure_path_exists(func):
     @wraps(func)
@@ -26,7 +25,7 @@ def setup_scope(lecroy: LecroyController, scope_config: Oscilliscope):
     """
     Takes the configs and sets up and setups up the oscilliscope based on the config values
     """
-    def setup_trigger(trigger_config: TriggerConfig):
+    def setup_trigger(chnl_num:int, trigger_config: TriggerConfig):
         """Sets up trigger channel based on trigger config"""
         lecroy.set_trigger_mode(trigger_config.mode)
         lecroy.set_trigger_select(
@@ -55,85 +54,28 @@ def setup_scope(lecroy: LecroyController, scope_config: Oscilliscope):
     for chnl_num, chnl_config in scope_config.channels.items():
         setup_channel(chnl_num, chnl_config)
         if chnl_config.trigger is not None:
-            setup_trigger(chnl_config.trigger)
+            setup_trigger(chnl_num, chnl_config.trigger)
 
-# def setup_etl_telescope(etl_telescope: ETL_Telescope, run_config: RunConfig, telescope_config: TelescopeConfig, thresholds_filename_prefix: str = None):
-#     for sh in telescope_config.service_hybrids:
-#         etl_telescope.add_readout_board(sh.readout_board_config, sh.readout_board_id)
-#     etl_telescope.check_all_rb_configured()
 
-#     etl_telescope.check_VTRXs()
+def setup_etl_telescope(etl_telescope: ETL_Telescope, telescope_config: TelescopeConfig, thresholds_filename_prefix: str = None):
+    for sh in telescope_config.service_hybrids:
+        etl_telescope.add_readout_board(sh.readout_board_config, sh.readout_board_id)
+    etl_telescope.check_all_rb_configured()
 
-#     for sh in telescope_config.service_hybrids:
-#         etl_telescope.connect_module(sh.readout_board_id, sh.module_select)
+    etl_telescope.check_VTRXs()
 
-#     etl_telescope.configure_ETROCs(
-#         l1a_delay  = run_config.l1a_delay, 
-#         offset     = run_config.offset,
-#         power_mode = run_config.power_mode,
-#         reuse_thresholds_dir = run_config.thresholds_directory,
-#         thresholds_filename_prefix = thresholds_filename_prefix)
+    for sh in telescope_config.service_hybrids:
+        etl_telescope.connect_module(sh.readout_board_id, sh.module_select)
 
-#     etl_telescope.test_etroc_daq()
+    etl_telescope.configure_ETROCs(
+        l1a_delay  = telescope_config.l1a_delay, 
+        offset     = telescope_config.offset,
+        power_mode = telescope_config.power_mode,
+        reuse_thresholds_dir = telescope_config.thresholds_directory,
+        thresholds_filename_prefix = thresholds_filename_prefix)
 
-class RunKcuStream:
-    """
-    Syncs daq steps for the scope and etroc. 
-    """
-    def __init__(self, kcu_ipadress: str, readout_board_ids:List[int], project_dir: Path):
-        self.kcu_ip_address = kcu_ipadress
-        self.project_dir = project_dir
-        self.readout_board_ids = readout_board_ids
-        self.run_number_path  = project_dir / Path('etroc/next_run_number.txt')
-        self.is_scope_acquiring_path = project_dir / Path('etroc/is_scope_acquiring.txt')
+    etl_telescope.test_etroc_daq()
 
-    # These are so the flags are always set to false when entering and exiting!
-    def __enter__(self):
-        self.is_scope_acquiring = False
-        return self
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.is_scope_acquiring = False
-
-    @property
-    def etroc_daq_command(self) -> List[str]:
-        etroc_daq_script = self.project_dir / Path('etroc/daq.py')
-        return ['/usr/bin/python3', str(etroc_daq_script), 
-            '--l1a_rate', '0', 
-            '--ext_l1a', 
-            '--kcu', self.kcu_ip_address, 
-            '--rb', ",".join(self.readout_board_ids), # do comma seperated for each rb
-            '--run', str(get_run_number(self.project_dir/Path('etroc/next_run_number.txt'))), 
-            '--lock', str(self.is_scope_acquiring_path)] # lock waits for scope to be ready
-
-    def setup(self) -> None:
-        etroc_daq_process = subprocess.Popen(['/usr/bin/python3', 'etroc/test.py']) #self.etroc_daq_command
-        #etroc_daq.wait()
-        if etroc_daq_process.returncode != 0: # Check for errors
-            raise RuntimeError(f"ETROC DAQ process failed with return code {etroc_daq_process.returncode}")
-
-    @property
-    def is_scope_acquiring(self) -> bool:
-        return self.get_status(self.is_scope_acquiring_path)
-
-    @is_scope_acquiring.setter
-    def is_scope_acquiring(self, status: bool):
-        self._is_scope_acquiring = self.set_status(self.is_scope_acquiring_path, status)
-
-    @staticmethod
-    @ensure_path_exists
-    def get_status(path: Path) -> bool:
-        with open(path) as file:
-            status = file.read().strip()
-        return status == "True"
-    
-    @staticmethod
-    @ensure_path_exists
-    def set_status(path: Path, status: bool):
-        with open(path, "w") as f:
-            value = "True" if status else "False"
-            f.write(value)
-            f.truncate()
-        return value == "True"
     
 import tomli
 with open('test_beam.toml', 'rb') as f:
@@ -145,12 +87,14 @@ project_dir = tb_config.test_beam.project_directory
 run_start = get_run_number(project_dir / Path('etroc/next_run_number.txt'))
 run_stop = run_start + tb_config.run_config.num_runs
 
-# etl_telescope = ETL_Telescope(tb_config.run_config.kcu_ip_address)
-# setup_etl_telescope(
-#     etl_telescope, 
-#     tb_config.run_config, 
-#     tb_config.telescope_config, 
-#     thresholds_filename_prefix=f"runs_{run_start}_{run_stop}_")
+import os
+os.chdir('module_test_sw')
+etl_telescope = ETL_Telescope(tb_config.run_config.kcu_ip_address)
+setup_etl_telescope(
+    etl_telescope, 
+    tb_config.telescope_config, 
+    thresholds_filename_prefix=f"runs_{run_start}_{run_stop}_")
+os.chdir('..')
 
 active_channels = [chnl_num for chnl_num in scope_config.channels]
 with LecroyController(scope_config.ip_address, active_channels=active_channels) as lecroy:
