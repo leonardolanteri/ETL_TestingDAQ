@@ -7,19 +7,20 @@
     comment = "Temperature -20C at new trigger threshold"
     num_runs = 200
     etroc_binary_data_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/etroc_binaries"
-    kcu_ip_address = "192.168.0.10"
-    kcu_firmware_version = "abc123"
 
 [telescope_config]
+    kcu_ip_address = "192.168.0.10"
+    kcu_firmware_version = "abc123"
     l1a_delay = 14 # units ns??
     offset = 10 # vth
-    power_mode = "i1"
+    power_mode = "high"
     thresholds_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/thresholds"
+    reuse_thresholds = false
 
     [[telescope_config.service_hybrids]]
         telescope_layer = 'first'
-        readout_board_id = 15
-        readout_board_version = "2.2"
+        readout_board_id = 0
+        readout_board_version = "v2.2"
         readout_board_config = "modulev1"
         module_select = [[110], [], []]
         bias_voltage = 260
@@ -28,17 +29,17 @@
         LV_psu = "Siglent SPD3303X_E"
         HV_psu = "CAEN HV Power Supply"
 
-    [[telescope_config.service_hybrids]]
-        telescope_layer = 'second'
-        readout_board_id = 27
-        readout_board_version = "2.2"
-        readout_board_config = "modulev1"
-        module_select = [[], [111], []]
-        bias_voltage = 260
+    # [[telescope_config.service_hybrids]]
+    #     telescope_layer = 'second'
+    #     readout_board_id = 27
+    #     readout_board_version = "2.2"
+    #     readout_board_config = "modulev1"
+    #     module_select = [[], [111], []]
+    #     bias_voltage = 260
 
-        #Optional
-        LV_psu = "Siglent SPD3303X_E"
-        HV_psu = "CAEN HV Power Supply"
+    #     #Optional
+    #     LV_psu = "Siglent SPD3303X_E"
+    #     HV_psu = "CAEN HV Power Supply"
 
 [oscilloscope]
     name = "Teledyne LeCroy Waverunner 8104"

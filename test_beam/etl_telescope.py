@@ -2,39 +2,69 @@ try:
     from yaml import CLoader as Loader, CDumper as Dumper
 except ImportError:
     from yaml import Loader, Dumper
+
+try:
+    from config import TelescopeConfig
+except ImportError:
+    raise ImportError("Please run setup.sh for the test beam in order to set up the pathing correctly :)")
+
 from module_test_sw.tamalero.KCU import KCU
 from module_test_sw.tamalero.ReadoutBoard import ReadoutBoard
-from module_test_sw.tamalero.utils import get_kcu, load_yaml, header
 from module_test_sw.tamalero.FIFO import FIFO
 from module_test_sw.tamalero.DataFrame import DataFrame
-from emoji import emojize
-from typing import List
+from module_test_sw.tamalero import utils
+from pathlib import Path
 
+from emoji import emojize
+from typing import List, Dict
+import sys
 
 class ETL_Telescope:
-    def __init__(self, kcu_ipaddress:str):
-        self.kcu: KCU = get_kcu(kcu_ipaddress, control_hub=True, verbose=True)
-        self.readout_boards: ReadoutBoard = []
+    def __init__(self, telescope_config: TelescopeConfig, thresholds_filename_prefix:str = None):
+        self.config = telescope_config
+        self.kcu: KCU = utils.get_kcu(self.config.kcu_ip_address, control_hub=True, verbose=True)
 
-    def add_readout_board(self, readout_board_config:str, readout_board_id:int):
-        self.readout_boards.append(
-                ReadoutBoard(
-                    rb      = readout_board_id, 
-                    trigger = True, 
-                    kcu     = self.kcu, 
-                    config  = readout_board_config, 
-                    verbose = False
+        if (self.kcu == 0):
+            # if not basic connection was established the get_kcu function returns 0
+            # this would cause the RB init to fail.
+            sys.exit(1)
+        # check that the KCU is actually connected
+        data = 0xabcd1234
+        self.kcu.write_node("LOOPBACK.LOOPBACK", data)
+        if (data != self.kcu.read_node("LOOPBACK.LOOPBACK")):
+            print("No communications with KCU105... quitting")
+            sys.exit(1)
+        else:
+            print("Successful Test Communication with KCU!!")
+        self.readout_boards: Dict[int,ReadoutBoard] = {}
+
+        self.startup_readout_boards()
+        self.check_all_rb_configured()
+        self.check_VTRXs() 
+        self.connect_modules()
+        self.configure_ETROCs(thresholds_filename_prefix=thresholds_filename_prefix)
+        self.test_etroc_daq()
+
+    def startup_readout_boards(self):
+        for sh in self.config.service_hybrids:
+            self.readout_boards[sh.readout_board_id] = (
+                    ReadoutBoard(
+                        rb      = sh.readout_board_id, 
+                        trigger = True, 
+                        kcu     = self.kcu, 
+                        config  = sh.readout_board_config, 
+                        verbose = False
+                    )
                 )
-            )
 
     def check_all_rb_configured(self):
-        all_configured = all(rb.configured for rb in self.readout_boards)
-        header(configured=all_configured)
+        all_configured = all(rb.configured for rb in self.readout_boards.values())
+        utils.header(configured=all_configured)
         return all_configured
 
     def check_VTRXs(self):
         # VTRX Power Up
-        for rb in self.readout_boards:
+        for rb in self.readout_boards.values():
             print("--------------")
             rb.VTRX.get_version()
             print(f"VTRX+ Info for RB {rb.rb}")
@@ -43,26 +73,34 @@ class ETL_Telescope:
             rb.VTRX.status()
             print("--------------")
 
-    def connect_module(self, readout_board_id:int, module_select: List[List[int]]):
-        """connects a module to single readout board by searching for matching id"""
-        for rb in self.readout_boards:
-            if readout_board_id != rb.rb:
-                continue
-            moduleids = [mod_slot[0] if len(mod_slot)>0 else 0 for mod_slot in module_select]
+    def connect_modules(self):
+        for sh in self.config.service_hybrids:
+            rb = self.readout_boards[sh.readout_board_id]
+            moduleids = [mod_slot[0] if len(mod_slot)>0 else 0 for mod_slot in sh.module_select]
             print(moduleids)
             rb.connect_modules(moduleids=moduleids)
 
             for mod in rb.modules:
                 mod.show_status()
 
-    def configure_ETROCs(self, l1a_delay=0, offset=10, power_mode='i1', reuse_thresholds_dir: str = None, thresholds_filename_prefix: str = None):
-        for rb in self.readout_boards:
+    def configure_ETROCs(self, thresholds_filename_prefix: str = None):
+        thresholds_dir = self.config.thresholds_directory
+
+        thresholds_filename_prefix = thresholds_filename_prefix
+        offset = self.config.offset
+        l1a_delay = self.config.l1a_delay
+        power_mode = self.config.power_mode
+        for rb in self.readout_boards.values():
             for mod in rb.modules:
                 if mod.connected:
                     for etroc in mod.ETROCs:
-                        if reuse_thresholds_dir is not None:
-                            with open(f'{reuse_thresholds_dir}/{thresholds_filename_prefix}thresholds_module_{etroc.module_id}_etroc_{etroc.chip_no}.yaml', 'r') as f:
-                                thresholds = load_yaml(f, Loader=Loader)
+                        if self.config.reuse_thresholds:
+                            filename = Path(f'{thresholds_filename_prefix}thresholds_module_{etroc.module_id}_etroc_{etroc.chip_no}.yaml')
+                            thresholds_file = thresholds_dir/filename
+                            if not thresholds_file.exists():
+                                raise FileNotFoundError("These thresholds you chose do not exist, please update the config switching the reuse thresholds flag to False to perform a threhold scan")
+                            with open(thresholds_file, 'r') as f:
+                                thresholds = utils.load_yaml(f, Loader=Loader)
                             etroc.physics_config(
                                 offset=offset, 
                                 L1Adelay=l1a_delay, 
@@ -74,7 +112,7 @@ class ETL_Telescope:
                                 offset = offset, 
                                 L1Adelay = l1a_delay, 
                                 thresholds = None, # this runs a threshold scan and saves it to outdir
-                                out_dir = reuse_thresholds_dir, 
+                                out_dir = thresholds_dir, 
                                 powerMode = power_mode)
                     for etroc in mod.ETROCs:
                         etroc.reset()
@@ -85,7 +123,7 @@ class ETL_Telescope:
         """
         # fifos
         fifos: list[FIFO] = []
-        for rb in self.readout_boards:
+        for rb in self.readout_boards.values():
             fifos.append(FIFO(rb))
 
         df = DataFrame("ETROC2")
@@ -95,7 +133,7 @@ class ETL_Telescope:
             fifo.reset()
 
         # Reset ETROCS
-        for rb in self.readout_boards:
+        for rb in self.readout_boards.values():
             for mod in rb.modules:
                 for etroc in mod.ETROCs:
                     etroc.reset()

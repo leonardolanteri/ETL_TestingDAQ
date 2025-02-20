@@ -34,11 +34,8 @@ class TestBeam(BaseModel):
 
 class RunConfig(BaseModel):
     comment: Optional[str] = Field(None, strip_whitespace=True)
-    kcu_ip_address: IPvAnyAddress
-    kcu_firmware_version: Optional[str] = Field(None, strip_whitespace=True)
     etroc_binary_data_directory: DirectoryPath
     num_runs: int 
-
 
 class ServiceHybrid(BaseModel):
     telescope_layer: Literal['first', 'second', 'third'] = Field(..., description="Which gets hit by the beam first, second, third. ")
@@ -66,11 +63,15 @@ class ServiceHybrid(BaseModel):
         return layer
     
 class TelescopeConfig(BaseModel):
+    kcu_ip_address: IPvAnyAddress
+    kcu_firmware_version: Optional[str] = Field(None, strip_whitespace=True)
     service_hybrids: List[ServiceHybrid]
     l1a_delay: int
     offset: Union[int, Literal['auto']]
-    power_mode: str = Field(..., strip_whitespace=True, description="Power mode of the etroc")
+    power_mode: Literal['default','low', 'medium','high'] = Field(..., strip_whitespace=True, description="Power mode of the etroc, they are 'i4','i3','i2','i1' respectively.")
     thresholds_directory: DirectoryPath
+    reuse_thresholds: bool
+
     @field_validator('service_hybrids', mode='after')
     @classmethod
     def layers_are_unique(cls, service_hybrids: List[ServiceHybrid]) -> List[ServiceHybrid]:
