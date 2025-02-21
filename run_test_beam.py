@@ -10,6 +10,8 @@ from config import TBConfig, Oscilliscope, ChannelConfig, TriggerConfig, RunConf
 from functools import wraps
 from test_beam.etl_telescope import ETL_Telescope
 from lecroy import LecroyController
+from test_beam.etl_telescope import KcuStream
+import time
 
 def ensure_path_exists(func):
     @wraps(func)
@@ -83,17 +85,23 @@ active_channels = [chnl_num for chnl_num in scope_config.channels]
 with LecroyController(scope_config.ip_address, active_channels=active_channels) as lecroy:
     setup_scope(lecroy, scope_config)
     
-    #beam_on = input("Need somebody to turn the beam on! Is it on? (y/n/abort)")
+    beam_on = input("Need somebody to turn the beam on! Is it on? (y/n/abort)")
+    kcu_ip_address = tb_config.telescope_config.kcu_ip_address
+    rb_ids = list(etl_telescope.readout_boards.keys())
+    binary_dir = tb_config.telescope_config.etroc_binary_data_directory
+    with KcuStream(kcu_ip_address, rb_ids, project_dir, binary_dir) as kcu_stream:
+        kcu_stream.startup()
+        #allow for all the streams to reach the locked point
+        # I dont like this logic, could instead let kcu stream know when all are ready!
+        # or import and set up the streams in here!
 
-    # with RunKcuStream(tb_config) as kcu_stream:
-    #     kcu_stream.setup()
-    #     #allow for all the streams to reach the locked point
-    #     # I dont like this logic, could instead let kcu stream know when all are ready!
-    #     # or import and set up the streams in here!
-    #     time.sleep(3) 
-    #     kcu_stream.is_scope_acquiring = True
-    #     lecroy.do_acquisition()
-
+        print("sleeping for 5 seconds to make sure processes are done!")
+        time.sleep(1) 
+        kcu_stream.is_scope_acquiring = True # this should make all the streams go zoom
+        print("Starting Scope acquisition!")
+        lecroy.do_acquisition()
+        for chnl in lecroy.channels.values(): # These are the active channels :)
+            chnl.save(run_start)
     # need to output to csv with information
 
 

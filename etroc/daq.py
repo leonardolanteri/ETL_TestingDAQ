@@ -4,6 +4,12 @@ import os
 import uhal
 import argparse
 import time
+import sys
+# This is very important, sometimes the python path gets confused
+for py_path in sys.path:
+    if "module_test_sw" in py_path and "ETL_TestingDAQ" not in py_path:
+        print("COME ON MAN!!! the yucky is in there!")
+        sys.path.remove("/home/etl/Test_Stand/module_test_sw")
 from module_test_sw.tamalero.utils import get_kcu
 from yaml import load, dump
 try:
@@ -61,7 +67,7 @@ def get_occupancy(hw, rb):
         occ = 0
     return occ * 4  # not sure where the factor of 4 comes from, but it's needed
 
-def stream_daq(kcu=None, rb=0, l1a_rate=0, run_time=10, n_events=1000, superblock=100, block=128, run=1, ext_l1a=False, lock=None, verbose=False):
+def stream_daq(binary_dir:str="./", kcu=None, rb=0, l1a_rate=0, run_time=10, n_events=1000, superblock=100, block=128, run=1, ext_l1a=False, lock=None, verbose=False):
     uhal.disableLogging()
     hw = kcu.hw
     rate_setting = l1a_rate / 25E-9 / (0xffffffff) * 10000
@@ -93,8 +99,8 @@ def stream_daq(kcu=None, rb=0, l1a_rate=0, run_time=10, n_events=1000, superbloc
     len_data = 0
     data = []
     occupancy = 0
-    f_out = f"ETROC_output/output_run_{run}_rb{rb}.dat"
-    log_out = f"ETROC_output/log_run_{run}_rb{rb}.yaml"
+    f_out = os.path.join(binary_dir, f"output_run_{run}_rb{rb}.dat")
+    log_out = os.path.join(binary_dir, f"log_run_{run}_rb{rb}.yaml")
     #f_out = f"output/output_rb_{rb}_run_{run}_time_{start}.dat"  # USED TO BE THIS, keeping for reference and debugging
     occupancy_block = []
     reads = []
@@ -105,7 +111,7 @@ def stream_daq(kcu=None, rb=0, l1a_rate=0, run_time=10, n_events=1000, superbloc
             Running = get_kcu_flag(lock=lock)
             while (Running.lower() == "false" or Running.lower() == "stop"):
                 if iteration == 0:
-                    print("Waiting for the start command.")
+                    print(f"Waiting for the start command for {rb=}")
                 Running = get_kcu_flag(lock=lock)
                 iteration += 1
 
@@ -254,6 +260,8 @@ if __name__ == '__main__':
     argParser.add_argument('--n_events', action='store', default=1000, type=int, help="N events")
     argParser.add_argument('--lock', action='store', default=None, help="Lock file for the scope acquisition status (relative or absolute path)")
     argParser.add_argument('--run', action='store', default=1, type=int, help="Run number")
+    argParser.add_argument('--binary_dir', action='store', type=str, help="The directory for where to store the binaries.")
+
     args = argParser.parse_args()
 
     start_time = time.time()
@@ -289,6 +297,7 @@ if __name__ == '__main__':
             stream_daq_multi(
                 stream_daq,
                 {
+                    'binary_dir': args.binary_dir,
                     'kcu':kcu,
                     'rb':rb,
                     'l1a_rate':args.l1a_rate,

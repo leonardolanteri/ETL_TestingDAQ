@@ -34,12 +34,11 @@ class TestBeam(BaseModel):
 
 class RunConfig(BaseModel):
     comment: Optional[str] = Field(None, strip_whitespace=True)
-    etroc_binary_data_directory: DirectoryPath
     num_runs: int 
 
 class ServiceHybrid(BaseModel):
     telescope_layer: Literal['first', 'second', 'third'] = Field(..., description="Which gets hit by the beam first, second, third. ")
-    readout_board_id: int
+    readout_board_id: Literal[0,1,2] = Field(..., description="This id corresponds to how the rb is connected to the KCU. 1 and 2 mean via the firely while 0 means via SFP cages.")
     readout_board_version: Optional[str] = Field(..., strip_whitespace=True, description="The pcb board version")
     readout_board_config: str = Field(..., strip_whitespace=True, description="This is the readoutout board configuration, called type due to naming convention in module_test_sw. The rb configs have the format: module_test_sw/configs/<type>_<version>.yaml")
     module_select: List[List[int]] = Field(..., description="modules have to be an integer due to the way the chip id is set for etrocs. See tamalero/Module.py line 57")
@@ -71,6 +70,7 @@ class TelescopeConfig(BaseModel):
     power_mode: Literal['default','low', 'medium','high'] = Field(..., strip_whitespace=True, description="Power mode of the etroc, they are 'i4','i3','i2','i1' respectively.")
     thresholds_directory: DirectoryPath
     reuse_thresholds: bool
+    etroc_binary_data_directory: DirectoryPath
 
     @field_validator('service_hybrids', mode='after')
     @classmethod
