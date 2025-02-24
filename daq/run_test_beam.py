@@ -77,7 +77,6 @@ project_dir = tb_config.test_beam.project_directory
 run_start = get_run_number(project_dir / Path('daq/static/next_run_number.txt'))
 run_stop = run_start + tb_config.run_config.num_runs
 
-
 scope_config = tb_config.oscilloscope
 active_channels = [chnl_num for chnl_num in scope_config.channels]
 with LecroyController(scope_config.ip_address, active_channels=active_channels) as lecroy:
@@ -103,6 +102,9 @@ with LecroyController(scope_config.ip_address, active_channels=active_channels) 
         lecroy.do_acquisition()
         for chnl in lecroy.channels.values(): # These are the active channels :)
             chnl.save(run_start)
+            # need a way to wait for save??
+            time.sleep(2)
+
     # need to output to csv with information
 
 
