@@ -8,9 +8,9 @@ for py_path in sys.path:
 from pathlib import Path
 from config import TBConfig, Oscilliscope, ChannelConfig, TriggerConfig, RunConfig, TelescopeConfig
 from functools import wraps
-from test_beam.etl_telescope import ETL_Telescope
-from lecroy import LecroyController
-from test_beam.etl_telescope import KcuStream
+from etl_telescope import ETL_Telescope
+from lecroy_controller import LecroyController
+from etl_telescope import KcuStream
 import time
 
 def ensure_path_exists(func):
@@ -69,22 +69,23 @@ def setup_scope(lecroy: LecroyController, scope_config: Oscilliscope):
 ################################################################################################################################
 
 import tomli
-with open('test_beam.toml', 'rb') as f:
+with open('../test_beam.toml', 'rb') as f:
     data = tomli.load(f)
 tb_config = TBConfig.model_validate(data)
 
 project_dir = tb_config.test_beam.project_directory
-run_start = get_run_number(project_dir / Path('etroc/next_run_number.txt'))
+run_start = get_run_number(project_dir / Path('daq/static/next_run_number.txt'))
 run_stop = run_start + tb_config.run_config.num_runs
 
-# initializes the electronics!
-etl_telescope = ETL_Telescope(tb_config.telescope_config, thresholds_filename_prefix=f"Run_{run_start}_{run_stop}_")
 
 scope_config = tb_config.oscilloscope
 active_channels = [chnl_num for chnl_num in scope_config.channels]
 with LecroyController(scope_config.ip_address, active_channels=active_channels) as lecroy:
+    # initializes the electronics!
+    etl_telescope = ETL_Telescope(tb_config.telescope_config, thresholds_filename_prefix=f"Run_{run_start}_{run_stop}_")
+
     setup_scope(lecroy, scope_config)
-    
+    lecroy.stop_acquistion() # FIXME: Somehow acquisiton starts after setup (could be after initalization, but I doubt it!)
     beam_on = input("Need somebody to turn the beam on! Is it on? (y/n/abort)")
     kcu_ip_address = tb_config.telescope_config.kcu_ip_address
     rb_ids = list(etl_telescope.readout_boards.keys())

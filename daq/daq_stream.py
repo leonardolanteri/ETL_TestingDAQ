@@ -17,7 +17,7 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 
-here = os.path.dirname(os.path.abspath(__file__))
+static_dir = os.path.dirname(os.path.abspath(__file__)) + "/static"
 
 class MultiThread:
     def __init__(self, fun, args):
@@ -45,14 +45,14 @@ def stream_daq_multi(fun, args):
     t.start()
     return mon
 
-def get_kcu_flag(lock=os.path.expandvars(f'{here}/running_acquitision.txt')):
+def get_kcu_flag(lock=os.path.expandvars(f'{static_dir}/running_acquitision.txt')):
     # NOTE where to put the locks?
     with open(lock) as f:
         res = f.read()
     return res.rstrip()
     #return open(f"/home/daq/ETROC2_Test_Stand/ScopeHandler/Lecroy/Acquisition/running_acquitision.txt").read()
 
-def write_run_done(log=os.path.expandvars(here+'/daq_log.txt'), run=0):
+def write_run_done(log=os.path.expandvars(static_dir+'/daq_log.txt'), run=0):
     with open(log, 'a') as f:
         f.write(f'{run}\n')
     return run

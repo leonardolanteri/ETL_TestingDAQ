@@ -1,6 +1,6 @@
 from typing import List, Optional, Literal, Dict, Any, Tuple, Union
 from pydantic import BaseModel, Field, FilePath, DirectoryPath, IPvAnyAddress, model_validator, field_validator
-from lecroy.controller import (
+from daq.lecroy_controller import (
     # if you had another scope you could duck type these units :)
     SegmentDisplayMode,
     SampleMode,

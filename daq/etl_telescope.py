@@ -180,8 +180,8 @@ class KcuStream:
         self.project_dir = project_dir
         self.binary_dir = binary_dir
         self.readout_board_ids = readout_board_ids
-        self.run_number_path  = project_dir / Path('etroc/next_run_number.txt')
-        self.is_scope_acquiring_path = project_dir / Path('etroc/is_scope_acquiring.txt')
+        self.run_number_path  = project_dir / Path('daq/static/next_run_number.txt')
+        self.is_scope_acquiring_path = project_dir / Path('daq/static/is_scope_acquiring.txt')
         self.etroc_daq_process = None
     # These are so the flags are always set to false when entering and exiting!
     def __enter__(self):
@@ -195,19 +195,19 @@ class KcuStream:
 
     @property
     def etroc_daq_command(self) -> List[str]:
-        etroc_daq_script = self.project_dir / Path('etroc/daq.py')
+        etroc_daq_script = self.project_dir / Path('daq/daq_stream.py')
         print(str(etroc_daq_script))
         print(str(self.binary_dir))
         print(self.kcu_ip_address)
         print(",".join(map(str,self.readout_board_ids)))
-        print(str(get_run_number(self.project_dir/Path('etroc/next_run_number.txt'))))
+        print(str(get_run_number(self.project_dir/Path('daq/static/next_run_number.txt'))))
         print(str(self.is_scope_acquiring_path))
         return ['python', str(etroc_daq_script), 
             '--l1a_rate', '0', 
             '--ext_l1a', 
             '--kcu', str(self.kcu_ip_address), 
             '--rb', ",".join(map(str,self.readout_board_ids)), # do comma seperated for each rb
-            '--run', str(get_run_number(self.project_dir/Path('etroc/next_run_number.txt'))), 
+            '--run', str(get_run_number(self.project_dir/Path('daq/static/next_run_number.txt'))), 
             '--lock', str(self.is_scope_acquiring_path),# lock waits for scope to be ready
             '--binary_dir', str(self.binary_dir)
             ] 
