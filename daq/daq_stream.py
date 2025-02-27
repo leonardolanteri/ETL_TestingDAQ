@@ -12,10 +12,6 @@ for py_path in sys.path:
         sys.path.remove("/home/etl/Test_Stand/module_test_sw")
 from module_test_sw.tamalero.utils import get_kcu
 from yaml import load, dump
-try:
-    from yaml import CLoader as Loader, CDumper as Dumper
-except ImportError:
-    from yaml import Loader, Dumper
 
 class MultiThread:
     def __init__(self, fun, args):

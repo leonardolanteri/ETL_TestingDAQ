@@ -124,6 +124,11 @@ class RunDaqStreamPY:
     def launch(self) -> None:
         """Launches the daq_stream.py which streams the data from the KCU."""
         self.stream_daq_process = subprocess.Popen(self.stream_daq_command) 
+    def wait(self) -> None:
+        if self.stream_daq_process is not None: #just in case
+            self.stream_daq_process.wait()
+        else:
+            print("DAQ stream subprocess completed or never started")
 
     @property
     def is_scope_acquiring(self) -> bool:
@@ -171,7 +176,7 @@ daq_dir = project_dir / Path('daq')
 run_start = get_run_number(daq_dir / Path('static/next_run_number.txt'))
 run_stop = run_start + tb_config.run_config.num_runs
 print(f"Starting runs: {run_start} to {run_stop}")
-
+from datetime import datetime
 scope_config = tb_config.oscilloscope
 scope_ip = scope_config.ip_address
 active_channels = [chnl_num for chnl_num in scope_config.channels]
@@ -190,9 +195,15 @@ with LecroyController(scope_ip, active_channels=active_channels) as lecroy, RunD
         time.sleep(0.2) 
 
     print("Starting Scope acquisition!")
+
     daq_stream.is_scope_acquiring = True # Starts all daq streams
+    # 6 microseconds of delay between DAQ Stream starting and lecroy acq starting
     lecroy.do_acquisition() # this hangs until acquisition is done.
     for chnl in lecroy.channels.values():
         chnl.save(run_start)
-        # need a way to wait for save?? -> look for files to exist??
-        time.sleep(2)
+    
+    # IMPORTANT: without this line the daq_stream.py gets killed on exit of program
+    daq_stream.wait()
+
+    # this is sort of dangerous as soon as it exits daq_stream is killed and conn to lecroy is closed
+    time.sleep(2)
