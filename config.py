@@ -38,7 +38,8 @@ class RunConfig(BaseModel):
 
 class ServiceHybrid(BaseModel):
     telescope_layer: Literal['first', 'second', 'third'] = Field(..., description="Which gets hit by the beam first, second, third. ")
-    readout_board_id: Literal[0,1,2] = Field(..., description="This id corresponds to how the rb is connected to the KCU. 1 and 2 mean via the firely while 0 means via SFP cages.")
+    readout_board_name: str = Field(None, strip_whitespace=True)
+    rb: Literal[0,1,2] = Field(..., description="This is the same rb in module_test_sw corresponds to how the rb is connected to the KCU. 1 and 2 mean via the firely while 0 means via SFP cages.")
     readout_board_version: Optional[str] = Field(..., strip_whitespace=True, description="The pcb board version")
     readout_board_config: str = Field(..., strip_whitespace=True, description="This is the readoutout board configuration, called type due to naming convention in module_test_sw. The rb configs have the format: module_test_sw/configs/<type>_<version>.yaml")
     module_select: List[List[int]] = Field(..., description="modules have to be an integer due to the way the chip id is set for etrocs. See tamalero/Module.py line 57")
@@ -83,7 +84,7 @@ class TelescopeConfig(BaseModel):
     @field_validator('service_hybrids', mode='after')
     @classmethod
     def readout_boards_are_unique(cls, service_hybrids: List[ServiceHybrid]) -> List[ServiceHybrid]:
-        readout_boards = [sh.readout_board_id for sh in service_hybrids]
+        readout_boards = [sh.rb for sh in service_hybrids]
         if not all_unique(readout_boards):
             raise ValueError(f"COME ON MAN! Detected multiple readout boards with the same name, they should be unique! Your input: {readout_boards}")
         return service_hybrids

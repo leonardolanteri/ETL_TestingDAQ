@@ -10,22 +10,13 @@ from config import TBConfig, Oscilliscope, ChannelConfig, TriggerConfig, RunConf
 from functools import wraps
 from etl_telescope import ETL_Telescope
 from lecroy_controller import LecroyController
-from etl_telescope import KcuStream
 import time
 
-def ensure_path_exists(func):
-    @wraps(func)
-    def wrapper(path: Path, *args, **kwargs):
-        if not path.exists():
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.touch(exist_ok=True)
-        return func(path, *args, **kwargs)
-    return wrapper
-
-def get_run_number(run_number_path: Path):
-    with open(run_number_path, 'r') as file:
-        run_number = file.read().strip()
-    return int(run_number)
+from pathlib import Path
+from functools import wraps
+import subprocess
+from emoji import emojize
+from typing import List
 
 #---------------- SETUPs BASED ON CONFIG --------------------------#
 def setup_scope(lecroy: LecroyController, scope_config: Oscilliscope):
@@ -63,6 +54,107 @@ def setup_scope(lecroy: LecroyController, scope_config: Oscilliscope):
         if chnl_config.trigger is not None:
             setup_trigger(chnl_num, chnl_config.trigger)
 
+def ensure_path_exists(func):
+    @wraps(func)
+    def wrapper(path: Path, *args, **kwargs):
+        if not path.exists():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.touch(exist_ok=True)
+        return func(path, *args, **kwargs)
+    return wrapper
+
+def get_run_number(run_number_path: Path):
+    with open(run_number_path, 'r') as file:
+        run_number = file.read().strip()
+    return int(run_number)
+
+
+class RunDaqStreamPY:
+    """Runs the daq_stream.py script in a safe pythonic manner"""
+    def __init__(self, telescope_config: TelescopeConfig, daq_dir: Path):
+        self.telescope_config = telescope_config
+        self.kcu_ip_address = self.telescope_config.kcu_ip_address
+        self.rbs = [sh.rb for sh in self.telescope_config.service_hybrids]
+        self.stream_daq_process = None
+
+        # Paths
+        self.daq_dir = daq_dir
+        if not self.daq_dir.is_dir():
+            raise ValueError(f"This {self.daq_dir} was not found or is not a directory.")
+        
+        self.static_dir              = self.daq_dir / Path('static')
+        self.daq_stream_path         = self.daq_dir / Path("daq_stream.py")
+        self.run_number_path         = self.static_dir / Path('next_run_number.txt')
+        self.is_scope_acquiring_path = self.static_dir / Path('is_scope_acquiring.txt')
+        self.binary_dir = self.telescope_config.etroc_binary_data_directory
+
+        self.is_rb_ready_paths = [self.static_dir/Path(f'is_rb_{rb}_ready.txt') for rb in self.rbs]
+
+    # These are so the flags are always set to false when entering and exiting!
+    def __enter__(self):
+        # Start all statuses to False
+        self.is_scope_acquiring = False
+        for is_rb_ready_path in self.is_rb_ready_paths:
+            self.set_status(is_rb_ready_path, False)
+        return self
+    
+    def __exit__(self, exc_type, exc_value, traceback):
+        # Return all statuses to False
+        self.is_scope_acquiring = False
+        for is_rb_ready_path in self.is_rb_ready_paths:
+            self.set_status(is_rb_ready_path, False)
+
+        # this makse sure to kill the process if a bug happens!    
+        if self.stream_daq_process is not None: # hand checked this becomes None once completed
+            self.stream_daq_process.kill()
+
+    @property
+    def stream_daq_command(self) -> List[str]:
+        return ['python', str(self.daq_stream_path), 
+            '--l1a_rate', '0', 
+            '--ext_l1a', 
+            '--kcu', str(self.kcu_ip_address), 
+            '--rb', ",".join(map(str,self.rbs)),
+            '--run', str(get_run_number(self.run_number_path)), 
+            '--lock', str(self.is_scope_acquiring_path), # lock waits for scope to be ready
+            '--binary_dir', str(self.binary_dir),
+            '--daq_static_dir', str(self.static_dir),
+        ] 
+
+    def launch(self) -> None:
+        """Launches the daq_stream.py which streams the data from the KCU."""
+        self.stream_daq_process = subprocess.Popen(self.stream_daq_command) 
+
+    @property
+    def is_scope_acquiring(self) -> bool:
+        return self.get_status(self.is_scope_acquiring_path)
+    @is_scope_acquiring.setter
+    def is_scope_acquiring(self, status: bool):
+        self._is_scope_acquiring = self.set_status(self.is_scope_acquiring_path, status)
+
+    @staticmethod
+    @ensure_path_exists
+    def get_status(path: Path) -> bool:
+        with open(path) as file:
+            status = file.read().strip()
+        if status == "":
+            raise ValueError("No status, is an empty string, please start it in the False state, by typing False into the text file.")
+        elif status not in ["True", "False"]:
+            raise ValueError(f"Status (your_status=\"{status}\") was found to not be \"True\" or \"False\", please check code that sets the status here and in .")
+        return status == "True"
+    
+    @staticmethod
+    @ensure_path_exists
+    def set_status(path: Path, status: bool):
+        with open(path, "w") as f:
+            value = "True" if status else "False"
+            f.write(value)
+            f.truncate()
+        return value == "True"
+
+    @property
+    def rbs_are_ready(self) -> bool:
+        return all(self.get_status(p) for p in self.is_rb_ready_paths)
 
 ################################################################################################################################
 ################################-------------START OF TEST BEAM ROUTINE-------------############################################
@@ -72,45 +164,35 @@ import tomli
 with open('../test_beam.toml', 'rb') as f:
     data = tomli.load(f)
 tb_config = TBConfig.model_validate(data)
-
+telescope_config = tb_config.telescope_config
 project_dir = tb_config.test_beam.project_directory
-run_start = get_run_number(project_dir / Path('daq/static/next_run_number.txt'))
+daq_dir = project_dir / Path('daq')
+
+run_start = get_run_number(daq_dir / Path('static/next_run_number.txt'))
 run_stop = run_start + tb_config.run_config.num_runs
+print(f"Starting runs: {run_start} to {run_stop}")
 
 scope_config = tb_config.oscilloscope
+scope_ip = scope_config.ip_address
 active_channels = [chnl_num for chnl_num in scope_config.channels]
-with LecroyController(scope_config.ip_address, active_channels=active_channels) as lecroy:
-    # initializes the electronics!
-    etl_telescope = ETL_Telescope(tb_config.telescope_config, thresholds_filename_prefix=f"Run_{run_start}_{run_stop}_")
-
+with LecroyController(scope_ip, active_channels=active_channels) as lecroy, RunDaqStreamPY(telescope_config, daq_dir) as daq_stream:
+    etl_telescope = ETL_Telescope(telescope_config, thresholds_filename_prefix=f"Run_{run_start}_{run_stop}_")
     setup_scope(lecroy, scope_config)
-    lecroy.stop_acquistion() # FIXME: Somehow acquisiton starts after setup (could be after initalization, but I doubt it!)
+    lecroy.stop_acquistion() # Needed for some reason after setup, it seems to begin triggering, stops when calling do_acquisition again though
+
+    ### here is where we would start loop of n runs
+
     beam_on = input("Need somebody to turn the beam on! Is it on? (y/n/abort)")
-    kcu_ip_address = tb_config.telescope_config.kcu_ip_address
-    rb_ids = list(etl_telescope.readout_boards.keys())
-    binary_dir = tb_config.telescope_config.etroc_binary_data_directory
-    with KcuStream(kcu_ip_address, rb_ids, project_dir, binary_dir) as kcu_stream:
-        kcu_stream.startup()
-        #allow for all the streams to reach the locked point
-        # I dont like this logic, could instead let kcu stream know when all are ready!
-        # or import and set up the streams in here!
+    daq_stream.launch() # WILL WAIT UNTIL daq_stream.is_scope_acquiring is set
 
-        print("sleeping for 5 seconds to make sure processes are done!")
-        time.sleep(1) 
-        kcu_stream.is_scope_acquiring = True # this should make all the streams go zoom
-        print("Starting Scope acquisition!")
-        lecroy.do_acquisition()
-        for chnl in lecroy.channels.values(): # These are the active channels :)
-            chnl.save(run_start)
-            # need a way to wait for save??
-            time.sleep(2)
+    print("Waiting for streams to be ready...")
+    while not daq_stream.rbs_are_ready:
+        time.sleep(0.2) 
 
-    # need to output to csv with information
-
-
-# Test Start Up
-# -> verify it works atleat runs etc...
-# First check thresholds are saved correctly
-
-
-# Do threshold scan, set thresholds at baseline
+    print("Starting Scope acquisition!")
+    daq_stream.is_scope_acquiring = True # Starts all daq streams
+    lecroy.do_acquisition() # this hangs until acquisition is done.
+    for chnl in lecroy.channels.values():
+        chnl.save(run_start)
+        # need a way to wait for save?? -> look for files to exist??
+        time.sleep(2)

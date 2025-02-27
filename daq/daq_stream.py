@@ -17,8 +17,6 @@ try:
 except ImportError:
     from yaml import Loader, Dumper
 
-static_dir = os.path.dirname(os.path.abspath(__file__)) + "/static"
-
 class MultiThread:
     def __init__(self, fun, args):
         self._running = True
@@ -45,17 +43,21 @@ def stream_daq_multi(fun, args):
     t.start()
     return mon
 
-def get_kcu_flag(lock=os.path.expandvars(f'{static_dir}/running_acquitision.txt')):
+def get_kcu_flag(lock_path: str):
+    """Lock path is the path to the file that prevents the daq from streaming"""
     # NOTE where to put the locks?
-    with open(lock) as f:
+    with open(lock_path) as f:
         res = f.read()
     return res.rstrip()
-    #return open(f"/home/daq/ETROC2_Test_Stand/ScopeHandler/Lecroy/Acquisition/running_acquitision.txt").read()
 
-def write_run_done(log=os.path.expandvars(static_dir+'/daq_log.txt'), run=0):
-    with open(log, 'a') as f:
+def write_run_done(log_path:str, run=0):
+    with open(log_path, 'a') as f:
         f.write(f'{run}\n')
     return run
+
+def write_rb_is_ready(path:str):
+    with open(path, 'w') as f:
+        f.write("True")
 
 def get_occupancy(hw, rb):
     try:
@@ -67,7 +69,7 @@ def get_occupancy(hw, rb):
         occ = 0
     return occ * 4  # not sure where the factor of 4 comes from, but it's needed
 
-def stream_daq(binary_dir:str="./", kcu=None, rb=0, l1a_rate=0, run_time=10, n_events=1000, superblock=100, block=128, run=1, ext_l1a=False, lock=None, verbose=False):
+def stream_daq(binary_dir:str="./", daq_static_dir:str="",kcu=None, rb=0, l1a_rate=0, run_time=10, n_events=1000, superblock=100, block=128, run=1, ext_l1a=False, lock=None, verbose=False):
     uhal.disableLogging()
     hw = kcu.hw
     rate_setting = l1a_rate / 25E-9 / (0xffffffff) * 10000
@@ -108,17 +110,18 @@ def stream_daq(binary_dir:str="./", kcu=None, rb=0, l1a_rate=0, run_time=10, n_e
         if lock is not None:
             # External lock file based DAQ
             iteration = 0
-            Running = get_kcu_flag(lock=lock)
+            Running = get_kcu_flag(lock_path=lock)
             while (Running.lower() == "false" or Running.lower() == "stop"):
                 if iteration == 0:
+                    write_rb_is_ready(daq_static_dir+f"/is_rb_{rb}_ready.txt")
                     print(f"Waiting for the start command for {rb=}")
-                Running = get_kcu_flag(lock=lock)
+                Running = get_kcu_flag(lock_path=lock)
                 iteration += 1
 
             print("Start data taking")
-            Running = get_kcu_flag(lock=lock)
+            Running = get_kcu_flag(lock_path=lock)
             while (Running.lower() != "false" and Running.lower() != "stop"):
-                Running = get_kcu_flag(lock=lock)
+                Running = get_kcu_flag(lock_path=lock)
                 num_blocks_to_read = 0
                 occupancy = get_occupancy(hw, rb)
                 num_blocks_to_read = occupancy // block
@@ -246,7 +249,7 @@ def stream_daq(binary_dir:str="./", kcu=None, rb=0, l1a_rate=0, run_time=10, n_e
         dump(log, f)
 
     print(f"Data stored in {f_out}\n")
-    write_run_done(run=run)
+    write_run_done(daq_static_dir+"/daq_log.txt",run=run)
 
     return f_out
 
@@ -261,6 +264,7 @@ if __name__ == '__main__':
     argParser.add_argument('--lock', action='store', default=None, help="Lock file for the scope acquisition status (relative or absolute path)")
     argParser.add_argument('--run', action='store', default=1, type=int, help="Run number")
     argParser.add_argument('--binary_dir', action='store', type=str, help="The directory for where to store the binaries.")
+    argParser.add_argument('--daq_static_dir', action='store', type=str, help="The dir for daq where all the static log and status text files live.")
 
     args = argParser.parse_args()
 
@@ -269,6 +273,8 @@ if __name__ == '__main__':
     kcu = get_kcu(args.kcu)
 
     rbs = [int(x) for x in args.rb.split(',')]
+    if len(rbs) > 3:
+        raise ValueError("Code currently does not support more than 3 readout boards")
 
     # scanning the RBs can cause problems with the trigger link, not exactly sure why.
     # therefore, it's safer to just give a list of RBs that are connected
@@ -298,6 +304,7 @@ if __name__ == '__main__':
                 stream_daq,
                 {
                     'binary_dir': args.binary_dir,
+                    'daq_static_dir': args.daq_static_dir,
                     'kcu':kcu,
                     'rb':rb,
                     'l1a_rate':args.l1a_rate,
