@@ -11,7 +11,10 @@ The project is split up into 3 parts:
 * **ETL_TestingDAQ/processing**
     * Contains code for deconding the binaries, merging them into a root file and exporting/backing up the data
 * **ETL_TestingDAQ/monitoring**
-    * Contains code for monitoring the test beam setup (e.g. high voltage supply monitor that will check the HV and could even turn it off or notify if leakage current is getting dangerous)
+    * Contains code for monitoring the test beam setup for example,
+        * A high voltage supply monitor that will check the HV and could even turn it off or notify if leakage current is getting dangerous
+        * DAQ monitor that looks at hit maps, clock distrobutions, etc...
+        * Temperature monitor 
 
 ### module_test_sw
 We use the tamalero API to interact with the boards. It is a git submodule for this project and is crucial for configuration of the front end electronics. See `daq/etl_telescope.py` for how it is used here!
