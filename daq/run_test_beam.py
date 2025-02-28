@@ -124,7 +124,8 @@ class RunDaqStreamPY:
     def launch(self) -> None:
         """Launches the daq_stream.py which streams the data from the KCU."""
         self.stream_daq_process = subprocess.Popen(self.stream_daq_command) 
-    def wait(self) -> None:
+
+    def wait_til_done(self) -> None:
         if self.stream_daq_process is not None: #just in case
             self.stream_daq_process.wait()
         else:
@@ -185,25 +186,22 @@ with LecroyController(scope_ip, active_channels=active_channels) as lecroy, RunD
     setup_scope(lecroy, scope_config)
     lecroy.stop_acquistion() # Needed for some reason after setup, it seems to begin triggering, stops when calling do_acquisition again though
 
-    ### here is where we would start loop of n runs
-
     beam_on = input("Need somebody to turn the beam on! Is it on? (y/n/abort)")
-    daq_stream.launch() # WILL WAIT UNTIL daq_stream.is_scope_acquiring is set
+    daq_stream.launch() # WILL STOP UNTIL daq_stream.is_scope_acquiring is set
 
     print("Waiting for streams to be ready...")
     while not daq_stream.rbs_are_ready:
         time.sleep(0.2) 
-
-    print("Starting Scope acquisition!")
-
+    print("Streams ready!")
+    print(">>>>> starting scope acquisition <<<<<<")
     daq_stream.is_scope_acquiring = True # Starts all daq streams
-    # 6 microseconds of delay between DAQ Stream starting and lecroy acq starting
+    # 6 microseconds of delay between these lines
     lecroy.do_acquisition() # this hangs until acquisition is done.
+    print(">>>>> scope acquisition finished <<<<<<")
+    daq_stream.is_scope_acquiring = False # Ends all daq streams
+
     for chnl in lecroy.channels.values():
         chnl.save(run_start)
     
-    # IMPORTANT: without this line the daq_stream.py gets killed on exit of program
-    daq_stream.wait()
-
-    # this is sort of dangerous as soon as it exits daq_stream is killed and conn to lecroy is closed
-    time.sleep(2)
+    # SAFETY: Lets daq_stream.py finish (otherwise it gets killed when exiting the context manager!)
+    daq_stream.wait_til_done()

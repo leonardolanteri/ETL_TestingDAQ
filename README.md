@@ -1,14 +1,22 @@
 # Introduction
 
-This repo serves to organize the different projects used to run the module testbeams. It is not up to date as is getting put together as we go until it is a working product. There was a significant amount of time where versioning was not used and not all the working code from previous test beams is pushed.
+This repository is for system test beams for the MTD ETL project. Currently we use a [KCU105](https://etl-rb.docs.cern.ch/Hardware/#kcu105) as the DAQ and a [MCP](https://en.wikipedia.org/wiki/Microchannel_plate_detector). 
 
-## Background / Overview
-Firmware should have already been flashed to the KCU before using the DAQ code
+## Background
+The project is split up into 3 parts:
+* daq/
+    * Contains the code necessary to get oscilliscope and etroc binaries. So it will set up the scope, etl front end electronics and perform the acquisition.
+* processing/
+    * Contains code for deconding the binaries, merging them into a root file and exporting/backing up the data
+* monitoring/
+    * Contains code for monitoring the test beam setup (e.g. high voltage supply monitor that will check the HV and could even turn it off or notify if leakage current is getting dangerous)
 
-```module_test_sw``` stores the top level scripts and interactions with the KCU
-```ScopeHandler``` and ```TimingDAQ``` handle interactions with the oscilloscope
+The outside variables for the test beam are defined in a `config.py`. Here all variables of the test beam are defined. Note, it is not necessary to run everything from the single config toml file (it could be json) or you even defined directly in the python files themselves. The only requirement is that the inputs are VALIDATED by using the Pydantic models. 
 
-The ```Run_Autopilot.sh``` script in ```module_test_sw``` starts the runs and attempts to keep everything moving
+## Getting Started
+
+## 
+
 
 ### Here is a complete view the codebase:
 

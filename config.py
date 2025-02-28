@@ -30,7 +30,7 @@ def get_modules(rb_positions: List[List[int]]) -> List[int]:
 class TestBeam(BaseModel):
     name: str = Field(..., strip_whitespace=True, description="Title of this test beam, ex March DESY 2025")
     beam_energy: int
-    project_directory: DirectoryPath
+    project_directory: DirectoryPath = Field(..., description="This should be the directory where ETL_TestingDAQ lives.")
 
 class RunConfig(BaseModel):
     comment: Optional[str] = Field(None, strip_whitespace=True)
@@ -38,11 +38,11 @@ class RunConfig(BaseModel):
 
 class ServiceHybrid(BaseModel):
     telescope_layer: Literal['first', 'second', 'third'] = Field(..., description="Which gets hit by the beam first, second, third. ")
-    readout_board_name: str = Field(None, strip_whitespace=True)
+    readout_board_name: str = Field(None, strip_whitespace=True, description="The neame of the readout board")
     rb: Literal[0,1,2] = Field(..., description="This is the same rb in module_test_sw corresponds to how the rb is connected to the KCU. 1 and 2 mean via the firely while 0 means via SFP cages.")
     readout_board_version: Optional[str] = Field(..., strip_whitespace=True, description="The pcb board version")
     readout_board_config: str = Field(..., strip_whitespace=True, description="This is the readoutout board configuration, called type due to naming convention in module_test_sw. The rb configs have the format: module_test_sw/configs/<type>_<version>.yaml")
-    module_select: List[List[int]] = Field(..., description="modules have to be an integer due to the way the chip id is set for etrocs. See tamalero/Module.py line 57")
+    module_select: List[List[int]] = Field(..., description="EX: [[110],[],[]] : modules have to be an integer due to the way the chip id is set for etrocs. See tamalero/Module.py line 57. ")
     LV_psu: Optional[str] = Field(None, strip_whitespace=True, description="Power Supply name, should be the same name given in the power supply model (this is so it gets any needed information like IP Address)")
     HV_psu: Optional[str] = Field(None, strip_whitespace=True, description="Power Supply name, should be the same name given in the power supply model (this is so it gets any needed information like IP Address)")
     bias_voltage: float
