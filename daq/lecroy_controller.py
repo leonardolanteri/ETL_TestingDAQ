@@ -141,7 +141,13 @@ class LecroyController:
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type == KeyboardInterrupt:
-            print("If running a scope acquisioin and you Cntrl-C'ed out of it, you will need to manually stop the scope or wait for the acquisition to finish on the scope before setting up a new connection.")
+            print("\n")
+            print("****************** READ ME ******************")
+            print("If running a scope acquisioin and you Cntrl-C'ed out of it")
+            print("Please manually stop the scope or wait for the acquisition to finish on the scope before.")
+            print("Otherwise you will get connection error to the scope!")
+            print("****************** READ ME ******************")
+            print("\n")
 
         if self._conn is not None:
             self._conn.close()

@@ -69,7 +69,7 @@ class TelescopeConfig(BaseModel):
     l1a_delay: int
     offset: Union[int, Literal['auto']]
     power_mode: Literal['default','low', 'medium','high'] = Field(..., strip_whitespace=True, description="Power mode of the etroc, they are 'i4','i3','i2','i1' respectively.")
-    thresholds_directory: DirectoryPath
+    all_thresholds_directory: DirectoryPath = Field(..., description="Directory to put all the thresholds for all the runs.")
     reuse_thresholds: bool
     etroc_binary_data_directory: DirectoryPath
 

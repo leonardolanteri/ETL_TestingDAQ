@@ -9,7 +9,7 @@ from pathlib import Path
 from config import TBConfig, Oscilliscope, ChannelConfig, TriggerConfig, RunConfig, TelescopeConfig
 from functools import wraps
 from etl_telescope import ETL_Telescope
-from lecroy_controller import LecroyController
+from lecroy_controller import LecroyController as Lecroy
 import time
 
 from pathlib import Path
@@ -19,7 +19,27 @@ from emoji import emojize
 from typing import List
 
 #---------------- SETUPs BASED ON CONFIG --------------------------#
-def setup_scope(lecroy: LecroyController, scope_config: Oscilliscope):
+def is_beam_on(option: str) -> bool:
+    """
+    Bit scuffed but whatever, forces the selection of y or abort.
+    """
+    switcher = {
+        'y': lambda: print("Beam is on!"),
+        'abort': lambda: sys.exit("CMON MAN! Aborting test beam run...")
+    }
+    if isinstance(option, str):
+        option = option.strip().lower()
+    func = switcher.get(option, None)
+    if func:
+        func()
+        return True
+    elif func is None:
+        return False
+    else:
+        print("Invalid option. Please enter 'y' or 'abort'.")
+        return False
+
+def setup_scope(lecroy: Lecroy, scope_config: Oscilliscope):
     """
     Takes the configs and sets up and setups up the oscilliscope based on the config values
     """
@@ -54,6 +74,9 @@ def setup_scope(lecroy: LecroyController, scope_config: Oscilliscope):
         if chnl_config.trigger is not None:
             setup_trigger(chnl_num, chnl_config.trigger)
 
+    # Needed for some reason after setup, it seems to begin triggering, stops when calling do_acquisition again though
+    lecroy.stop_acquistion() 
+
 def ensure_path_exists(func):
     @wraps(func)
     def wrapper(path: Path, *args, **kwargs):
@@ -67,6 +90,10 @@ def get_run_number(run_number_path: Path):
     with open(run_number_path, 'r') as file:
         run_number = file.read().strip()
     return int(run_number)
+
+def set_run_number(run_number_path: Path, run: int):
+    with open(run_number_path, 'w') as file:
+        file.write(str(run))
 
 
 class RunDaqStreamPY:
@@ -163,7 +190,7 @@ class RunDaqStreamPY:
         return all(self.get_status(p) for p in self.is_rb_ready_paths)
 
 ################################################################################################################################
-################################-------------START OF TEST BEAM ROUTINE-------------############################################
+#####################################-------------TEST BEAM ROUTINE-------------################################################
 ################################################################################################################################
 
 import tomli
@@ -171,37 +198,54 @@ with open('../test_beam.toml', 'rb') as f:
     data = tomli.load(f)
 tb_config = TBConfig.model_validate(data)
 telescope_config = tb_config.telescope_config
+scope_config = tb_config.oscilloscope
+
 project_dir = tb_config.test_beam.project_directory
 daq_dir = project_dir / Path('daq')
 
-run_start = get_run_number(daq_dir / Path('static/next_run_number.txt'))
-run_stop = run_start + tb_config.run_config.num_runs
-print(f"Starting runs: {run_start} to {run_stop}")
-from datetime import datetime
-scope_config = tb_config.oscilloscope
-scope_ip = scope_config.ip_address
+run_number_path = daq_dir/Path('static/next_run_number.txt')
+run_start = get_run_number(run_number_path)
+num_runs = tb_config.run_config.num_runs
+run_stop = run_start + num_runs - 1 
+
 active_channels = [chnl_num for chnl_num in scope_config.channels]
-with LecroyController(scope_ip, active_channels=active_channels) as lecroy, RunDaqStreamPY(telescope_config, daq_dir) as daq_stream:
-    etl_telescope = ETL_Telescope(telescope_config, thresholds_filename_prefix=f"Run_{run_start}_{run_stop}_")
+
+thresholds_dir = telescope_config.all_thresholds_directory / Path(f"run_{run_start}_{run_stop}")
+thresholds_dir.mkdir(exist_ok=True)
+with Lecroy(scope_config.ip_address, active_channels=active_channels) as lecroy, RunDaqStreamPY(telescope_config, daq_dir) as daq_stream:
+    etl_telescope = ETL_Telescope(telescope_config, thresholds_dir=thresholds_dir)
     setup_scope(lecroy, scope_config)
-    lecroy.stop_acquistion() # Needed for some reason after setup, it seems to begin triggering, stops when calling do_acquisition again though
 
-    beam_on = input("Need somebody to turn the beam on! Is it on? (y/n/abort)")
-    daq_stream.launch() # WILL STOP UNTIL daq_stream.is_scope_acquiring is set
+    user_input_for_beam_on = None
+    while not is_beam_on(user_input_for_beam_on):
+        user_input_for_beam_on = input("Need somebody to turn the beam on! Is it on? (y/abort) ")
 
-    print("Waiting for streams to be ready...")
-    while not daq_stream.rbs_are_ready:
-        time.sleep(0.2) 
-    print("Streams ready!")
-    print(">>>>> starting scope acquisition <<<<<<")
-    daq_stream.is_scope_acquiring = True # Starts all daq streams
-    # 6 microseconds of delay between these lines
-    lecroy.do_acquisition() # this hangs until acquisition is done.
-    print(">>>>> scope acquisition finished <<<<<<")
-    daq_stream.is_scope_acquiring = False # Ends all daq streams
+    print(f"----------STARTING RUNS {run_start} TO {run_stop}----------")
+    for run in range(run_start, run_start+num_runs):
+        set_run_number(run_number_path, run=run)
 
-    for chnl in lecroy.channels.values():
-        chnl.save(run_start)
-    
-    # SAFETY: Lets daq_stream.py finish (otherwise it gets killed when exiting the context manager!)
-    daq_stream.wait_til_done()
+        print("\n")
+        print(f"::::::::::: ACQUIRING RUN {run} :::::::::::")
+        daq_stream.launch() # WILL STOP UNTIL daq_stream.is_scope_acquiring is set
+        print("Waiting for streams to be ready...")
+        while not daq_stream.rbs_are_ready:
+            time.sleep(0.2) 
+        print("Streams ready!")
+        print(">>>>> starting scope acquisition <<<<<<")
+        # Starts all daq streams bec its waiting for scope to begin!
+        daq_stream.is_scope_acquiring = True 
+        # 6 microseconds of delay between these lines
+        lecroy.do_acquisition() # this hangs until acquisition is done.
+        print(">>>>> scope acquisition finished <<<<<<")
+        # Ends all daq streams
+        daq_stream.is_scope_acquiring = False 
+
+        for chnl in lecroy.channels.values():
+            chnl.save(run)
+        
+        # SAFETY: Lets daq_stream.py finish (otherwise it gets killed when exiting the context manager!)
+        daq_stream.wait_til_done()
+
+        print(f"::::::::::: FINISHED RUN {run} :::::::::::")
+
+# uhal._core.NonValidatedMemory

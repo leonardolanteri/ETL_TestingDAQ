@@ -14,10 +14,10 @@ from typing import List, Dict
 import sys
 
 class ETL_Telescope:
-    def __init__(self, telescope_config: TelescopeConfig, thresholds_filename_prefix:str = None):
+    def __init__(self, telescope_config: TelescopeConfig, thresholds_dir:Path = None):
         self.config = telescope_config
         self.kcu: KCU = utils.get_kcu(self.config.kcu_ip_address, control_hub=True, verbose=True)
-
+        self.thresholds_dir = thresholds_dir
         if (self.kcu == 0):
             # if not basic connection was established the get_kcu function returns 0
             # this would cause the RB init to fail.
@@ -36,7 +36,7 @@ class ETL_Telescope:
         self.check_all_rb_configured()
         self.check_VTRXs() 
         self.connect_modules()
-        self.configure_ETROCs(thresholds_filename_prefix=thresholds_filename_prefix)
+        self.configure_ETROCs()
         self.test_etroc_daq()
 
     def startup_readout_boards(self):
@@ -83,8 +83,6 @@ class ETL_Telescope:
                 mod.show_status()
 
     def configure_ETROCs(self, thresholds_filename_prefix: str = None):
-        thresholds_dir = self.config.thresholds_directory
-
         thresholds_filename_prefix = thresholds_filename_prefix
         offset = self.config.offset
         l1a_delay = self.config.l1a_delay
@@ -97,7 +95,7 @@ class ETL_Telescope:
                             print(f"Found ETROC {etroc.chip_no}")
                             if self.config.reuse_thresholds:
                                 filename = Path(f'thresholds_module_{etroc.module_id}_etroc_{etroc.chip_no}.yaml')
-                                thresholds_file = thresholds_dir/filename
+                                thresholds_file = self.thresholds_dir/filename
                                 if not thresholds_file.exists():
                                     raise FileNotFoundError(f"These the thresholds at {thresholds_file} do not exist. You can update the config's 'reuse thresholds' flag to False to perform a threshold scan")
                                 print("*********Reusing Thresholds************")
@@ -113,7 +111,7 @@ class ETL_Telescope:
                                     offset = offset, 
                                     L1Adelay = l1a_delay, 
                                     thresholds = None, # this runs a threshold scan and saves it to outdir
-                                    out_dir = thresholds_dir, 
+                                    out_dir = self.thresholds_dir, 
                                     powerMode = power_mode)
                         else:
                             print(f"ETROC {etroc.chip_no} is not connected!")
