@@ -4,55 +4,54 @@ This repository is for system test beams for the MTD ETL project. Currently we u
 
 ## Background
 The project is split up into 3 parts:
-* daq/
-    * Contains the code necessary to get oscilliscope and etroc binaries. So it will set up the scope, etl front end electronics and perform the acquisition.
-* processing/
+* **ETL_TestingDAQ/daq**
+    * Contains the code necessary to get oscilliscope trace files and etroc binaries. In all, it will set up the scope, etl front-end electronics and perform the scope acquisition (trace file) while simulataneously streaming the daq (etroc binary). See DAQ Concepts for more info!
+        * The actual data acquisition between the scope and streaming our daq is performed by `run_test_beam.py`
+        * The static directory contains text files that are used for synchronizing the daq stream and oscilloscope acquisition. Also log and the global run number.
+* **ETL_TestingDAQ/processing**
     * Contains code for deconding the binaries, merging them into a root file and exporting/backing up the data
-* monitoring/
+* **ETL_TestingDAQ/monitoring**
     * Contains code for monitoring the test beam setup (e.g. high voltage supply monitor that will check the HV and could even turn it off or notify if leakage current is getting dangerous)
 
-The outside variables for the test beam are defined in a `config.py`. Here all variables of the test beam are defined. Note, it is not necessary to run everything from the single config toml file (it could be json) or you even defined directly in the python files themselves. The only requirement is that the inputs are VALIDATED by using the Pydantic models. 
+### module_test_sw
+We use the tamalero API to interact with the boards. It is a git submodule for this project and is crucial for configuration of the front end electronics. See `daq/etl_telescope.py` for how it is used here!
+
+### The Config
+The external variables for the test beam are specified in a file named `config.py` there are also defintions in the file explaing the variables. 
+
+This file defines all variables needed to operate the test beam (str, int, paths etc...). The project isn't locked into using a configuration file, but all user inputs should be validated by the Pydantic models. See [here](https://docs.pydantic.dev/latest/examples/files/) for using other file formats. You can also instantiate the models directly in the code, having one main configuration file is just for what I though is convenient!
 
 ## Getting Started
+This assumes you already have correclty setup the KCU and installed the ipbus-software. If not please follow [these](https://github.com/nebraska-silicon-lab/Lab-Instructions/blob/master/sop/ETL/200%20-%20ETL%20Test%20Stand%20Setup.md) directions by Ian Reed on getting a Test Stand up and running (it covers everything needed to set up a Test Stand!).
 
-## 
+Next, you will need to clone the repository,
+```
+git clone --recurse-submodules https://gitlab.cern.ch/cms-etl-electronics/ETL_TestingDAQ.git
+```
 
+Then you need to install the conda environment and activate it,
+```
+conda env create --file=environment.yaml
+conda activate etl_testing_daq
+```
 
-### Here is a complete view the codebase:
+Currently you have the ipbus-software installed but the python package will not be apart of the conda package. To add it you can do the following,
+```
+export PYTHONPATH=$PYTHONPATH:/path/to/ipbus-software/uhal/python/pkg
+```
+You will know this is the correct path because in the uhal directory it should have a `__init__.py` file with a `__core.so` binary. `uhal` also has needed dependencies which you can include by `export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH` but this is in the `setup.sh` file. Which we can now run it because it sets up needed environment variables,
+```
+source setup.sh
+```
+You are now ready to run the code for the test beam! Before running it though you need to define a config, right now toml file is only supported in `test_beam.toml` for a place to start! You can also read the pydantic models directly in `config.py`.
 
-![tbdaq](images/tbdaq.png)
+## Updating the Environment
 
-## Environment
+If you work on a part are pushing to the repository, please push updates to `environment.yml`, your current activated conda environemnt can be made into a yaml file like: 
+```
+conda env export | grep -v "^prefix: " > environment.yml
+```
 
-The environment is getting built as we go so for the parts that currently work the environment can be built like:
-```conda env create --file=environment.yml```
-
-If you work on a part are pushing to the repository, please push updates to `environment.yml`, your current activated conda environemnt can be made into a yaml file like (please take care to not **overwrite** the environment file): 
-```conda env export | grep -v "^prefix: " > environment.yml```
-
-If you find a way to update the yaml instead of rewriting please share here (potentially `conda env update --name etl_testing_daq --file environment.yml --prune` works).
-
-
-# Work Tracker
-
-From the loooking at `tbdaq.drawio` the codebase can be split into two parts. The first part is all the scripts that make the `.dat` (contains all the etroc data from the KCU) and `.trc` files (contains all scope data from the oscilliscope); also there is a script (`data_dumper.py`) that converts the dat file to json but this can ultamitely be removed. The second part is to convert all these into one root file. 
-
-*HERE ON OUT PLEASE STATE WHAT HAS BEEN WORKED ON SO PEOPLE KNOW* also explain a bit about what it does and what is implemented (and what bugs may have been introduced :)
-
-### `ScopeHandler/Lecroy/Merging/merge_scope_etroc.py` 
-This part of the script takes the scope and etroc data (from whatever is last in the nasty chain) and converts them to a final merged root file.
-
-* Has unit tests for the merge tree function (puts big root files could be improved but is ok for now)
-    * run by `python -m unit_test.test_merge_scope_etroc` in the `/home/users/hswanson13/ETL_TestingDAQ/ScopeHandler/Lecroy/Merging` directory
-* Enviroment for running the script
-* Clock function updated to account for faster sampling speeds. Also is faster and fully columnar.
-
-### `/ScopeHandler/Lecroy/` (`Acquisition/acquisition.py` and `Conversion/recoLoop.py`)
-
-Added root the environment by following instructions [here](https://indico.cern.ch/event/759388/contributions/3306849/attachments/1816254/2968550/root_conda_forge.pdf). All I did was the following to get recoLoop to work INSIDE the env:
-
-`conda config --env --add channels conda-forge` then,
-`conda install root`
 
 # DAQ Concepts
 
@@ -61,7 +60,8 @@ This section is an overview of how data is collected from our backend FPGA board
 ![DAQ Readout](images/DAQ_Readout.png) <sup>Remember for the module, the particle hit data is stored, for each pixel, in the circular buffer of the ETROC after LGAD analog signal passes a discriminator value and then the ETROC works its magic for the timing information. The KCU simply accesses this circular buffer.</sup>
 
 **Manuals**:
-* [Lecroy Waverunner Oscilliscope](https://cdn.teledynelecroy.com/files/manuals/waverunner-8000-operators-manual.pdf)
+* [General operator's Lecroy Waverunner Oscilliscope manual](https://cdn.teledynelecroy.com/files/manuals/waverunner-8000-operators-manual.pdf)
+    * [Remote Control and Automation Manual](https://cdn.teledynelecroy.com/files/manuals/maui-remote-control-and-automation-manual.pdf)
 
 ## Oscilliscope Data Acquistion
 
@@ -85,10 +85,3 @@ Here is what our Oscilliscope settings were:
 |Holdoff|Timebase|
 |---|---|
 |![holdoff_settings](images/EA31AC74-8D68-434C-B060-6147203742AC.jpg)|![timebase settings](images/0A70AFA2-1BCF-4124-A30F-91009D3B21DC.jpg)|
-
-Getting trace files from oscilliscope using the software in teh directory `/home/users/hswanson13/ETL_TestingDAQ/ScopeHandler/Lecroy/Acquisition/`:
-```
-python3 acquisition.py --numEvents 200 --sampleRate 10 --horizontalWindow 50 --trigCh C2 --trig -0.05 --trigSlope "NEG" --vScale1 0.2 --vScale2 0.15 --vScale3 0.2--vScale4 0.2 --vPos1 0 --vPos2 2 --vPos3 -3 --vPos4 0 --timeoffset 0 --display 1
-```
-
-Then to convert the trace files recoLoop.py in the Conversion directory was used. 
