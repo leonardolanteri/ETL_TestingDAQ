@@ -17,8 +17,11 @@ from functools import wraps
 import subprocess
 from emoji import emojize
 from typing import List
+import json
+from datetime import datetime
 
 #---------------- SETUPs BASED ON CONFIG --------------------------#
+
 def is_beam_on(option: str) -> bool:
     """
     Bit scuffed but whatever, forces the selection of y or abort.
@@ -192,60 +195,101 @@ class RunDaqStreamPY:
 ################################################################################################################################
 #####################################-------------TEST BEAM ROUTINE-------------################################################
 ################################################################################################################################
+if __name__ == '__main__':
+    import argparse
+    argParser = argparse.ArgumentParser(description = "DAQ Test Beam argparser")
+    argParser.add_argument('--etl_power_up', action='store_true', help="Flag to power up JUST etl front-end electronics")
+    args = argParser.parse_args()
+    
+    # LOAD THE CONFIG
+    import tomli
+    with open('../test_beam.toml', 'rb') as f:
+        data = tomli.load(f)
+    tb_config = TBConfig.model_validate(data)
+    telescope_config = tb_config.telescope_config
+    scope_config = tb_config.oscilloscope
+    project_dir = tb_config.test_beam.project_directory
+    
+    # GET RUN NUMBERS
+    daq_dir = project_dir / Path('daq')
+    run_number_path = daq_dir/Path('static/next_run_number.txt')
+    run_start = get_run_number(run_number_path)
+    num_runs = tb_config.run_config.num_runs
+    run_stop = run_start + num_runs - 1 
 
-import tomli
-with open('../test_beam.toml', 'rb') as f:
-    data = tomli.load(f)
-tb_config = TBConfig.model_validate(data)
-telescope_config = tb_config.telescope_config
-scope_config = tb_config.oscilloscope
-
-project_dir = tb_config.test_beam.project_directory
-daq_dir = project_dir / Path('daq')
-
-run_number_path = daq_dir/Path('static/next_run_number.txt')
-run_start = get_run_number(run_number_path)
-num_runs = tb_config.run_config.num_runs
-run_stop = run_start + num_runs - 1 
-
-active_channels = [chnl_num for chnl_num in scope_config.channels]
-
-thresholds_dir = telescope_config.all_thresholds_directory / Path(f"run_{run_start}_{run_stop}")
-thresholds_dir.mkdir(exist_ok=True)
-with Lecroy(scope_config.ip_address, active_channels=active_channels) as lecroy, RunDaqStreamPY(telescope_config, daq_dir) as daq_stream:
+    # Initialize Run Log
+    run_group_path = tb_config.run_config.run_log_directory / Path(f"runs_{run_start}_{run_stop}")
+    new_run_group = {
+        "config": tb_config.model_dump(),
+        "runs": []
+    }
+    with open(run_group_path, mode='w') as f:
+        json.dump(new_run_group, f)
+    
+    # CONFIGURE FRONT END ELECTRONICS
+    thresholds_dir = telescope_config.all_thresholds_directory / Path(f"run_{run_start}_{run_stop}")
+    thresholds_dir.mkdir(exist_ok=True)
     etl_telescope = ETL_Telescope(telescope_config, thresholds_dir=thresholds_dir)
-    setup_scope(lecroy, scope_config)
+    if args.etl_power_up:
+        sys.exit("ETL Power up option gave exiting early!")
 
-    user_input_for_beam_on = None
-    while not is_beam_on(user_input_for_beam_on):
-        user_input_for_beam_on = input("Need somebody to turn the beam on! Is it on? (y/abort) ")
+    # DAQ
+    active_channels = [chnl_num for chnl_num in scope_config.channels]
+    with Lecroy(scope_config.ip_address, active_channels=active_channels) as lecroy, RunDaqStreamPY(telescope_config, daq_dir) as daq_stream:
+        if args.scope_power_up:
+            setup_scope(lecroy, scope_config)
 
-    print(f"----------STARTING RUNS {run_start} TO {run_stop}----------")
-    for run in range(run_start, run_start+num_runs):
-        set_run_number(run_number_path, run=run)
+        user_input_for_beam_on = None
+        while not is_beam_on(user_input_for_beam_on):
+            user_input_for_beam_on = input("Need somebody to turn the beam on! Is it on? (y/abort) ")
 
-        print("\n")
-        print(f"::::::::::: ACQUIRING RUN {run} :::::::::::")
-        daq_stream.launch() # WILL STOP UNTIL daq_stream.is_scope_acquiring is set
-        print("Waiting for streams to be ready...")
-        while not daq_stream.rbs_are_ready:
-            time.sleep(0.2) 
-        print("Streams ready!")
-        print(">>>>> starting scope acquisition <<<<<<")
-        # Starts all daq streams bec its waiting for scope to begin!
-        daq_stream.is_scope_acquiring = True 
-        # 6 microseconds of delay between these lines
-        lecroy.do_acquisition() # this hangs until acquisition is done.
-        print(">>>>> scope acquisition finished <<<<<<")
-        # Ends all daq streams
-        daq_stream.is_scope_acquiring = False 
+        print(f"----------STARTING RUNS {run_start} TO {run_stop}----------")
+        for run in range(run_start, run_start+num_runs):
+            start_time = datetime.now()
+            set_run_number(run_number_path, run=run)
 
-        for chnl in lecroy.channels.values():
-            chnl.save(run)
-        
-        # SAFETY: Lets daq_stream.py finish (otherwise it gets killed when exiting the context manager!)
-        daq_stream.wait_til_done()
+            print("\n")
+            print(f"::::::::::: ACQUIRING RUN {run} :::::::::::")
+            daq_stream.launch() # WILL STOP UNTIL daq_stream.is_scope_acquiring is set
+            
+            print("Waiting for streams to be ready...")
+            while not daq_stream.rbs_are_ready:
+                time.sleep(0.2) 
+            print("Streams ready!")
+            
+            print(">>>>> starting scope acquisition <<<<<<")
+            # Starts all daq streams bec its waiting for scope to begin!
+            daq_stream.is_scope_acquiring = True 
+            # 6 microseconds of delay between these lines
+            lecroy.do_acquisition() # this hangs until acquisition is done.
+            print(">>>>> scope acquisition finished <<<<<<")
+            
+            # Ends all daq streams
+            daq_stream.is_scope_acquiring = False 
 
-        print(f"::::::::::: FINISHED RUN {run} :::::::::::")
+            for chnl in lecroy.channels.values():
+                chnl.save(run)
+            
+            # SAFETY: Lets daq_stream.py finish (otherwise it gets killed when exiting the context manager!)
+            daq_stream.wait_til_done()
 
-# uhal._core.NonValidatedMemory
+            # Output run log
+            with open(run_group_path, 'r+') as f:
+                run_group_log = json.load(f)
+                if 'runs' in run_group_log:
+                    run_group_log['runs'].append(
+                        {
+                            'run_number': run,
+                            'finish_time': datetime.now().isoformat(),
+                            'start_time': start_time.isoformat(),
+                            'temperatures': 123 #etl_telescope.etroc_temperatures
+                        }
+                    )
+                    f.seek(0) # 
+                    json.dump(run_group_log, f, indent=4)
+                else:
+                    print("Run log corrupted during runs, lost the 'runs' key, skipping logging...")
+
+            print(f"::::::::::: FINISHED RUN {run} :::::::::::")
+
+    # uhal._core.NonValidatedMemory

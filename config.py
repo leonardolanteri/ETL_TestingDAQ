@@ -31,10 +31,11 @@ class TestBeam(BaseModel):
     name: str = Field(..., strip_whitespace=True, description="Title of this test beam, ex March DESY 2025")
     beam_energy: int
     project_directory: DirectoryPath = Field(..., description="This should be the directory where ETL_TestingDAQ lives.")
-
+    
 class RunConfig(BaseModel):
     comment: Optional[str] = Field(None, strip_whitespace=True)
     num_runs: int 
+    run_log_directory: DirectoryPath = Field(..., description="Directory containing the run logs, each log corresponds to a series/group of runs")
 
 class ServiceHybrid(BaseModel):
     telescope_layer: Literal['first', 'second', 'third'] = Field(..., description="Which gets hit by the beam first, second, third. ")

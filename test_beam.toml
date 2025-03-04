@@ -6,6 +6,7 @@
 [run_config]
     comment = "Temperature -20C at new trigger threshold"
     num_runs = 5
+    run_log_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/run_logs"
 
 [telescope_config]
     kcu_ip_address = "192.168.0.10"
