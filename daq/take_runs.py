@@ -227,13 +227,13 @@ if __name__ == '__main__':
             
             # Ends all daq streams
             daq_stream.is_scope_acquiring = False 
-
+            print("letting daq stream know scope is done!")
             for chnl in lecroy.channels.values():
                 chnl.save(run)
-            
+            print("saved the waveforms now waiting for daq stream")
             # SAFETY: Lets daq_stream.py finish (otherwise it gets killed when exiting the context manager!)
             daq_stream.wait_til_done()
-
+            print("daq stream done")
             # Output run log
             with open(run_group_path, 'r+') as f:
                 run_group_log = json.load(f)

@@ -14,6 +14,11 @@ from module_test_sw.tamalero.utils import get_kcu
 from yaml import load, dump
 
 class MultiThread:
+    """
+    THIS DOES NOT ACTUALLY CREATE MULTI THREADS
+
+    Multiple threads are made when stream_daq_multi is called in a loop...
+    """
     def __init__(self, fun, args):
         self._running = True
         self.fun = fun
@@ -37,6 +42,7 @@ def stream_daq_multi(fun, args):
     mon = MultiThread(fun, args)
     t = Thread(target = mon.run_limited, args=(1,))
     t.start()
+    mon.thread = t
     return mon
 
 def get_kcu_flag(lock_path: str):
@@ -316,9 +322,11 @@ if __name__ == '__main__':
     init_time = time.time()
     print(f"Init of ETROC DAQ took {round(init_time-start_time, 1)}s")
     print("Taking data now")
-    while any([stream._running for stream in streams]):
+    #while any([stream._running for stream in streams]):
+    while any([stream.thread.is_alive() for stream in streams]):
        # stream_0._running or stream_1._running:
         time.sleep(1)
+
     print("Done with all streams")
 
     print(f"Run {args.run} has ended.")
