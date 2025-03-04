@@ -6,11 +6,11 @@ for py_path in sys.path:
         sys.path.remove("/home/etl/Test_Stand/module_test_sw")
 
 from pathlib import Path
-from config import TBConfig, Oscilliscope, ChannelConfig, TriggerConfig, RunConfig, TelescopeConfig
 from functools import wraps
 from etl_telescope import ETL_Telescope
 from lecroy_controller import LecroyController as Lecroy
 import time
+from config import TBConfig, TelescopeConfig
 
 from pathlib import Path
 from functools import wraps
@@ -41,44 +41,6 @@ def is_beam_on(option: str) -> bool:
     else:
         print("Invalid option. Please enter 'y' or 'abort'.")
         return False
-
-def setup_scope(lecroy: Lecroy, scope_config: Oscilliscope):
-    """
-    Takes the configs and sets up and setups up the oscilliscope based on the config values
-    """
-    def setup_trigger(chnl_num:int, trigger_config: TriggerConfig):
-        """Sets up trigger channel based on trigger config"""
-        lecroy.set_trigger_mode(trigger_config.mode)
-        lecroy.set_trigger_select(
-            lecroy.channels[chnl_num], 
-            condition=trigger_config.condition, 
-            level=trigger_config.level, 
-            units=trigger_config.units)
-        lecroy.set_trigger_slope(trigger_config.slope) 
-
-    def setup_channel(chnl_num: int, channel_config: ChannelConfig):
-        """Sets up a channel based on the config"""
-        vertical_axis = channel_config.vertical_axis
-        lecroy.channels[chnl_num].set_vertical_axis(
-            vertical_axis.lower,
-            vertical_axis.upper, 
-            units=vertical_axis.units)
-        lecroy.channels[chnl_num].set_coupling(channel_config.coupling)
-
-    lecroy.set_sample_rate(scope_config.sample_rate[0]) #take first elem because second is the units...
-    horz_window, units = scope_config.horizontal_window
-    lecroy.set_horizontal_window(horz_window, units=units)
-    lecroy.set_sample_mode(scope_config.sample_mode)
-    lecroy.set_number_of_segments(scope_config.number_of_segments)
-    lecroy.set_segment_display(scope_config.segment_display) 
-
-    for chnl_num, chnl_config in scope_config.channels.items():
-        setup_channel(chnl_num, chnl_config)
-        if chnl_config.trigger is not None:
-            setup_trigger(chnl_num, chnl_config.trigger)
-
-    # Needed for some reason after setup, it seems to begin triggering, stops when calling do_acquisition again though
-    lecroy.stop_acquistion() 
 
 def ensure_path_exists(func):
     @wraps(func)
@@ -218,9 +180,9 @@ if __name__ == '__main__':
     run_stop = run_start + num_runs - 1 
 
     # Initialize Run Log
-    run_group_path = tb_config.run_config.run_log_directory / Path(f"runs_{run_start}_{run_stop}")
+    run_group_path = tb_config.run_config.run_log_directory / Path(f"runs_{run_start}_{run_stop}.json")
     new_run_group = {
-        "config": tb_config.model_dump(),
+        "config": tb_config.model_dump(mode="json"),
         "runs": []
     }
     with open(run_group_path, mode='w') as f:
@@ -236,8 +198,7 @@ if __name__ == '__main__':
     # DAQ
     active_channels = [chnl_num for chnl_num in scope_config.channels]
     with Lecroy(scope_config.ip_address, active_channels=active_channels) as lecroy, RunDaqStreamPY(telescope_config, daq_dir) as daq_stream:
-        if args.scope_power_up:
-            setup_scope(lecroy, scope_config)
+        lecroy.setup_from_config(scope_config)
 
         user_input_for_beam_on = None
         while not is_beam_on(user_input_for_beam_on):

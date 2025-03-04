@@ -320,7 +320,48 @@ class LecroyController:
         if isinstance(response, str) and response.strip() != '1':
             raise TimeoutError("Timedout, still not sure about this method, COME ON MAN!")
         return True
+
     
+    def setup_from_config(self, scope_config) -> None:
+        """
+        Takes the configs and sets up and setups up the oscilliscope based on the config values
+        """
+        from config import Oscilloscope as OscilloscopeConfig
+        from config import TriggerConfig, ChannelConfig
+        def setup_trigger(chnl_num:int, trigger_config: TriggerConfig):
+            """Sets up trigger channel based on trigger config"""
+            self.set_trigger_mode(trigger_config.mode)
+            self.set_trigger_select(
+                self.channels[chnl_num], 
+                condition=trigger_config.condition, 
+                level=trigger_config.level, 
+                units=trigger_config.units)
+            self.set_trigger_slope(trigger_config.slope) 
+
+        def setup_channel(chnl_num: int, channel_config: ChannelConfig):
+            """Sets up a channel based on the config"""
+            vertical_axis = channel_config.vertical_axis
+            self.channels[chnl_num].set_vertical_axis(
+                vertical_axis.lower,
+                vertical_axis.upper, 
+                units=vertical_axis.units)
+            self.channels[chnl_num].set_coupling(channel_config.coupling)
+
+        self.set_sample_rate(scope_config.sample_rate[0]) #take first elem because second is the units...
+        horz_window, units = scope_config.horizontal_window
+        self.set_horizontal_window(horz_window, units=units)
+        self.set_sample_mode(scope_config.sample_mode)
+        self.set_number_of_segments(scope_config.number_of_segments)
+        self.set_segment_display(scope_config.segment_display) 
+
+        for chnl_num, chnl_config in scope_config.channels.items():
+            setup_channel(chnl_num, chnl_config)
+            if chnl_config.trigger is not None:
+                setup_trigger(chnl_num, chnl_config.trigger)
+
+        # Needed for some reason after setup, it seems to begin triggering, stops when calling do_acquisition again though
+        self.stop_acquistion() 
+
     def __repr__(self):
         """
         The *IDN? query identifies the instrument type and software version. The response consists of four different fields providing information on the manufacturer, the scope model, the serial number and the firmware revision.

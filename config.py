@@ -135,7 +135,7 @@ class ChannelConfig(BaseModel):
     vertical_axis: VerticalAxis
     trigger: TriggerConfig = None
 
-class Oscilliscope(BaseModel):
+class Oscilloscope(BaseModel):
     # This should try to be general for any scope, i think its possible! But we will likely never have to go there...
     name: str = Field(..., strip_whitespace=True)
     ip_address: IPvAnyAddress
@@ -145,7 +145,7 @@ class Oscilliscope(BaseModel):
     segment_display: SegmentDisplayMode
     sample_mode: SampleMode
     channels: Dict[int, ChannelConfig]
-    number_of_segments: int
+    number_of_segments: int = Field(...,le = 5000)
 
     @model_validator(mode='before')
     @classmethod
@@ -169,7 +169,7 @@ class TBConfig(BaseModel):
     test_beam: TestBeam
     run_config: RunConfig
     telescope_config: TelescopeConfig
-    oscilloscope: Oscilliscope
+    oscilloscope: Oscilloscope
     power_supplies: List[PowerSupply]
     file_processing: FileProcessing
 
