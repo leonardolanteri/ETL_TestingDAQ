@@ -1,5 +1,6 @@
 from typing import List, Optional, Literal, Dict, Any, Tuple, Union
 from pydantic import BaseModel, Field, FilePath, DirectoryPath, IPvAnyAddress, model_validator, field_validator
+from pathlib import Path
 from daq.lecroy_controller import (
     # if you had another scope you could duck type these units :)
     SegmentDisplayMode,
@@ -173,11 +174,38 @@ class TBConfig(BaseModel):
     power_supplies: List[PowerSupply]
     file_processing: FileProcessing
 
+def load_config() -> TBConfig:
+    """
+    The active config should be put in the active config director, if there is more than one it throws an error.
 
-# import tomllib
-# with open('test_beam.toml', 'rb') as f:
-#     data = tomllib.load(f)
-# tb_run = TBConfig.model_validate(data)
+    Implemented File Types:
+    - toml
+    
+    Could be implemented:
+    - pickle
+    - json
+    - yaml
+    - ... anything that can be read into a python dictionary so it can be validated by pydantic
+    """
+    from os import environ, path
+    
+    if 'TEST_BEAM_BASE' not in environ:
+        raise KeyError("\"Test_BEAM_BASE\" not in environment variables, did you source setup.sh?")
 
+    active_config_dir = Path(path.expandvars("$TEST_BEAM_BASE/configs/active_config"))
+    if not active_config_dir.is_dir():
+        raise NotADirectoryError(f"This directory ({active_config_dir}) does not exist. The convention is all used configs are put in ETL_TestingDAQ/configs and the active config goes in ETL_TestingDAQ/configs/active_config.")
 
-# print(tb_run.telescope_setup)
+    active_configs = [c for c in active_config_dir.iterdir()]
+    if len(active_configs) != 1:
+        raise ValueError(f"There has to be exactly one config in the active config directory. Currently these are the configs in ETL_TestingDAQ/configs/active_config: {active_configs}")
+    active_config_path = active_configs[0]
+
+    # LOAD THE CONFIG
+    if active_config_path.suffix == '.toml':
+        import tomli
+        with open(active_config_path, 'rb') as f:
+            data = tomli.load(f)
+        return TBConfig.model_validate(data)
+    else:
+        raise NotImplementedError(f"Sorry the file extension you provided ({active_config_path.suffix}) is not currently implemented!")

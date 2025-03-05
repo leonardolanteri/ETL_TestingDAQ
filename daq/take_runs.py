@@ -10,7 +10,7 @@ from functools import wraps
 from etl_telescope import ETL_Telescope
 from lecroy_controller import LecroyController as Lecroy
 import time
-from config import TBConfig, TelescopeConfig
+from config import TelescopeConfig, load_config
 
 from pathlib import Path
 from functools import wraps
@@ -164,10 +164,7 @@ if __name__ == '__main__':
     args = argParser.parse_args()
     
     # LOAD THE CONFIG
-    import tomli
-    with open('../test_beam.toml', 'rb') as f:
-        data = tomli.load(f)
-    tb_config = TBConfig.model_validate(data)
+    tb_config = load_config()
     telescope_config = tb_config.telescope_config
     scope_config = tb_config.oscilloscope
     project_dir = tb_config.test_beam.project_directory
