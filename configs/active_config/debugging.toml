@@ -6,25 +6,25 @@
 [run_config]
     comment = "Temperature -20C at new trigger threshold"
     num_runs = 5
-    run_log_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/run_logs"
+    run_log_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/daq/run_logs"
 
 [telescope_config]
     kcu_ip_address = "192.168.0.10"
     kcu_firmware_version = "abc123"
-    l1a_delay = 0 # units ns??
+    l1a_delay = 14 # units ns??
     offset = 5 # vth
     power_mode = "high"
-    all_thresholds_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/thresholds"
+    all_thresholds_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/daq/thresholds"
     reuse_thresholds = false
-    etroc_binary_data_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/etroc_binaries"
+    etroc_binary_data_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/daq/etroc_binaries"
 
     [[telescope_config.service_hybrids]]
         telescope_layer = 'first'
-        readout_board_name = "RB0034"
+        readout_board_name = "RB0020"
         rb = 0
         readout_board_version = "v2.2"
         readout_board_config = "modulev1"
-        module_select = [[110], [], []]
+        module_select = [[103], [], []]
         bias_voltage = 260
 
         #Optional
@@ -65,9 +65,9 @@
         coupling = 'D50'
         vertical_axis = { min=-2, max=2, units="V" }
 
-[file_processing]
-    merged_data_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/merged" # will add test beam name
-    backup_directory = "/media/etl/Storage/"
+[watchdog]
+    base_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/watchdog/"
+    backup_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/watchdog/backup"
 
 # Power Supplies
 [[power_supplies]]

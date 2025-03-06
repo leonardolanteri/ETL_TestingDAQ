@@ -208,6 +208,8 @@ if __name__ == '__main__':
 
             print("\n")
             print(f"::::::::::: ACQUIRING RUN {run} :::::::::::")
+
+
             daq_stream.launch() # WILL STOP UNTIL daq_stream.is_scope_acquiring is set
             
             print("Waiting for streams to be ready...")
@@ -231,6 +233,8 @@ if __name__ == '__main__':
             # SAFETY: Lets daq_stream.py finish (otherwise it gets killed when exiting the context manager!)
             daq_stream.wait_til_done()
             print("daq stream done")
+
+
             # Output run log
             with open(run_group_path, 'r+') as f:
                 run_group_log = json.load(f)

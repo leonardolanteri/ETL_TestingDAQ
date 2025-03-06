@@ -106,11 +106,6 @@ class PowerSupply(BaseModel):
     log_path: Optional[FilePath] = None
     ip_address: Optional[IPvAnyAddress] = None
 
-class FileProcessing(BaseModel):
-    merged_data_directory: DirectoryPath
-    backup_directory: DirectoryPath
-
-
 class TriggerConfig(BaseModel):
     mode: TriggerMode
     condition: TriggerCondition
@@ -131,7 +126,7 @@ class VerticalAxis(BaseModel):
         return self
 
 class ChannelConfig(BaseModel):
-    name: str = Field(..., alias="for")
+    name: Literal["MCP", "Clock"] = Field(..., alias="for")
     coupling: Coupling
     vertical_axis: VerticalAxis
     trigger: TriggerConfig = None
@@ -141,8 +136,8 @@ class Oscilloscope(BaseModel):
     name: str = Field(..., strip_whitespace=True)
     ip_address: IPvAnyAddress
     binary_data_directory: DirectoryPath
-    sample_rate: Tuple[SampleRate, Literal["GS/s"]] = Field((20, "GS/s"), max_length=2, min_length=2)
-    horizontal_window: Tuple[HorizontalWindow, TimeUnits] = Field((50, "ns"), max_length=2, min_length=2)
+    sample_rate: Tuple[SampleRate, Literal["GS/s"]] = Field(..., max_length=2, min_length=2)
+    horizontal_window: Tuple[HorizontalWindow, TimeUnits] = Field(..., max_length=2, min_length=2)
     segment_display: SegmentDisplayMode
     sample_mode: SampleMode
     channels: Dict[int, ChannelConfig]
@@ -165,6 +160,9 @@ class Oscilloscope(BaseModel):
             raise ValueError(f"COME ON MAN! There must be exactly one trigger channel specified. You have specified {len(trigger_channels)}")
         return self
 
+class Watchdog(BaseModel):
+    base_directory: DirectoryPath
+    backup_directory:           DirectoryPath
 
 class TBConfig(BaseModel):
     test_beam: TestBeam
@@ -172,7 +170,8 @@ class TBConfig(BaseModel):
     telescope_config: TelescopeConfig
     oscilloscope: Oscilloscope
     power_supplies: List[PowerSupply]
-    file_processing: FileProcessing
+    watchdog: Watchdog
+
 
 def load_config() -> TBConfig:
     """

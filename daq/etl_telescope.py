@@ -87,8 +87,10 @@ class ETL_Telescope:
         offset = self.config.offset
         l1a_delay = self.config.l1a_delay
         power_mode = self.config.power_mode
+        modules = []
         for readout_board in self.readout_boards.values():
             for mod in readout_board.modules:
+                modules.append(mod)
                 if mod.connected:
                     for etroc in mod.ETROCs:
                         if etroc.is_connected():
@@ -117,7 +119,10 @@ class ETL_Telescope:
                             print(f"ETROC {etroc.chip_no} is not connected!")
                     for etroc in mod.ETROCs:
                         etroc.reset()
-    
+
+        if not any(mod.connected for mod in modules):
+            raise ConnectionError("No modules connected, aborting...")
+
     def test_etroc_daq(self):
         """
         Sends l1a's and checks for data in the FIFO
