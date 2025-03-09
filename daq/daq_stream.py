@@ -8,7 +8,7 @@ import sys
 # This is very important, sometimes the python path gets confused
 for py_path in sys.path:
     if "module_test_sw" in py_path and "ETL_TestingDAQ" not in py_path:
-        print("COME ON MAN!!! the yucky is in there!")
+        print("COME ON MAN!!! the wrong module_test_sw was in there! Removed it for you :P")
         sys.path.remove("/home/etl/Test_Stand/module_test_sw")
 from module_test_sw.tamalero.utils import get_kcu
 from yaml import load, dump

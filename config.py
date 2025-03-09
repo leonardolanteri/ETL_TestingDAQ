@@ -1,5 +1,5 @@
 from typing import List, Optional, Literal, Dict, Any, Tuple, Union
-from pydantic import BaseModel, Field, FilePath, DirectoryPath, IPvAnyAddress, model_validator, field_validator
+from pydantic import BaseModel, Field, FilePath, DirectoryPath, IPvAnyAddress, model_validator, field_validator, computed_field, ValidationError
 from pathlib import Path
 from daq.lecroy_controller import (
     # if you had another scope you could duck type these units :)
@@ -101,6 +101,17 @@ class TelescopeConfig(BaseModel):
             raise ValueError(f"COME ON MAN! Duplicate modules detected in the configuration file. {modules}")
         return service_hybrids
     
+    @computed_field
+    @property
+    def rbs(self) -> list[int]:
+        rbs = []
+        for sh in self.service_hybrids:
+            rbs.append(sh.rb)
+        
+        if not rbs:
+            raise ValidationError("No readout boards provided")
+        return rbs
+
 class PowerSupply(BaseModel):
     name: str = Field(..., strip_whitespace=True)
     log_path: Optional[FilePath] = None
@@ -160,9 +171,25 @@ class Oscilloscope(BaseModel):
             raise ValueError(f"COME ON MAN! There must be exactly one trigger channel specified. You have specified {len(trigger_channels)}")
         return self
 
+    @computed_field
+    @property
+    def mcp_channel_number(self) -> int:
+        for chnl_num, chnl in self.channels.items():
+            if chnl.name == "MCP":
+                return chnl_num
+        raise ValidationError("MCP channel not defined in the config.")
+    
+    @computed_field
+    @property
+    def clock_channel_number(self) -> int:
+        for chnl_num, chnl in self.channels.items():
+            if chnl.name == "Clock":
+                return chnl_num
+        raise ValidationError("Clock channel not defined in the config.")
+
 class Watchdog(BaseModel):
     base_directory: DirectoryPath
-    backup_directory:           DirectoryPath
+    backup_directory: DirectoryPath
 
 class TBConfig(BaseModel):
     test_beam: TestBeam

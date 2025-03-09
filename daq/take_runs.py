@@ -2,7 +2,7 @@ import sys
 # This is very important, sometimes the python path gets confused
 for py_path in sys.path:
     if "module_test_sw" in py_path and "ETL_TestingDAQ" not in py_path:
-        print("COME ON MAN!!! the yucky is in there!")
+        print("COME ON MAN!!! the wrong module_test_sw was in there! Removed it for you :P")
         sys.path.remove("/home/etl/Test_Stand/module_test_sw")
 
 from pathlib import Path
@@ -197,6 +197,7 @@ if __name__ == '__main__':
     with Lecroy(scope_config.ip_address, active_channels=active_channels) as lecroy, RunDaqStreamPY(telescope_config, daq_dir) as daq_stream:
         lecroy.setup_from_config(scope_config)
 
+        user_input_for_watchdog_on = input("HOLD UP, is the watchdog on? If not you will need to manually merge binaries to root!")
         user_input_for_beam_on = None
         while not is_beam_on(user_input_for_beam_on):
             user_input_for_beam_on = input("Need somebody to turn the beam on! Is it on? (y/abort) ")
@@ -204,7 +205,6 @@ if __name__ == '__main__':
         print(f"----------STARTING RUNS {run_start} TO {run_stop}----------")
         for run in range(run_start, run_start+num_runs):
             start_time = datetime.now()
-            set_run_number(run_number_path, run=run)
 
             print("\n")
             print(f"::::::::::: ACQUIRING RUN {run} :::::::::::")
@@ -253,5 +253,8 @@ if __name__ == '__main__':
                     print("Run log corrupted during runs, lost the 'runs' key, skipping logging...")
 
             print(f"::::::::::: FINISHED RUN {run} :::::::::::")
+
+            #+1 to make it the "next run number"
+            set_run_number(run_number_path, run=run+1) 
 
     # uhal._core.NonValidatedMemory

@@ -16,11 +16,12 @@ from pathlib import Path
 from typing import List
 import awkward as ak
 import uproot
+import json
 
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def consolidate_acquisition(output_file_path: str, etroc_binary_paths: List[str]=None, mcp_binary_path: str=None, clock_binary_path: str=None):
+def consolidate_acquisition(output_file_path: str, etroc_binary_paths: List[str]=None, mcp_binary_path: str=None, clock_binary_path: str=None, run_log_path:str = None):
 
     t_file_reads = time.perf_counter()
     mcp_waveform = LecroyReader(mcp_binary_path)
@@ -42,12 +43,21 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: List[str]
 
     t_write_files = time.perf_counter()
     with uproot.recreate(output_file_path) as output:
+        # Store Merged data
         etroc_data.update(oscillicsope_waveforms) #oscillicsope_waveforms | etroc_data
         output["pulse"] = etroc_data
+        
+        # Store Binary in root file
+        binary_paths = list(map(Path, etroc_binary_paths)) + [ Path(mcp_binary_path), Path(clock_binary_path)]
+        output["binaries"] = {bin_path.name:"..." for bin_path in binary_paths}
+
+        # Store Run Log
+        with open(run_log_path, "r") as f:
+            output["run_log"] = json.load(f)
 
         N_events_etroc = len(etroc_data[list(etroc_data.keys())[0]])
         N_events_scope = len(oscillicsope_waveforms[list(oscillicsope_waveforms.keys())[0]])
-        print(f"The length of the branches doesn't match for run: {output_file_path}, {N_events_etroc} vs {N_events_scope}")
+        logger.error(f"The length of the branches doesn't match for run: {output_file_path}, {N_events_etroc} vs {N_events_scope}")
     
     logger.info(f"WRITE FILE TOOK {(time.perf_counter()-t_write_files):.2f} seconds")
 
@@ -55,41 +65,53 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: List[str]
 # trace_file = lambda chnl, run: Path(f'/media/etl/Storage/SPS_October_2024/LecroyRaw/C{chnl}--Trace{run}.trc')
 # etroc_file = lambda run: Path(f"/home/etl/Test_Stand/module_test_sw/ETROC_output/output_run_{run}_rb0.dat")
 if __name__ == "__main__":
-    trace_file = lambda chnl, run: Path(f"/eos/uscms/store/group/cmstestbeam/ETL_DESY_March_2024/LecroyRaw/C{chnl}--Trace{run}.trc")
-    etroc_file = lambda run: Path(f"/eos/uscms/store/group/cmstestbeam/ETL_DESY_March_2024/rawDat/output_run_{run}_rb0.dat")
-
-    MCP_channel = 2
-    CLK_channel = 3
-
-    output_file_dir = Path(f"rereco_data2")
-    output_file_dir.parent.mkdir(parents=True, exist_ok=True)
-    output_file = lambda run: Path(f"run_{run}.root")
-
-    run_start = 2800
-    run_stop = 3000
+    import argparse
+    parser = argparse.ArgumentParser(description="Process ETROC and Oscilloscope binaries.")
+    parser.add_argument('--run_start', type=int, required=True, help='Start run number')
+    parser.add_argument('--run_stop', type=int, required=True, help='Stop run number')
+    parser.add_argument('--output_dir', type=Path, help='Output directory')
+    parser.add_argument('--mcp_channel', type=int, default=2, help='Channel number of the mcp')
+    parser.add_argument('--clock_channel', type=int, default=3, help='Channel number of the clock')
+    parser.add_argument('--trace_binary_dir', type=Path, help='Directory of trace files (mcp and clock)')
+    parser.add_argument('--etroc_binary_dir', type=Path, help='Directory of etroc files')
+    parser.add_argument('--processes', type=int, default=3, help='Number of multiprocesses to spawn')
+    parser.add_argument('--overwrite', action="store_true", help='Will overwrite any already merged files. Otherwise it skips them.')
+    args = parser.parse_args()
+    # /eos/uscms/store/group/cmstestbeam/ETL_DESY_March_2024/LecroyRaw/
+    # /eos/uscms/store/group/cmstestbeam/ETL_DESY_March_2024/rawDat/
+    if not args.output_dir.isdir():
+        raise ValueError(f"Your output dir does not exist or is not a directory: {args.output_dir}")
+    if not args.trace_binary_dir.isdir():
+        raise ValueError(f"Your inputted trace binary directory does not exist or is not a directory: {args.trace_binary_dir}")
+    if not args.etroc_binary_dir.isdir():
+        raise ValueError(f"Your inputted etroc binary directory does not exist or is not a directory: {args.etroc_binary_dir}")
+    
+    trace_path  = lambda chnl, run: args.trace_binary_dir/Path(f"C{chnl}--Trace{run}.trc")
+    etroc_path  = lambda run: args.etroc_binary_dir/Path(f"output_run_{run}_rb0.dat")
+    output_path = lambda run: args.output_dir/Path(f"run_{run}.root")
 
     def consolidate_acquisition_task(run):
-        if (os.path.exists(f"{output_file_dir}/{output_file(run)}")):
-            print(f"The file: {output_file(run)}, is already created.")
+        if output_path(run).isfile() and not args.overwrite:
+            logger.info(f"The file: {output_path(run)}, is already created.")
             return
-        print(f'Consolidating run: {run}')
+        logger.info(f'Consolidating run: {run}')
         try:
             consolidate_acquisition(
-                output_file_dir / output_file(run),
-                etroc_binary_paths=[etroc_file(run)],
-                mcp_binary_path=trace_file(MCP_channel, run),
-                clock_binary_path=trace_file(CLK_channel, run),
+                output_path(run),
+                etroc_binary_paths=[etroc_path(run)],
+                mcp_binary_path=trace_path(args.mcp_channel, run),
+                clock_binary_path=trace_path(args.clock_channel, run),
             )
         except:
-            print("AN ERROR HAS OCCURED DURING CONVERSION!")
+            logger.error("AN ERROR HAS OCCURED DURING CONVERSION!")
 
     t_consolidated = time.perf_counter()
-    with Pool() as pool:
+    with Pool(processes=args.processes) as pool:
         results = pool.imap_unordered(
-            consolidate_acquisition_task, range(run_start, run_stop + 1)
+            consolidate_acquisition_task, range(args.run_start, args.run_stop + 1)
         )
         for _ in results:
             pass
 
-    print(f"COMPLETED IN: {(time.perf_counter()-t_consolidated):.2f} seconds")
+    logger.info(f"COMPLETED IN: {(time.perf_counter()-t_consolidated):.2f} seconds")
 
