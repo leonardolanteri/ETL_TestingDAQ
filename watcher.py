@@ -163,7 +163,9 @@ if __name__ == "__main__":
     observer.schedule(
         ConfigUpdateHandler(), 
         TB_CONFIG.test_beam.project_directory / Path("configs/active_config/"))
-
+    
+    observer.start()
+    logging.info(f"🐶 Watchdog is now monitoring directories...")
 
     try:
         while True:

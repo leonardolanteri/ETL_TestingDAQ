@@ -15,7 +15,7 @@ from daq.lecroy_controller import (
     TriggerSlope
 )
 
-def all_unique(array: List) -> bool:
+def all_unique(array: list) -> bool:
     "Returns true if all the elements in an array are unique"
     return len(array) == len(set(array))
 
@@ -50,7 +50,7 @@ class ServiceHybrid(BaseModel):
     bias_voltage: float
 
     @field_validator('module_select', mode='after')
-    def check_single_module_selected(rb_positions: List):
+    def check_single_module_selected(rb_positions: list):
         """Logic for handling the format [[110], [], []], checks only 1 module is connected to rb"""
         if len(get_modules(rb_positions)) != 1:
             raise ValueError(f"COME ON MAN! Only a single module can be selected for test beam. You selected: {rb_positions}")
@@ -103,7 +103,7 @@ class TelescopeConfig(BaseModel):
     
     @computed_field
     @property
-    def rbs(self) -> List[int]:
+    def rbs(self) -> list[int]:
         rbs = []
         for sh in self.service_hybrids:
             rbs.append(sh.rb)
@@ -158,9 +158,9 @@ class Oscilloscope(BaseModel):
     @classmethod
     def convert_list_to_tuple(cls, data: Any) -> Any:
         if isinstance(data, dict):
-            if 'horizontal_window' in data and isinstance(data['horizontal_window'], List):
+            if 'horizontal_window' in data and isinstance(data['horizontal_window'], list):
                 data['horizontal_window'] = tuple(data['horizontal_window'])
-            if 'sample_rate' in data and isinstance(data['sample_rate'], List):
+            if 'sample_rate' in data and isinstance(data['sample_rate'], list):
                 data['sample_rate'] = tuple(data['sample_rate'])
         return data
 
