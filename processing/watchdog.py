@@ -20,6 +20,7 @@ ETROC_BINARY_DIR = TB_CONFIG.telescope_config.etroc_binary_data_directory
 SCOPE_BINARY_DIR =  TB_CONFIG.oscilloscope.binary_data_directory
 BASE_DIR = TB_CONFIG.watchdog.base_directory
 RUN_NUMBER_PATH = TB_CONFIG.test_beam.project_directory/Path('daq/static/next_run_number.txt')
+SCOPE_TRC_FILE_REGEX = r"C(\d+)--Trace(\d+).trc"
 MCP_FILENAME_REGEX = rf"C{TB_CONFIG.oscilloscope.mcp_channel_number}--Trace(\d+).trc"
 CLOCK_FILENAME_REGEX = rf"C{TB_CONFIG.oscilloscope.clock_channel_number}--Trace(\d+).trc"
 MERGED_FILENAME_REGEX = r"run_(\d+).root"
@@ -32,7 +33,7 @@ logging.basicConfig(level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 def get_next_run_number() -> int:
-    """Looks at the next_run_number.txt which stores the next run number from daq"""
+    """Looks at the daq/static/next_run_number.txt which stores the next run number from daq"""
     with open(RUN_NUMBER_PATH, 'r') as file:
         run_number = file.read().strip()
     return int(run_number)
@@ -65,35 +66,20 @@ def find_run_number(file_path: Path, reg_expression: str) -> Union[None, int]:
     """
     if not file_path.is_file():
         raise FileNotFoundError(f"File not found for: {file_path}")
-    
+
     expression = re.compile(reg_expression)
-    if match := expression.match(file_path.name):
-        
-        if len(match.groups()) != 1:
-            raise ValueError(f"Please provide only one capture group in regular expresion, {len(match.groups())} found. Remember in regex capture groups are denoted by parenthesis ()") 
-        run_num_raw = match.group(1)
-        if run_num_raw.isdigit():
-            return int(run_num_raw)
-        else:
-            raise ValueError(f"Your inputted regular expression did not output an integer. Output: {run_num_raw}")
-    else:
+    match = expression.match(file_path.name)
+    if not match:
         return None
 
-def find_run_numbers(directory: Path, reg_expression: str) -> Set[int]:
-    """
-    Finds all run numbers in a directory based off of a regular expression.
-    Supports only one capture group in the regular expression (this should be for the run number!)
-    If a non integer string is found, it raises a Value Error.
-    """
-    run_numbers = set()
-    if not directory.is_dir():
-        raise NotADirectoryError(f"Directory not found for: {directory}")
-    
-    for file in directory.iterdir():
-        run_num = find_run_number(file, reg_expression)
-        if run_num is not None:
-            run_numbers.add(run_num)
-    return run_numbers
+    if len(match.groups()) != 1:
+        raise ValueError(f"Please provide only one capture group in regular expression, {len(match.groups())} found. Remember in regex capture groups are denoted by parenthesis ()")
+
+    run_num_raw = match.group(1)
+    if not run_num_raw.isdigit():
+        raise ValueError(f"Your inputted regular expression did not output an integer. Output: {run_num_raw}")
+
+    return int(run_num_raw)
 
 def find_file_by_run_number(source_directory: Path, run_number: int, filename_regex: str):
     """
@@ -112,6 +98,22 @@ def get_unmerged_runs(merged_root_dir: Path) -> Set:
     """
     Finds unmerged runs by comparing run numbers between trace files and etroc binaries
     """
+    def find_run_numbers(directory: Path, reg_expression: str) -> Set[int]:
+        """
+        Finds all run numbers in a directory based off of a regular expression.
+        Supports only one capture group in the regular expression (this should be for the run number!)
+        If a non integer string is found, it raises a Value Error.
+        """
+        run_numbers = set()
+        if not directory.is_dir():
+            raise NotADirectoryError(f"Directory not found for: {directory}")
+        
+        for file in directory.iterdir():
+            run_num = find_run_number(file, reg_expression)
+            if run_num is not None:
+                run_numbers.add(run_num)
+        return run_numbers
+
     merged_runs = find_run_numbers(
         merged_root_dir,
         MERGED_FILENAME_REGEX
@@ -145,11 +147,9 @@ def etroc_hitmaps_generator(path: Path, output_dir: Path) -> None:
         logging.warning(f"No ETROC data available for {path}.")
         return
 
-    # Initialize hitmap array (from Daniel's code)
     hits = np.zeros([16, 16])
     mask = []  # Define mask if needed
 
-    # Generate the hitmap
     for ev in etroc_data:
         for row, col in zip(ev.row, ev.col):
             if (row, col) not in mask:
@@ -201,7 +201,7 @@ def MCP_trace_generator(path: Path, output_dir: Path, run_number: str) -> None:
     fig.savefig(output_file)
     plt.close(fig) 
 
-    print(f"Generated and saved MCP trace at: {output_file}")
+    logging.info(f"Generated and saved MCP trace at: {output_file}")
 
 def Clock_trace_generator(path: Path, output_dir: Path, run_number: str) -> None:
     """
@@ -253,40 +253,33 @@ class ClockPlotsHandler(FileSystemEventHandler):
     output_dirname = "clock_plots"
 
     def on_created(self, event):
-        channel = str(TB_CONFIG.oscilloscope.clock_channel_number)
         file_path = Path(event.src_path)
-        match = re.match(r"C(\d+)--Trace(\d+).trc", file_path.name)
-        if match is None:
-            return 
-        if match.group(1) == channel:
-            logging.info(f'[CLOCK PLOT] Scope Clock Trace file at {event.src_path} has been created')
-            output_dir = create_output_dir(self)
-            try:
-            # Generate traces histogram
-                Clock_trace_generator(file_path,output_dir,match.group(2))
-            except Exception as e:
-                logging.error(f"Failed to CLOCK traces for {file_path}: {e}")
+        match = re.match(SCOPE_TRC_FILE_REGEX, file_path.name)
+        if not match or match.group(1) != str(TB_CONFIG.oscilloscope.clock_channel_number):
+            return
+
+        logging.info(f'[CLOCK PLOT] Scope Clock Trace file at {event.src_path} has been created')
+        output_dir = create_output_dir(self)
+        try:
+            Clock_trace_generator(file_path, output_dir, match.group(2))
+        except Exception as e:
+            logging.error(f"Failed to generate CLOCK traces plot for {file_path}: {e}")
 
 class McpPlotsHandler(FileSystemEventHandler):
     output_dirname = "mcp_plots"
 
     def on_created(self, event):
-        channel = str(TB_CONFIG.oscilloscope.mcp_channel_number)
-
         file_path = Path(event.src_path)
-        match = re.match(r"C(\d+)--Trace(\d+).trc", file_path.name)
-        if match is None:
-            return 
-        if match.group(1) == channel:
-            logging.info(f'[MCP PLOT] Scope MCP Trace file at {event.src_path} has been created')
-            output_dir = create_output_dir(self)
+        match = re.match(SCOPE_TRC_FILE_REGEX, file_path.name)
+        if not match or match.group(1) != str(TB_CONFIG.oscilloscope.mcp_channel_number):
+            return
 
-            try:
-                # Generate traces histogram
-                MCP_trace_generator(file_path,output_dir,match.group(2))
-            except Exception as e:
-                logging.error(f"Failed to MCP traces for {file_path}: {e}")
-
+        logging.info(f'[MCP PLOT] Scope MCP Trace file at {event.src_path} has been created')
+        output_dir = create_output_dir(self)
+        try:
+            MCP_trace_generator(file_path, output_dir, match.group(2))
+        except Exception as e:
+            logging.error(f"Failed to generate MCP traces plot for {file_path}: {e}")
 
 class ConfigUpdateHandler(FileSystemEventHandler):
     def on_modified(self, event):
@@ -304,44 +297,40 @@ class MergeToRootHandler(FileSystemEventHandler):
     def on_created(self, event):
         etroc_regs = [ETROC_FILENAME_REGEX_FUNC(rb) for rb in TB_CONFIG.telescope_config.rbs]
         scope_regs = [CLOCK_FILENAME_REGEX, MCP_FILENAME_REGEX]
-        
+
         # Get run number from event
         event_run_number = None
-        for reg_exp in etroc_regs+scope_regs:
+        for reg_exp in etroc_regs + scope_regs:
             event_run_number = find_run_number(Path(event.src_path), reg_exp)
             if event_run_number is not None:
                 break
+
         if event_run_number is None:
             logging.warning(f"Did not find event run number for this file path: {event.src_path}")
+            return
 
-        # need to check etroc directory
         found_etroc_runs = [
-            find_file_by_run_number(ETROC_BINARY_DIR, event_run_number, reg) for reg in etroc_regs]
-
+            find_file_by_run_number(ETROC_BINARY_DIR, event_run_number, reg) for reg in etroc_regs
+        ]
         found_mcp_run = find_file_by_run_number(SCOPE_BINARY_DIR, event_run_number, MCP_FILENAME_REGEX)
-        found_clock_run = find_file_by_run_number(SCOPE_BINARY_DIR, event_run_number, CLOCK_FILENAME_REGEX)       
-        # if all merge
-        print(found_etroc_runs)
-        print(found_mcp_run)
-        print(found_clock_run)
-        if None not in found_etroc_runs and found_mcp_run is not None and found_clock_run is not None:
-            logging.info(f'[MERGED ROOT FILE] Merged root file {event.src_path} has been created')
-            # process binaries
-            run_log = get_run_log(event_run_number)
-            if run_log is None:
-                logging.error(f"NOT MERGING RUN {event_run_number}: Run log not found")
-                return 
-            consolidate_acquisition(
-               create_output_dir(self) / Path(MERGED_FILENAME(event_run_number)),
-               etroc_binary_paths = list(map(str, found_etroc_runs)),
-               mcp_binary_path    = str(found_mcp_run),
-               clock_binary_path  = str(found_clock_run),
-               run_log_path = run_log
-            )
+        found_clock_run = find_file_by_run_number(SCOPE_BINARY_DIR, event_run_number, CLOCK_FILENAME_REGEX)
+        if None in found_etroc_runs or found_mcp_run is None or found_clock_run is None:
+            # Need all three data files
+            return
 
-        
-        #logging.info("The expected binaries are in their respective directories, attempting merge!")
-        # will need functionality to wait for multiple binaries (look at telescope mode)
+        run_log = get_run_log(event_run_number)
+        if run_log is None:
+            logging.error(f"NOT MERGING RUN {event_run_number}: Run log not found")
+            return
+
+        logging.info(f'[MERGED ROOT FILE] Creating merged root file at {event.src_path}')
+        consolidate_acquisition(
+            create_output_dir(self) / Path(MERGED_FILENAME(event_run_number)),
+            etroc_binary_paths=list(map(str, found_etroc_runs)),
+            mcp_binary_path=str(found_mcp_run),
+            clock_binary_path=str(found_clock_run),
+            run_log_path=run_log
+        )
 
 class DataBackupHandler(FileSystemEventHandler):
     def on_created(self, event):
@@ -363,10 +352,10 @@ if __name__ == "__main__":
     ]
     merged_root_dir = BASE_DIR/Path(merge_to_root_handler.output_dirname)
     # Display User the unmerged runs
-    print("========= UNMERGED RUNS =========")
-    print(
+    logging.info("========= UNMERGED RUNS =========")
+    logging.info(
         sorted(get_unmerged_runs(merged_root_dir)))
-    print("=================================\n")
+    logging.info("=================================\n")
 
     for handler, directory in processing_handlers:
         # Make watchdog dirs if they do not exist
