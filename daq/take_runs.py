@@ -19,12 +19,19 @@ from emoji import emojize
 from typing import List
 import json
 from datetime import datetime
+import logging
+
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+logging.getLogger('lecroy_controller').setLevel(logging.INFO)
+logging.getLogger('etl_telescope').setLevel(logging.INFO)
 
 #---------------- SETUPs BASED ON CONFIG --------------------------#
 
 def is_beam_on(option: str) -> bool:
     """
-    Bit scuffed but whatever, forces the selection of y or abort.
+    This is scuffed but whatever, forces the selection of y or abort.
     """
     switcher = {
         'y': lambda: print("Beam is on!"),
@@ -113,21 +120,25 @@ class RunDaqStreamPY:
             '--daq_static_dir', str(self.static_dir),
         ] 
 
-    def launch(self) -> None:
-        """Launches the daq_stream.py which streams the data from the KCU."""
+    def execute_python_subprocess(self) -> None:
+        """Launch the daq_stream.py which streams the data from the KCU."""
         self.stream_daq_process = subprocess.Popen(self.stream_daq_command) 
 
     def wait_til_done(self) -> None:
         if self.stream_daq_process is not None: #just in case
+            logging.info("Waiting for daq stream process to finish...")
             self.stream_daq_process.wait()
+            logging.info("daq stream finished")
         else:
-            print("DAQ stream subprocess completed or never started")
+            logging.warning("DAQ stream subprocess completed or never started")
 
     @property
     def is_scope_acquiring(self) -> bool:
         return self.get_status(self.is_scope_acquiring_path)
     @is_scope_acquiring.setter
     def is_scope_acquiring(self, status: bool):
+        daq_stream_message = f"Releasing daq streams" if status else "Closing daq streams"
+        logging.info(daq_stream_message + f"based on scope is acquiring status: {status}")
         self._is_scope_acquiring = self.set_status(self.is_scope_acquiring_path, status)
 
     @staticmethod
@@ -152,7 +163,12 @@ class RunDaqStreamPY:
 
     @property
     def rbs_are_ready(self) -> bool:
-        return all(self.get_status(p) for p in self.is_rb_ready_paths)
+        rbs_are_ready = all(self.get_status(p) for p in self.is_rb_ready_paths)
+
+        if rbs_are_ready:
+            logging.info("All streams in daq_stream.py are initialized, waiting for scope acquisition!")
+        
+        return rbs_are_ready
 
 ################################################################################################################################
 #####################################-------------TEST BEAM ROUTINE-------------################################################
@@ -202,38 +218,22 @@ if __name__ == '__main__':
         while not is_beam_on(user_input_for_beam_on):
             user_input_for_beam_on = input("Need somebody to turn the beam on! Is it on? (y/abort) ")
 
-        print(f"----------STARTING RUNS {run_start} TO {run_stop}----------")
+        logging.info(f"----------STARTING RUNS {run_start} TO {run_stop}----------")
         for run in range(run_start, run_start+num_runs):
+            logging.info(f"::::::::::: ACQUIRING RUN {run} :::::::::::")
             start_time = datetime.now()
-
-            print("\n")
-            print(f"::::::::::: ACQUIRING RUN {run} :::::::::::")
-
-
-            daq_stream.launch() # WILL STOP UNTIL daq_stream.is_scope_acquiring is set
-            
-            print("Waiting for streams to be ready...")
+            # WILL STOP UNTIL daq_stream.is_scope_acquiring is set
+            daq_stream.execute_python_subprocess() 
             while not daq_stream.rbs_are_ready:
                 time.sleep(0.2) 
-            print("Streams ready!")
             
-            print(">>>>> starting scope acquisition <<<<<<")
-            # Starts all daq streams bec its waiting for scope to begin!
-            daq_stream.is_scope_acquiring = True 
+            daq_stream.is_scope_acquiring = True # releases daq streams
             # 6 microseconds of delay between these lines
             lecroy.do_acquisition() # this hangs until acquisition is done.
-            print(">>>>> scope acquisition finished <<<<<<")
-            
-            # Ends all daq streams
             daq_stream.is_scope_acquiring = False 
-            print("letting daq stream know scope is done!")
             for chnl in lecroy.channels.values():
                 chnl.save(run)
-            print("saved the waveforms now waiting for daq stream")
-            # SAFETY: Lets daq_stream.py finish (otherwise it gets killed when exiting the context manager!)
             daq_stream.wait_til_done()
-            print("daq stream done")
-
 
             # Output run log
             with open(run_group_path, 'r+') as f:
@@ -250,10 +250,9 @@ if __name__ == '__main__':
                     f.seek(0) # 
                     json.dump(run_group_log, f, indent=4)
                 else:
-                    print("Run log corrupted during runs, lost the 'runs' key, skipping logging...")
+                    logging.error("Run log corrupted during runs, lost the 'runs' key, skipping logging...")
 
-            print(f"::::::::::: FINISHED RUN {run} :::::::::::")
-
+            logging.info(f"::::::::::: FINISHED RUN {run} :::::::::::")
             #+1 to make it the "next run number"
             set_run_number(run_number_path, run=run+1) 
 

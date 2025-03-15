@@ -234,8 +234,6 @@ def Clock_trace_generator(path: Path, output_dir: Path, run_number: str) -> None
     logging.info(f"Generated and saved Clock traces at: {output_file}")
 
 
-
-
 class EtrocHitMapsHandler(FileSystemEventHandler):
     output_dirname = "etroc_hitmaps"
     # def __init__(self, *args, **kwargs):

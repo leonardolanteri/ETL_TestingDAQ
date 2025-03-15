@@ -3,6 +3,10 @@ from __future__ import annotations
 import pyvisa as visa
 from typing import Literal, List
 from pydantic import validate_call, ConfigDict
+import logging
+
+logger = logging.getLogger(__name__)
+
 SegmentDisplayMode = Literal["Adjacent","Overlay","Waterfall","Perspective","Mosaic"]
 VoltageUnits = Literal["V", "MV"]
 Coupling = Literal['A1M', 'D1M', 'D50', 'GND']
@@ -76,6 +80,8 @@ class Channel:
         self._conn.write(rf"""vbs app.SaveRecall.Waveform.WaveFormat = "{file_format}" """)
         self._conn.write(rf"""vbs 'app.SaveRecall.Waveform.TraceTitle = "Trace{run_number}"' """)
         self._conn.write(r"""vbs 'app.SaveRecall.Waveform.SaveFile' """)
+        logger.info(f"Saved waveform for run {run_number} on channel {self.number}")
+
 
 class LecroyController:
     """
@@ -116,7 +122,7 @@ class LecroyController:
         self.reset()
         # Recommended by documentation page 2-16 in maui-remote control manual
         setup_wait = self.wait_til_idle(5) 
-        print(f"Scope reset complete: {setup_wait}")
+        logger.info(f"Scope reset to defualt settings complete: {setup_wait}")
         # this is just good to stop any previous acquisitions, unlikely but to be safe!
 
         self.channels = {
@@ -142,11 +148,11 @@ class LecroyController:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type == KeyboardInterrupt:
             print("\n")
-            print("****************** READ ME ******************")
-            print("If running a scope acquisioin and you Cntrl-C'ed out of it")
-            print("Please manually stop the scope or wait for the acquisition to finish on the scope before.")
-            print("Otherwise you will get connection error to the scope!")
-            print("****************** READ ME ******************")
+            logger.warning("****************** READ ME ******************")
+            logger.warning("If running a scope acquisioin and you Cntrl-C'ed out of it")
+            logger.warning("Please manually stop the scope or wait for the acquisition to finish on the scope before.")
+            logger.warning("Otherwise you will get connection error to the scope!")
+            logger.warning("****************** READ ME ******************")
             print("\n")
 
         if self._conn is not None:
@@ -295,7 +301,8 @@ class LecroyController:
 
         WARNING: **Only tested for sequence sample mode!!** but might be general
         For single acquisitions, there are better methods in the manual!
-        """
+        """ 
+        logger.info("<<<<< STARTING SCOPE ACQUISITION >>>>>>")
         self.stop_acquistion()
         self._conn.write("*CLS") # clear status regisers
         self._conn.write("*TRG") # executes arm command, Group Execute Trigger
@@ -303,6 +310,7 @@ class LecroyController:
         # When you try to send *OPC? command it won't read it until acquisition is complete because of the wait command!
         # Important because we want to program to hang while we do acquisition, so *OPC? is needed to get that behavior
         self._conn.query("*OPC?") # Operation Complete Query, always returns 1
+        logger.info("<<<<< SCOPE ACQUISITION FINISHED >>>>>>")
 
     def reset(self):
         """
