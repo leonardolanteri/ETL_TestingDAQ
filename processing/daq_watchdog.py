@@ -13,6 +13,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileCreatedEvent
 from config import load_config
 from plots import etroc_hitmaps_generator, MCP_trace_generator, Clock_trace_generator
+import subprocess
 
 TB_CONFIG = load_config()
 ETROC_BINARY_DIR = TB_CONFIG.telescope_config.etroc_binary_data_directory
@@ -48,8 +49,6 @@ def get_run_log(run_number:int) -> Union[Path, None]:
         if not run_log_match:
             continue
         run_start, run_stop = map(int, run_log_match.groups())
-        print(run_start, run_stop)
-        print(TB_CONFIG.run_config.num_runs)
         if run_start < run_number < run_stop and (TB_CONFIG.run_config.num_runs - 1) == (run_stop-run_start) :
             return run_log_path
 
@@ -80,8 +79,7 @@ def get_unmerged_runs(merged_root_dir: Path) -> Set:
 
 class EtrocHitMapsHandler(FileSystemEventHandler):
     output_dirname = "etroc_hitmaps"
-    # def __init__(self, *args, **kwargs):
-    #     super(EtrocHitMapsHandler, self).__init__(*args, **kwargs)
+
     def on_created(self, event):
         if not event.src_path.endswith(".dat"):
             return 
@@ -126,14 +124,6 @@ class McpPlotsHandler(FileSystemEventHandler):
             MCP_trace_generator(file_path, output_dir, match.group(2))
         except Exception as e:
             logging.error(f"Failed to generate MCP traces plot for {file_path}: {e}")
-
-class ConfigUpdateHandler(FileSystemEventHandler):
-    def on_modified(self, event):
-        logging.critical("Config updated, EXITING WATCHDOG!")
-        sys.exit("boomshackalacka")
-        # Just exit the watchdog with a big explanation
-        # The config has changed please rerun the watchdog in order to load the new config
-        # do this on file changes, or if new active config
 
 class MergeToRootHandler(FileSystemEventHandler):
     output_dirname = 'merged_root'
@@ -182,6 +172,21 @@ class DataBackupHandler(FileSystemEventHandler):
     def on_created(self, event):
         logging.info("Merged root file made, attempting backup store of binaries and root file")
 
+
+class ConfigUpdateHandler(FileSystemEventHandler):
+    def __init__(self, observer: Observer):
+        super(ConfigUpdateHandler).__init__()
+        self.observer = observer
+
+    def on_modified(self, event):
+        logging.critical("Config updated, EXITING WATCHDOG!")
+        subprocess.Popen(['notify-send', "ETL TB - CRITICAL - Config was updated, exiting watchdog"])
+        observer.stop()
+        
+        # Just exit the watchdog with a big explanation
+        # The config has changed please rerun the watchdog in order to load the new config
+        # do this on file changes, or if new active config
+
 if __name__ == "__main__":
     observer = Observer()
 
@@ -212,15 +217,15 @@ if __name__ == "__main__":
     observer.schedule(DataBackupHandler(), merged_root_dir)
 
     observer.schedule(
-        ConfigUpdateHandler(), 
+        ConfigUpdateHandler(observer=observer), 
         TB_CONFIG.test_beam.project_directory / Path("configs/active_config/"))
     
     observer.start()
     logging.info(f"🐶 Watchdog is now monitoring directories...")
 
     try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
+        while observer.is_alive():
+            observer.join(1)
+    finally:
         observer.stop()
-    observer.join()
+        observer.join()

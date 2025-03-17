@@ -103,7 +103,7 @@ class TelescopeConfig(BaseModel):
     
     @computed_field
     @property
-    def rbs(self) -> list[int]:
+    def rbs(self) -> List[int]:
         rbs = []
         for sh in self.service_hybrids:
             rbs.append(sh.rb)

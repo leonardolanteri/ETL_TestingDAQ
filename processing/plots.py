@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')  # Use a non-GUI backend otherwise the multithread crushes
 import matplotlib.pyplot as plt
-
+import mplhep 
 logger = logging.getLogger(__name__)
 
 def etroc_hitmaps_generator(path: Path, output_dir: Path) -> None:
@@ -14,7 +14,7 @@ def etroc_hitmaps_generator(path: Path, output_dir: Path) -> None:
     Generates a hitmap from ETROC binary data and saves it in the specified output directory.
     """
     # Set CMS style for plots
-    plt.style.use(hep.style.CMS)
+    plt.style.use(mplhep.style.CMS)
 
     # Convert the paths in strings and the binaries in ak.arrays
     etroc_binary_paths = [str(path)] 
@@ -69,14 +69,14 @@ def MCP_trace_generator(path: Path, output_dir: Path, run_number: str) -> None:
     ax.set_xlabel("Time (ns)")
     ax.set_ylabel("Voltage (V)")
     ax.set_title(f"All {reader.n_events} Events MCP - Channel {reader.channel}")
-    ax.legend()
+    ax.legend(loc="upper right")
     ax.grid()
 
     output_file = output_dir / f"MCP_traces_run_{run_number}.png"
     fig.savefig(output_file)
     plt.close(fig) 
 
-    logger.info(f"Generated and saved MCP trace at: {output_file}")
+    logger.info(f"[MCP PLOT] saved at: {output_file}")
 
 def Clock_trace_generator(path: Path, output_dir: Path, run_number: str) -> None:
     """
@@ -99,11 +99,11 @@ def Clock_trace_generator(path: Path, output_dir: Path, run_number: str) -> None
     ax.set_xlabel("Time (ns)")
     ax.set_ylabel("Voltage (V)")
     ax.set_title(f"All {reader.n_events} Events Clock - Channel {reader.channel}")
-    ax.legend()
+    ax.legend(loc="upper right")
     ax.grid()
 
     output_file = output_dir / f"Clock_traces_run_{run_number}.png"
     fig.savefig(output_file)
     plt.close(fig) 
 
-    logger.info(f"Generated and saved Clock traces at: {output_file}")
+    logger.info(f"[CLOCK PLOT] saved at: {output_file}")
