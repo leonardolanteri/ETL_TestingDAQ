@@ -193,21 +193,21 @@ if __name__ == '__main__':
     run_stop = run_start + num_runs - 1 
 
     # Initialize Run Log
-    run_group_path = tb_config.run_config.run_log_directory / Path(f"runs_{run_start}_{run_stop}.json")
-    new_run_group = {
+    run_log_path = tb_config.run_config.run_log_directory / Path(f"runs_{run_start}_{run_stop}.json")
+    run_log = {
         "config": tb_config.model_dump(mode="json"),
-        "runs": []
+        "runs": [],
+        "thresholds": {}
     }
-    with open(run_group_path, mode='w') as f:
-        json.dump(new_run_group, f)
-    
     # CONFIGURE FRONT END ELECTRONICS
-    thresholds_dir = telescope_config.all_thresholds_directory / Path(f"run_{run_start}_{run_stop}")
-    thresholds_dir.mkdir(exist_ok=True)
-    etl_telescope = ETL_Telescope(telescope_config, thresholds_dir=thresholds_dir)
+    etl_telescope = ETL_Telescope(telescope_config)
+    run_log["thresholds"] = etl_telescope.thresholds
+
+    with open(run_log_path, mode='w') as f:
+        json.dump(run_log, f)
+
     if args.etl_power_up:
         sys.exit("ETL Power up option gave exiting early!")
-
     # DAQ
     active_channels = [chnl_num for chnl_num in scope_config.channels]
     with Lecroy(scope_config.ip_address, active_channels=active_channels) as lecroy, RunDaqStreamPY(telescope_config, daq_dir) as daq_stream:
@@ -236,7 +236,7 @@ if __name__ == '__main__':
             daq_stream.wait_til_done()
 
             # Output run log
-            with open(run_group_path, 'r+') as f:
+            with open(run_log_path, 'r+') as f:
                 run_group_log = json.load(f)
                 if 'runs' in run_group_log:
                     run_group_log['runs'].append(

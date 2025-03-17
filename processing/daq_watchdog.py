@@ -32,6 +32,7 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 logging.getLogger("plots")
+logging.getLogger("process_binaries")
 
 def create_output_dir(handler) -> Path:
     """
@@ -49,8 +50,12 @@ def get_run_log(run_number:int) -> Union[Path, None]:
         if not run_log_match:
             continue
         run_start, run_stop = map(int, run_log_match.groups())
-        if run_start < run_number < run_stop and (TB_CONFIG.run_config.num_runs - 1) == (run_stop-run_start) :
-            return run_log_path
+        num_runs = TB_CONFIG.run_config.num_runs
+        if run_start <= run_number <= run_stop and (num_runs - 1) == (run_stop-run_start):
+            return run_log_path 
+        else:
+            logging.debug(f"Run log not found by checking: \
+                            {run_start=}<={run_number=}<={run_stop} and {num_runs=}-1 == ({run_start-run_stop})")           
 
 def get_unmerged_runs(merged_root_dir: Path) -> Set:
     """
@@ -223,7 +228,7 @@ if __name__ == "__main__":
     observer.start()
     logging.info(f"🐶 Watchdog is now monitoring directories...")
 
-    try:
+    try: # thx watchdog documentation
         while observer.is_alive():
             observer.join(1)
     finally:

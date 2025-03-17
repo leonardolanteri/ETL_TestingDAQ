@@ -52,16 +52,15 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: List[str]
         output["pulse"] = etroc_data
         
         # Store Binary in root file
-        binary_paths = list(
-            map(Path, etroc_binary_paths)) + [ Path(mcp_binary_path), Path(clock_binary_path)]
-        for bin_path in binary_paths:
-            output['binary-file-'+bin_path.name] = base64.b64encode(bin_path.read_bytes()).decode('utf-8')
+        # binary_paths = list(
+        #     map(Path, etroc_binary_paths)) + [ Path(mcp_binary_path), Path(clock_binary_path)]
+        # for bin_path in binary_paths:
+        #     output['binary-file-'+bin_path.name] = base64.b64encode(bin_path.read_bytes()).decode('utf-8')
+
         # Store Run Log
         output["run_log"] = json.dumps(run_log)
         logger.debug(f"THIS IS THE RUN LOG: {run_log}")
 
-        # logger.debug(ak.Array(etroc_data['event']))
-        # logger.debug(ak.Array(oscillicsope_waveforms['mcp_volts']))
         N_events_etroc = len(etroc_data['event'])
         N_events_scope = len(oscillicsope_waveforms['mcp_volts'])
         if N_events_etroc != N_events_scope:

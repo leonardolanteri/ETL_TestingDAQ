@@ -16,10 +16,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 class ETL_Telescope:
-    def __init__(self, telescope_config: TelescopeConfig, thresholds_dir:Path = None):
+    def __init__(self, telescope_config: TelescopeConfig):
         self.config = telescope_config
         self.kcu: KCU = utils.get_kcu(self.config.kcu_ip_address, control_hub=True, verbose=True)
-        self.thresholds_dir = thresholds_dir
         if (self.kcu == 0):
             # if not basic connection was established the get_kcu function returns 0
             # this would cause the RB init to fail.
@@ -33,7 +32,8 @@ class ETL_Telescope:
         else:
             logger.info("Successful Test Communication with KCU!!")
         self.readout_boards: Dict[int,ReadoutBoard] = {}
-
+        
+        self.thresholds = {}
         # i apologize that this does not read very procedurally
         self.startup_readout_boards()
         self.check_all_rb_configured()
@@ -85,8 +85,7 @@ class ETL_Telescope:
             for mod in readout_board.modules:
                 mod.show_status()
 
-    def configure_ETROCs(self, thresholds_filename_prefix: str = None):
-        thresholds_filename_prefix = thresholds_filename_prefix
+    def configure_ETROCs(self):
         offset = self.config.offset
         l1a_delay = self.config.l1a_delay
         power_mode = self.config.power_mode
@@ -94,34 +93,25 @@ class ETL_Telescope:
         for readout_board in self.readout_boards.values():
             for mod in readout_board.modules:
                 modules.append(mod)
-                if mod.connected:
-                    for etroc in mod.ETROCs:
-                        if etroc.is_connected():
-                            logger.info(f"Found ETROC {etroc.chip_no}")
-                            if self.config.reuse_thresholds:
-                                filename = Path(f'thresholds_module_{etroc.module_id}_etroc_{etroc.chip_no}.yaml')
-                                thresholds_file = self.thresholds_dir/filename
-                                if not thresholds_file.exists():
-                                    raise FileNotFoundError(f"These the thresholds at {thresholds_file} do not exist. You can update the config's 'reuse thresholds' flag to False to perform a threshold scan")
-                                logger.info("*********Reusing Thresholds************")
-                                thresholds = utils.load_yaml(thresholds_file)
-                                etroc.physics_config(
-                                    offset=offset, 
-                                    L1Adelay=l1a_delay, 
-                                    thresholds=thresholds, 
-                                    powerMode=power_mode
-                                )
-                            else:
-                                etroc.physics_config(
-                                    offset = offset, 
-                                    L1Adelay = l1a_delay, 
-                                    thresholds = None, # this runs a threshold scan and saves it to outdir
-                                    out_dir = self.thresholds_dir, 
-                                    powerMode = power_mode)
-                        else:
-                            logger.info(f"ETROC {etroc.chip_no} is not connected!")
-                    for etroc in mod.ETROCs:
-                        etroc.reset()
+                if not mod.connected:
+                    logger.info(f"Module {mod.module_id} is not connected!")
+                    continue
+                for etroc in mod.ETROCs:
+                    if not etroc.is_connected():
+                        logger.info(f"ETROC {etroc.chip_no} is not connected!")
+                        continue
+
+                    etroc.set_power_mode(power_mode)
+                    etroc.enable_data_readout(broadcast=True)
+                    etroc.wr_reg("workMode", 0, broadcast=True)
+                    etroc.set_L1Adelay(delay=l1a_delay, broadcast=True)
+                    baseline, noise_width = etroc.run_threshold_scan(offset=offset) # threshold = baseline + offset !!
+                    self.thresholds[f"rb_{readout_board.rb}_module_{mod.module_id}_etroc_{etroc.chip_no}"] = {
+                        "noise_width": noise_width,
+                        "baseline": baseline
+                    }
+                for etroc in mod.ETROCs:
+                    etroc.reset()
 
         if not any(mod.connected for mod in modules):
             raise ConnectionError("No modules connected, aborting...")
