@@ -10,6 +10,7 @@ import re
 from run_number import find_file_by_run_number, extract_run_number, get_all_run_numbers
 import time
 from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
 from watchdog.events import FileSystemEventHandler, FileCreatedEvent
 from config import load_config
 from plots import etroc_hitmaps_generator, MCP_trace_generator, Clock_trace_generator
@@ -85,19 +86,22 @@ def get_unmerged_runs(merged_root_dir: Path) -> Set:
 class EtrocHitMapsHandler(FileSystemEventHandler):
     output_dirname = "etroc_hitmaps"
 
-    def on_created(self, event):
+    def on_modified(self, event):
         if not event.src_path.endswith(".dat"):
             return 
-        
-        logging.info(f'[ETROC HIT MAP] ETROC Binary at {event.src_path} has been created')
+        logging.info(f'[ETROC HIT MAP] ETROC Binary {Path(event.src_path).name} has been created')
+
         file_path = Path(event.src_path)
         output_dir = create_output_dir(self)
         try:
             # Generate hitmap
             etroc_hitmaps_generator(file_path, output_dir)
         except Exception as e:
-            logging.error(f"Failed to generate hitmap for {file_path}: {e}")
-    
+            # daq_stream.py writes multiple times to the etroc binary file 
+            # which causes this to fire prematurely.
+            return
+        logging.info(f"Successfully made etroc hit map: {Path(event.src_path).name}")
+
 class ClockPlotsHandler(FileSystemEventHandler):
     output_dirname = "clock_plots"
 
@@ -107,12 +111,12 @@ class ClockPlotsHandler(FileSystemEventHandler):
         if not match or match.group(1) != str(TB_CONFIG.oscilloscope.clock_channel_number):
             return
 
-        logging.info(f'[CLOCK PLOT] Scope Clock Trace file at {event.src_path} has been created')
+        logging.info(f'[CLOCK PLOT] Scope Clock Trace file at {file_path.name} has been created')
         output_dir = create_output_dir(self)
         try:
             Clock_trace_generator(file_path, output_dir, match.group(2))
         except Exception as e:
-            logging.error(f"Failed to generate CLOCK traces plot for {file_path}: {e}")
+            logging.error(f"Failed to generate CLOCK traces plot for {file_path.name}: {e}")
 
 class McpPlotsHandler(FileSystemEventHandler):
     output_dirname = "mcp_plots"
@@ -123,17 +127,21 @@ class McpPlotsHandler(FileSystemEventHandler):
         if not match or match.group(1) != str(TB_CONFIG.oscilloscope.mcp_channel_number):
             return
 
-        logging.info(f'[MCP PLOT] Scope MCP Trace file at {event.src_path} has been created')
+        logging.info(f'[MCP PLOT] Scope MCP Trace file at {file_path.name} has been created')
         output_dir = create_output_dir(self)
         try:
             MCP_trace_generator(file_path, output_dir, match.group(2))
         except Exception as e:
-            logging.error(f"Failed to generate MCP traces plot for {file_path}: {e}")
+            logging.error(f"Failed to generate MCP traces plot for {file_path.name}: {e}")
 
 class MergeToRootHandler(FileSystemEventHandler):
     output_dirname = 'merged_root'
 
     def on_created(self, event):
+        if event.src_path.endswith(".yaml"):
+            logging.info(f"DAQ made internal log at {event.src_path}")
+            return
+        
         etroc_regs = [ETROC_FILENAME_REGEX_FUNC(rb) for rb in TB_CONFIG.telescope_config.rbs]
         scope_regs = [CLOCK_FILENAME_REGEX, MCP_FILENAME_REGEX]
 
@@ -162,7 +170,6 @@ class MergeToRootHandler(FileSystemEventHandler):
             logging.error(f"NOT MERGING RUN {event_run_number}: Run log not found")
             return
 
-        logging.info(f'[MERGED ROOT FILE] Creating merged root file at {event.src_path}')
         merged_path = create_output_dir(self) / Path(MERGED_FILENAME(event_run_number))
         consolidate_acquisition(
             merged_path,
@@ -171,7 +178,7 @@ class MergeToRootHandler(FileSystemEventHandler):
             clock_binary_path=str(found_clock_run),
             run_log_path=run_log
         )
-        logging.info(f"Finished merging {event_run_number} at {merged_path}")
+        logging.info(f"[MERGED] Finished merging run {event_run_number} with name {merged_path.name}")
 
 class DataBackupHandler(FileSystemEventHandler):
     def on_created(self, event):
@@ -179,33 +186,28 @@ class DataBackupHandler(FileSystemEventHandler):
 
 
 class ConfigUpdateHandler(FileSystemEventHandler):
-    def __init__(self, observer: Observer):
+    def __init__(self, observer):
         super(ConfigUpdateHandler).__init__()
         self.observer = observer
 
     def on_modified(self, event):
         logging.critical("Config updated, EXITING WATCHDOG!")
         subprocess.Popen(['notify-send', "ETL TB - CRITICAL - Config was updated, exiting watchdog"])
-        observer.stop()
+        self.observer.stop()
         
         # Just exit the watchdog with a big explanation
         # The config has changed please rerun the watchdog in order to load the new config
         # do this on file changes, or if new active config
 
 if __name__ == "__main__":
-    observer = Observer()
+    pc_observer = Observer()
+    scope_obsever = PollingObserver()
 
     etroc_hitmaps_handler = EtrocHitMapsHandler()
     clock_plots_handler = ClockPlotsHandler()
     mcp_plots_handler = McpPlotsHandler()
     merge_to_root_handler = MergeToRootHandler()
-    processing_handlers = [
-        (etroc_hitmaps_handler, ETROC_BINARY_DIR),
-        (clock_plots_handler,   SCOPE_BINARY_DIR),
-        (mcp_plots_handler,     SCOPE_BINARY_DIR),
-        (merge_to_root_handler, SCOPE_BINARY_DIR),
-        (merge_to_root_handler, ETROC_BINARY_DIR)
-    ]
+
     merged_root_dir = BASE_DIR/Path(merge_to_root_handler.output_dirname)
     # Display User the unmerged runs
     logging.info("========= UNMERGED RUNS =========")
@@ -213,24 +215,32 @@ if __name__ == "__main__":
         sorted(get_unmerged_runs(merged_root_dir)))
     logging.info("=================================\n")
 
-    for handler, directory in processing_handlers:
-        # Make watchdog dirs if they do not exist
-        # Needed to create the folders directly in the handlers
-        #create_output_dir(handler)
-        observer.schedule(handler, directory)
+    pc_observer.schedule(etroc_hitmaps_handler, ETROC_BINARY_DIR)
+    pc_observer.schedule(merge_to_root_handler, ETROC_BINARY_DIR)
 
-    observer.schedule(DataBackupHandler(), merged_root_dir)
+    scope_obsever.schedule(clock_plots_handler, SCOPE_BINARY_DIR)
+    scope_obsever.schedule(mcp_plots_handler, SCOPE_BINARY_DIR)
+    scope_obsever.schedule(merge_to_root_handler, SCOPE_BINARY_DIR)
 
-    observer.schedule(
-        ConfigUpdateHandler(observer=observer), 
+
+    pc_observer.schedule(DataBackupHandler(), merged_root_dir)
+
+    pc_observer.schedule(
+        ConfigUpdateHandler(observer=pc_observer), 
         TB_CONFIG.test_beam.project_directory / Path("configs/active_config/"))
     
-    observer.start()
+    pc_observer.start()
+    scope_obsever.start()
     logging.info(f"🐶 Watchdog is now monitoring directories...")
 
     try: # thx watchdog documentation
-        while observer.is_alive():
-            observer.join(1)
+        while pc_observer.is_alive() or scope_obsever.is_alive():
+            if pc_observer.is_alive():
+                pc_observer.join(1)
+            elif scope_obsever.is_alive():
+                scope_obsever.join(1)
     finally:
-        observer.stop()
-        observer.join()
+        pc_observer.stop()
+        pc_observer.join()
+        scope_obsever.stop()
+        scope_obsever.join()

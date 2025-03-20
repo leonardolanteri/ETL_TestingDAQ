@@ -94,7 +94,7 @@ class ETL_Telescope:
             for mod in readout_board.modules:
                 modules.append(mod)
                 if not mod.connected:
-                    logger.info(f"Module {mod.module_id} is not connected!")
+                    logger.info(f"Module {mod.id} is not connected!")
                     continue
                 for etroc in mod.ETROCs:
                     if not etroc.is_connected():
@@ -106,9 +106,9 @@ class ETL_Telescope:
                     etroc.wr_reg("workMode", 0, broadcast=True)
                     etroc.set_L1Adelay(delay=l1a_delay, broadcast=True)
                     baseline, noise_width = etroc.run_threshold_scan(offset=offset) # threshold = baseline + offset !!
-                    self.thresholds[f"rb_{readout_board.rb}_module_{mod.module_id}_etroc_{etroc.chip_no}"] = {
-                        "noise_width": noise_width,
-                        "baseline": baseline
+                    self.thresholds[f"rb_{etroc.rb.rb}_module_{etroc.module_id}_etroc_{etroc.chip_no}"] = {
+                        "noise_width": noise_width.tolist(),
+                        "baseline": baseline.tolist()
                     }
                 for etroc in mod.ETROCs:
                     etroc.reset()
@@ -141,7 +141,7 @@ class ETL_Telescope:
         fifos[0].send_l1a(10)
 
         for i, fifo in enumerate(fifos):
-            logger.info(emojize(':closed_mailbox_with_raised_flag:'), f" Data in FIFO {i}:")
+            logger.info(emojize(':closed_mailbox_with_raised_flag:')+f" Data in FIFO {i}:")
             for x in fifos[i].pretty_read(df):
                 logger.info(x)
 

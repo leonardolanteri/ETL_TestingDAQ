@@ -31,7 +31,7 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: List[str]
     if etroc_data is None:
         print(f"no etroc data from {etroc_binary_paths}")
         return
-    logger.info(f"LOADING FILES TOOK {(time.perf_counter()-t_file_reads):.2f} seconds")
+    logger.debug(f"LOADING FILES TOOK {(time.perf_counter()-t_file_reads):.2f} seconds")
 
     oscillicsope_waveforms = {
         'mcp_volts': mcp_waveform.y,
@@ -66,7 +66,7 @@ def consolidate_acquisition(output_file_path: str, etroc_binary_paths: List[str]
         if N_events_etroc != N_events_scope:
             logger.error(f"The length of the branches doesn't match for run: {output_file_path}, {N_events_etroc} vs {N_events_scope}")
     
-    logger.info(f"WRITE FILE TOOK {(time.perf_counter()-t_write_files):.2f} seconds")
+    logger.debug(f"WRITE FILE TOOK {(time.perf_counter()-t_write_files):.2f} seconds")
 
 if __name__ == "__main__":
     import argparse
