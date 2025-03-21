@@ -36,6 +36,8 @@ def find_file_by_run_number(source_directory: Path, run_number: int, filename_re
     returns the file with matching run number.
     """
     for file in source_directory.iterdir():
+        if not file.is_file():
+            continue
         matched_run_number = extract_run_number(file, filename_regex)
         if matched_run_number is None:
             continue
@@ -54,6 +56,8 @@ def get_all_run_numbers(directory: Path, reg_expression: str) -> Set[int]:
         raise NotADirectoryError(f"Directory not found for: {directory}")
     
     for file in directory.iterdir():
+        if not file.is_file():
+            continue
         run_num = extract_run_number(file, reg_expression)
         if run_num is not None:
             run_numbers.add(run_num)

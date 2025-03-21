@@ -194,7 +194,7 @@ class Watchdog(BaseModel):
     ###### COMPUTED FROM INPUTTED DIRS ABOVE ######
     ###############################################
 
-    def ensure_dir_exists(directory: DirectoryPath) -> DirectoryPath:
+    def ensure_dir_exists(self, directory: DirectoryPath) -> DirectoryPath:
         directory.mkdir(exist_ok=True) # throws error if parents dont exists :)
         return directory 
     

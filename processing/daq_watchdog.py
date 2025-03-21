@@ -10,8 +10,8 @@ import re
 from run_number import find_file_by_run_number, extract_run_number, get_all_run_numbers
 import time
 from watchdog.observers import Observer
-from watchdog.observers.read_directory_changes import WindowsApiObserver
-from watchdog.events import FileSystemEventHandler, FileCreatedEvent
+from watchdog.observers.polling import PollingObserver
+from watchdog.events import FileSystemEventHandler
 from config import load_config
 from plots import etroc_hitmaps_generator, MCP_trace_generator, Clock_trace_generator
 import subprocess
@@ -93,7 +93,7 @@ class EtrocHitMapsHandler(FileSystemEventHandler):
             # which causes this to fire prematurely.
             return
 class ClockPlotsHandler(FileSystemEventHandler):
-    def on_any_event(self, event):
+    def on_created(self, event):
         file_path = Path(event.src_path)
         match = re.match(SCOPE_TRC_FILE_REGEX, file_path.name)
         if not match or match.group(1) != str(TB_CONFIG.oscilloscope.clock_channel_number):
@@ -106,7 +106,7 @@ class ClockPlotsHandler(FileSystemEventHandler):
             logging.error(f"Failed to generate CLOCK traces plot for {file_path.name}: {e}")
 
 class McpPlotsHandler(FileSystemEventHandler):
-    def on_any_event(self, event):
+    def on_created(self, event):
         file_path = Path(event.src_path)
         match = re.match(SCOPE_TRC_FILE_REGEX, file_path.name)
         if not match or match.group(1) != str(TB_CONFIG.oscilloscope.mcp_channel_number):
@@ -143,14 +143,17 @@ class MergeToRootHandler(FileSystemEventHandler):
         ]
         found_mcp_run = find_file_by_run_number(SCOPE_BINARY_DIR, event_run_number, MCP_FILENAME_REGEX)
         found_clock_run = find_file_by_run_number(SCOPE_BINARY_DIR, event_run_number, CLOCK_FILENAME_REGEX)
+
+        # Need all required binaries
+        num_found_files = 0
+        num_found_files += len([i for i in found_etroc_runs if i is not None]) 
+        num_found_files += 1 if found_mcp_run else 0
+        num_found_files += 1 if found_clock_run else 0
+        num_needed_files = len(found_etroc_runs) + 2
+        logging.info(
+            f"[MERGE PROGRESS {num_found_files}/{num_needed_files}]: EVENT TRIGGERED BY {Path(event.src_path).name}"
+        )
         if None in found_etroc_runs or found_mcp_run is None or found_clock_run is None:
-            # Need all required binaries
-            num_found_files = 0
-            num_found_files += len(filter(lambda i: i is not None, found_etroc_runs))
-            num_needed_files = len(found_etroc_runs)
-            logging.info(
-                f"[MERGED {num_found_files}/{num_needed_files}]: EVENT TRIGGERED BY {Path(event.src_path).name}"
-            )
             return
         ##################################################################################
         run_log = get_run_log(event_run_number)
@@ -159,7 +162,7 @@ class MergeToRootHandler(FileSystemEventHandler):
             return
         ##################################################################################
         consolidate_acquisition(
-            CONFIG.final_merged_dir,
+            CONFIG.final_merged_dir / MERGED_FILENAME(event_run_number),
             etroc_binary_paths=list(map(str, found_etroc_runs)),
             mcp_binary_path=str(found_mcp_run),
             clock_binary_path=str(found_clock_run),
@@ -171,15 +174,17 @@ class MergeToRootHandler(FileSystemEventHandler):
         # Doing this here because using another watchdog might be more dangerous!
         for etroc_path in found_etroc_runs:
             shutil.move(
-                etroc_path,
-                CONFIG.final_etroc_binary_dir
+                str(etroc_path),
+                str(CONFIG.final_etroc_binary_dir)
             )
-        shutil.move(found_mcp_run, CONFIG.final_scope_binary_dir)
-        shutil.move(found_clock_run, CONFIG.final_scope_binary_dir)
+        shutil.move(str(found_mcp_run), str(CONFIG.final_scope_binary_dir))
+        shutil.move(str(found_clock_run), str(CONFIG.final_scope_binary_dir))
         logging.info(f"[ARCHIVED ✅]")
 
 class NewRunNumberHandler(FileSystemEventHandler):
-    def on_modified(self, event):
+    def on_closed(self, event):
+        if str(RUN_NUMBER_PATH) != event.src_path:
+            return 
         with open(event.src_path) as f:
             run_number = f.read()
 
@@ -210,7 +215,7 @@ class ConfigUpdateHandler(FileSystemEventHandler):
 
 if __name__ == "__main__":
     pc_observer = Observer()
-    scope_obsever = WindowsApiObserver()
+    polling_observer = PollingObserver()
 
     etroc_hitmaps_handler = EtrocHitMapsHandler()
     clock_plots_handler = ClockPlotsHandler()
@@ -225,19 +230,19 @@ if __name__ == "__main__":
     logging.info("=================================\n")
 
     pc_observer.schedule(merge_to_root_handler, ETROC_BINARY_DIR)
-    scope_obsever.schedule(merge_to_root_handler, SCOPE_BINARY_DIR)
+    polling_observer.schedule(merge_to_root_handler, SCOPE_BINARY_DIR)
 
-    pc_observer.schedule(etroc_hitmaps_handler,  CONFIG.final_merged_dir)
-    pc_observer.schedule(clock_plots_handler,    CONFIG.final_scope_binary_dir)
+    # pc_observer.schedule(etroc_hitmaps_handler,  CONFIG.final_merged_dir)
+    # pc_observer.schedule(clock_plots_handler,    CONFIG.final_scope_binary_dir)
     pc_observer.schedule(mcp_plots_handler,      CONFIG.final_scope_binary_dir)
-    pc_observer.schedule(new_run_number_handler, RUN_NUMBER_PATH)
+    pc_observer.schedule(new_run_number_handler, RUN_NUMBER_PATH.parent)
 
     pc_observer.schedule(
         ConfigUpdateHandler(observer=pc_observer), 
         TB_CONFIG.test_beam.project_directory / Path("configs/active_config/"))
     
     pc_observer.start()
-    scope_obsever.start()
+    polling_observer.start()
     logging.info(f"🐶 Watchdog is now monitoring directories...")
 
     try: # thx watchdog documentation
@@ -246,5 +251,5 @@ if __name__ == "__main__":
     finally:
         pc_observer.stop()
         pc_observer.join()
-        scope_obsever.stop()
-        scope_obsever.join()
+        polling_observer.stop()
+        polling_observer.join()
