@@ -186,8 +186,47 @@ class Oscilloscope(BaseModel):
         raise ValidationError("Clock channel not defined in the config.")
 
 class Watchdog(BaseModel):
-    base_directory: DirectoryPath
-    backup_directory: DirectoryPath
+    monitor_directory: DirectoryPath
+    final_archive_directory: DirectoryPath
+
+    ###############################################
+    ###### BELOW ARE PRECOMPUTED DIRECTORIES ######
+    ###### COMPUTED FROM INPUTTED DIRS ABOVE ######
+    ###############################################
+
+    def ensure_dir_exists(directory: DirectoryPath) -> DirectoryPath:
+        directory.mkdir(exist_ok=True) # throws error if parents dont exists :)
+        return directory 
+    
+    @computed_field
+    @property
+    def mcp_plots_dir(self) -> Path:
+        return self.ensure_dir_exists(self.monitor_directory / "mcp_plots")
+
+    @computed_field
+    @property
+    def clock_plots_dir(self) -> Path:
+        return self.ensure_dir_exists(self.monitor_directory / "clock_plots")
+    
+    @computed_field
+    @property
+    def etroc_hitmap_dir(self) -> Path:
+        return self.ensure_dir_exists(self.monitor_directory / "etroc_hitmaps")
+
+    @computed_field
+    @property
+    def final_etroc_binary_dir(self) -> Path:
+        return self.ensure_dir_exists(self.final_archive_directory / "etroc_binary")
+
+    @computed_field
+    @property
+    def final_scope_binary_dir(self) -> Path:
+        return self.ensure_dir_exists(self.final_archive_directory / "scope_binary")
+    
+    @computed_field
+    @property
+    def final_merged_dir(self) -> Path:
+        return self.ensure_dir_exists(self.final_archive_directory / "merged")
 
 class TBConfig(BaseModel):
     test_beam: TestBeam
@@ -196,7 +235,6 @@ class TBConfig(BaseModel):
     oscilloscope: Oscilloscope
     power_supplies: List[PowerSupply]
     watchdog: Watchdog
-
 
 def load_config() -> TBConfig:
     """

@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import mplhep 
 logger = logging.getLogger(__name__)
 
-def etroc_hitmaps_generator(path: Path, output_dir: Path) -> None:
+def etroc_hitmaps_generator(path: Path, output_dir: Path) -> Path:
     """
     Generates a hitmap from ETROC binary data and saves it in the specified output directory.
     """
@@ -45,9 +45,9 @@ def etroc_hitmaps_generator(path: Path, output_dir: Path) -> None:
     output_file = output_dir / f"hitmap_run_{run_number}.png"
     fig.savefig(output_file)
     plt.close(fig)
-    logger.info(f"Generated and saved hitmap at: {output_file}")
+    return output_file
 
-def MCP_trace_generator(path: Path, output_dir: Path, run_number: str) -> None:
+def MCP_trace_generator(path: Path, output_dir: Path, run_number: str) -> Path:
     """
     Plots all events from path (they have to be Lecroy binaries) and saves the histogram on outputdir.
     """
@@ -57,8 +57,9 @@ def MCP_trace_generator(path: Path, output_dir: Path, run_number: str) -> None:
     fig, ax = plt.subplots(figsize=(10, 6))
 
     for event_num in range(reader.n_events):
-        t, v = reader.x[event_num] * 1e9, reader.y[event_num]
-        ax.plot(t, v, alpha=0.3)  # Alpha for transparency to see overlapping traces
+        if event_num % 10 == 0:
+            t, v = reader.x[event_num] * 1e9, reader.y[event_num]
+            ax.plot(t, v, alpha=0.3)  # Alpha for transparency to see overlapping traces
 
     # Add trigger & min/max voltage lines
     ax.axvline(0, label="Trigger (t=0)", color='black', linewidth=1.2)
@@ -68,15 +69,14 @@ def MCP_trace_generator(path: Path, output_dir: Path, run_number: str) -> None:
     # Labels and legend
     ax.set_xlabel("Time (ns)")
     ax.set_ylabel("Voltage (V)")
-    ax.set_title(f"All {reader.n_events} Events MCP - Channel {reader.channel}")
+    ax.set_title(f"All {reader.n_events/10} Events MCP - Channel {reader.channel}")
     ax.legend(loc="upper right")
     ax.grid()
 
     output_file = output_dir / f"MCP_traces_run_{run_number}.png"
     fig.savefig(output_file)
     plt.close(fig) 
-
-    logger.info(f"[MCP PLOT] saved at: {output_file}")
+    return output_file
 
 def Clock_trace_generator(path: Path, output_dir: Path, run_number: str) -> None:
     """
@@ -88,8 +88,9 @@ def Clock_trace_generator(path: Path, output_dir: Path, run_number: str) -> None
     fig, ax = plt.subplots(figsize=(10, 6))
 
     for event_num in range(reader.n_events):
-        t, v = reader.x[event_num] * 1e9, reader.y[event_num]
-        ax.plot(t, v, alpha=0.3)  # Alpha for transparency to see overlapping traces
+        if event_num % 10 == 0:
+            t, v = reader.x[event_num] * 1e9, reader.y[event_num]
+            ax.plot(t, v, alpha=0.3)  # Alpha for transparency to see overlapping traces
 
     # Add min/max voltage lines
     ax.axhline(reader.minVerticalValue, label=f'Min V = {reader.minVerticalValue:.3}V', color='red', linestyle='--')
@@ -98,12 +99,11 @@ def Clock_trace_generator(path: Path, output_dir: Path, run_number: str) -> None
     # Labels and legend
     ax.set_xlabel("Time (ns)")
     ax.set_ylabel("Voltage (V)")
-    ax.set_title(f"All {reader.n_events} Events Clock - Channel {reader.channel}")
+    ax.set_title(f"All {reader.n_events/10} Events Clock - Channel {reader.channel}")
     ax.legend(loc="upper right")
     ax.grid()
 
     output_file = output_dir / f"Clock_traces_run_{run_number}.png"
     fig.savefig(output_file)
     plt.close(fig) 
-
-    logger.info(f"[CLOCK PLOT] saved at: {output_file}")
+    return output_file
