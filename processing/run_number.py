@@ -1,19 +1,25 @@
 from pathlib import Path
 from typing import Union, Set
 import re
+import logging
+logger = logging.getLogger(__name__)
 
-def get_next_run_number(next_run_number_path: Path) -> int:
+def get_next_run_number(next_run_number_path: Path) -> Union[int, None]:
     """Looks at the daq/static/next_run_number.txt which stores the next run number from daq"""
     with open(next_run_number_path, 'r') as file:
         run_number = file.read().strip()
+
+    if not run_number.isdigit():
+        logger.error("RUN NUMBER COMPRIMISED -> Is not a number")
+        return 
     return int(run_number)
 
-def extract_run_number(file_path: Path, reg_expression: str) -> Union[None, int]:
+def extract_run_number(file_path: Path, reg_expression: str, force_file_exist:bool = True) -> Union[None, int]:
     """
     From file path it extracts the run number, if no run number is found it returns nothing. 
     Only one capture group is allowed in the regular expression
     """
-    if not file_path.is_file():
+    if not file_path.is_file() and force_file_exist:
         raise FileNotFoundError(f"File not found for: {file_path}")
 
     expression = re.compile(reg_expression)

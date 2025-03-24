@@ -7,7 +7,7 @@ import logging
 from pathlib import Path
 from typing import Set, Union
 import re
-from run_number import find_file_by_run_number, extract_run_number, get_all_run_numbers
+from run_number import find_file_by_run_number, extract_run_number, get_all_run_numbers, get_next_run_number
 import time
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
@@ -38,6 +38,7 @@ logging.basicConfig(level=logging.INFO,
                     datefmt='%Y-%m-%d %H:%M:%S')
 logging.getLogger("plots")
 logging.getLogger("process_binaries")
+logging.getLogger("run_number")
 
 def get_run_log(run_number:int) -> Union[Path, None]:
     for run_log_path in TB_CONFIG.run_config.run_log_directory.iterdir():
@@ -72,6 +73,15 @@ def get_unmerged_runs(merged_root_dir: Path) -> Set:
             ETROC_BINARY_DIR, ETROC_FILENAME_REGEX_FUNC(rb))
     all_runs |= etroc_runs
     return all_runs - merged_runs
+
+
+def print_run_number(run_number: int) -> None:
+    print("\n")
+    logging.info(f"###############################")
+    logging.info(f"######    DAQ ON RUN     ######")
+    logging.info(f"######      {run_number}       ######")
+    logging.info(f"###############################")
+    print("\n")
 
 ############################################################################################
 ############################# WATCHDOG EVENT HANDLERS ######################################
@@ -123,6 +133,13 @@ class MergeToRootHandler(FileSystemEventHandler):
         if event.src_path.endswith(".yaml"):
             logging.info(f"DAQ made internal log at {event.src_path}")
             return
+        file_path = Path(event.src_path)
+        if not file_path.exists():
+            logging.debug(f"Probably merged file was already created so this file has been moved: {file_path}")
+            return
+        if file_path.is_dir():
+            logging.warning(f"File path is a directory. {file_path}")
+            return
         
         etroc_regs = [ETROC_FILENAME_REGEX_FUNC(rb) for rb in TB_CONFIG.telescope_config.rbs]
         scope_regs = [CLOCK_FILENAME_REGEX, MCP_FILENAME_REGEX]
@@ -130,11 +147,15 @@ class MergeToRootHandler(FileSystemEventHandler):
         ##################### Get run number from event
         event_run_number = None
         for reg_exp in etroc_regs + scope_regs:
-            event_run_number = extract_run_number(Path(event.src_path), reg_exp)
+            event_run_number = extract_run_number(file_path, reg_exp, force_file_exist=False)
             if event_run_number is not None:
                 break
         if event_run_number is None:
-            logging.warning(f"UNABLE TO MATCH RUN RUMBER FOR: {event.src_path}")
+            logging.warning(f"UNABLE TO MATCH RUN RUMBER FOR: {file_path}")
+            return
+        merged_path = CONFIG.final_merged_dir / MERGED_FILENAME(event_run_number)
+        if merged_path.exists():
+            print("HEYEYEHEHEYEH=========================")
             return
         ##################################################################################
         # Check if we have all required binaries: etroc(s), mcp and clock
@@ -151,7 +172,7 @@ class MergeToRootHandler(FileSystemEventHandler):
         num_found_files += 1 if found_clock_run else 0
         num_needed_files = len(found_etroc_runs) + 2
         logging.info(
-            f"[MERGE PROGRESS {num_found_files}/{num_needed_files}]: EVENT TRIGGERED BY {Path(event.src_path).name}"
+            f"[MERGE PROGRESS {num_found_files}/{num_needed_files}]: EVENT TRIGGERED BY {file_path.name}"
         )
         if None in found_etroc_runs or found_mcp_run is None or found_clock_run is None:
             return
@@ -179,25 +200,22 @@ class MergeToRootHandler(FileSystemEventHandler):
             )
         shutil.move(str(found_mcp_run), str(CONFIG.final_scope_binary_dir))
         shutil.move(str(found_clock_run), str(CONFIG.final_scope_binary_dir))
-        logging.info(f"[ARCHIVED ✅]")
+
+
+class BackupWatcherHandler(FileSystemEventHandler):
+    def on_created(self, event):
+        file_path = Path(event.src_path)
+        logging.info(f"[ARCHIVED ✅]: {file_path.name}")
+
 
 class NewRunNumberHandler(FileSystemEventHandler):
     def on_closed(self, event):
         if str(RUN_NUMBER_PATH) != event.src_path:
             return 
-        with open(event.src_path) as f:
-            run_number = f.read()
-
-        if not run_number.isdigit():
-            logging.error("RUN NUMBER COMPRIMISED -> Is not a number")
-        run_number = int(run_number)
-
-        print("\n")
-        logging.info(f"###############################")
-        logging.info(f"###### DAQ STARTING RUN ######")
-        logging.info(f"######   {run_number}   ######")
-        logging.info(f"###############################")
-        print("\n")
+        run_number = get_next_run_number(Path(event.src_path))
+        if run_number is None:
+            return
+        print_run_number(run_number)
 
 class ConfigUpdateHandler(FileSystemEventHandler):
     def __init__(self, observer):
@@ -232,9 +250,13 @@ if __name__ == "__main__":
     pc_observer.schedule(merge_to_root_handler, ETROC_BINARY_DIR)
     polling_observer.schedule(merge_to_root_handler, SCOPE_BINARY_DIR)
 
+    polling_observer.schedule(BackupWatcherHandler(), CONFIG.final_archive_directory, 
+                              recursive=True)
+
+
     # pc_observer.schedule(etroc_hitmaps_handler,  CONFIG.final_merged_dir)
     # pc_observer.schedule(clock_plots_handler,    CONFIG.final_scope_binary_dir)
-    pc_observer.schedule(mcp_plots_handler,      CONFIG.final_scope_binary_dir)
+    # pc_observer.schedule(mcp_plots_handler,      CONFIG.final_scope_binary_dir)
     pc_observer.schedule(new_run_number_handler, RUN_NUMBER_PATH.parent)
 
     pc_observer.schedule(
@@ -244,6 +266,12 @@ if __name__ == "__main__":
     pc_observer.start()
     polling_observer.start()
     logging.info(f"🐶 Watchdog is now monitoring directories...")
+
+    # print the first run number
+    run_number = get_next_run_number(RUN_NUMBER_PATH)
+    if run_number is None:
+        raise ValueError(f"Run number was not found at {run_number}")
+    print_run_number(run_number)
 
     try: # thx watchdog documentation
         while pc_observer.is_alive():
