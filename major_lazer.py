@@ -5,6 +5,7 @@ from daq.lecroy_controller import LecroyController
 from daq.etl_telescope import ETL_Telescope
 from processing.cernbox_api import CERNBoxAPI
 from pathlib import Path
+import processing.plots as tb_plots
 
 @click.group()
 def cli():
@@ -57,7 +58,7 @@ def watchdog():
     """Executes the daq_watchdog python file"""
     click.echo("Running the watchdog...")
     subprocess.run(["python", "processing/daq_watchdog.py"])
-    
+
 @cli.group()
 def backup():
     """Commands related to CERNBox backup."""
@@ -85,19 +86,25 @@ def plots():
     pass
 
 @plots.command()
-def clock():
+@click.argument('clock_trace_file', type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path))
+def clock_from_binary(clock_trace_file):
     """Generate clock plots."""
     click.echo("Generating clock plots...")
+    tb_plots.Clock_trace_generator(clock_trace_file, Path("./"))
 
 @plots.command()
-def mcp():
+@click.argument('mcp_trace_file', type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path))
+def mcp_from_binary(mcp_trace_file):
     """Generate MCP plots."""
     click.echo("Generating MCP plots...")
+    tb_plots.MCP_trace_generator(mcp_trace_file, Path("./"))
 
 @plots.command()
-def etroc_hitmap():
+@click.argument('etroc_binary_file', type=click.Path(exists=True, file_okay=True, dir_okay=False, path_type=Path))
+def etroc_hitmap_from_binary(etroc_binary_file):
     """Generate etroc hitmap plots."""
-    click.echo("Generating etroc hitmap plots...")
+    click.echo("Generating etroc hitmap plot...")
+    tb_plots.etroc_hitmaps_generator(etroc_binary_file, Path("./"))
 
 if __name__ == "__main__":
     cli()

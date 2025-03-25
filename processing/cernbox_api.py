@@ -60,7 +60,7 @@ class CERNBoxAPI:
         if local_path.is_dir():
             # fetch and do the diff for speed?
             remote_files = self.fetch_remote(remote_dir)
-            
+
             files_to_upload = [
                 file_path for file_path in local_path.iterdir() if file_path.name not in remote_files
             ]
@@ -84,7 +84,7 @@ class CERNBoxAPI:
                 local_path  = str(local_path),
             ) 
         else:
-            raise ValueError(f"Your local path ({local_path}) is not a directory or file. Does it exist?")
+            raise ValueError(f"Your local path ({local_path}) is not a directory or file. Does it exist?")        
 
     def fetch_remote(self, remote_dir: Path) -> list:
         return self.client.list(str(remote_dir))
