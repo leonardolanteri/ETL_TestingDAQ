@@ -45,7 +45,7 @@
 [oscilloscope]
     name = "Teledyne LeCroy Waverunner 8104"
     ip_address = "192.168.0.6"
-    binary_data_directory = "/home/etl/Test_Stand/daq/LecroyMount/"
+    binary_data_directory = "/home/etl/Test_Stand/daq/"
     sample_rate = [20, "GS/s"]
     horizontal_window = [25, "NS"]
     segment_display = "Overlay"

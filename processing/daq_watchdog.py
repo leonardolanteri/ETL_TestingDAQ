@@ -16,6 +16,7 @@ from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from webdav3.client import Client
 from webdav3.exceptions import WebDavException
+from cernbox_api import CERNBoxAPI
 
 TB_CONFIG = load_config()
 CONFIG = TB_CONFIG.watchdog
@@ -229,31 +230,18 @@ class ConfigUpdateHandler(FileSystemEventHandler):
 class CERNboxBackupHandler(FileSystemEventHandler):
     def on_created(self, event):
         file_archive_path = Path(event.src_path)
-        if "CERNBOX_HOST" not in environ or \
-           "CERNBOX_LOGIN" not in environ or \
-           "CERNBOX_PASSWORD" not in environ:
-            raise KeyError(" (Did you source setup.sh? See README for details :D) In order to backup the files to the CERNBox you need to add the correct environment variables: \
-                            CERNBOX_HOST, CERNBOX_LOGIN, CERNBOX_PASSWORD")
-        options = {
-            'webdav_hostname': environ["CERNBOX_HOST"],
-            'webdav_login':    environ["CERNBOX_LOGIN"],
-            'webdav_password': environ["CERNBOX_PASSWORD"]
-        }
-        try:
-            client = Client(options)            
-            # This seems fairly robust... famous last words
-            if file_archive_path.parent != CONFIG.final_archive_directory:
-                # Put file in the directory it is in
-                remote_path = Path("public/") / CONFIG.final_archive_directory.name / file_archive_path.parent.name
-            else: # Otherwise keep it in the base directory
-                remote_path = Path("public/") / CONFIG.final_archive_directory.name
-            client.upload_sync(
-                remote_path = str(remote_path), 
-                local_path  = str(file_archive_path))
-            logging.info(f"[CERNBOX] Successfully uploaded: {file_archive_path.name}")
-        except WebDavException as exception:
-            logging.error(f"[CERNBOX] Failed to upload: local={file_archive_path} on remote={remote_path}: exception = {exception}")
-
+        # This seems fairly robust... famous last words
+        remote_path = Path(CONFIG.final_archive_directory.name)
+        if file_archive_path.parent != CONFIG.final_archive_directory: 
+            # if it is in a dir put it in that dir (merged/, etroc_binaries/, etc...)
+            remote_path = remote_path / file_archive_path.parent.name
+        
+        cernbox = CERNBoxAPI()
+        cernbox.upload(
+            remote_dir = str(remote_path), 
+            local_path  = str(file_archive_path)) # could put the dir here and have it always check if anything is missing?
+        logging.info(f"[CERNBOX] Successfully uploaded: {file_archive_path.name}")
+        
 if __name__ == "__main__":
     pc_observer = Observer()
     polling_observer = PollingObserver()

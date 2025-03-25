@@ -173,12 +173,7 @@ class RunDaqStreamPY:
 ################################################################################################################################
 #####################################-------------TEST BEAM ROUTINE-------------################################################
 ################################################################################################################################
-if __name__ == '__main__':
-    import argparse
-    argParser = argparse.ArgumentParser(description = "DAQ Test Beam argparser")
-    argParser.add_argument('--etl_power_up', action='store_true', help="Flag to power up JUST etl front-end electronics")
-    args = argParser.parse_args()
-    
+if __name__ == '__main__':    
     # LOAD THE CONFIG
     tb_config = load_config()
     telescope_config = tb_config.telescope_config
@@ -206,11 +201,10 @@ if __name__ == '__main__':
     with open(run_log_path, mode='w') as f:
         json.dump(run_log, f)
 
-    if args.etl_power_up:
-        sys.exit("ETL Power up option gave exiting early!")
     # DAQ
-    active_channels = [chnl_num for chnl_num in scope_config.channels]
-    with Lecroy(scope_config.ip_address, active_channels=active_channels) as lecroy, RunDaqStreamPY(telescope_config, daq_dir) as daq_stream:
+    scope_ip = scope_config.ip_address
+    channels = list(scope_config.channels.keys())
+    with Lecroy(scope_ip, active_channels=channels) as lecroy, RunDaqStreamPY(telescope_config, daq_dir) as daq_stream:
         lecroy.setup_from_config(scope_config)
 
         user_input_for_watchdog_on = input("HOLD UP, is the watchdog on? If not you will need to manually merge binaries to root!")

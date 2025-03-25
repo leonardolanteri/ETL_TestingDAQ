@@ -41,7 +41,7 @@ We use a shell script to configure the correct paths and gather needed environme
 #### local_setup.sh
 Needed Fields:
 - `export CERNBOX_HOST = <cern box project link>`
-    - EXAMPLE: `https://cernbox.cern.ch/files/spaces/eos/project/m/mtd-etl-system-test`
+    - EXAMPLE: `https://cernbox.cern.ch/cernbox/webdav/eos/project/m/mtd-etl-system-test`, note this is the webdav url!
 - `export CERNBOX_LOGIN = <service or personal account login>`
     - EXAMPLE: `etlsystb`
 - `export CERNBOX_PASSWORD = <account password>`

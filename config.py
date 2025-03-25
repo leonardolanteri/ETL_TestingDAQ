@@ -236,7 +236,7 @@ class TBConfig(BaseModel):
     power_supplies: List[PowerSupply]
     watchdog: Watchdog
 
-def load_config() -> TBConfig:
+def load_config(relax_validation=False) -> TBConfig:
     """
     The active config should be put in the active config director, if there is more than one it throws an error.
 
@@ -268,6 +268,12 @@ def load_config() -> TBConfig:
         import tomli
         with open(active_config_path, 'rb') as f:
             data = tomli.load(f)
-        return TBConfig.model_validate(data)
     else:
         raise NotImplementedError(f"Sorry the file extension you provided ({active_config_path.suffix}) is not currently implemented!")
+   
+    if relax_validation:
+        # if key is missing it wont add it but it wont run validation
+        # so extra_fields are not added!
+        return TBConfig.model_construct(**data)
+    else:
+        return TBConfig.model_validate(data)
