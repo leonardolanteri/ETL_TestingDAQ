@@ -3,20 +3,22 @@ export TEST_BEAM_BASE=$PWD
 export PYTHONPATH=$PYTHONPATH:$PWD
 export PYTHONPATH=$PYTHONPATH:$TAMALERO_BASE
 export PYTHONIOENCODING=utf8
+
+
+# Check if the file exists
+SETUP_FILE="local_setup.sh"
+if [ -f "$SETUP_FILE" ]; then
+    source "$SETUP_FILE"
+else
+    echo "Error: '$SETUP_FILE' not found. Please set up the '$SETUP_FILE' file; see the README for details."
+    exit 1
+fi
+
 echo "Set PYTHONPATH"
 echo $PYTHONPATH
-echo "Set LD_LIBRARY"
+echo "Set LD_LIBRARY_PATH"
 echo $LD_LIBRARY_PATH
-
-# #If you do it the preinstall way (SAFEST)
-export PYTHONPATH=$PYTHONPATH:/home/etl/ipbus-software/uhal/python/pkg/
-export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH
-
-# #If you do it conda package way (POTENTIALLY CONVIENENT)
-# conda install hswanson::ipbus-uhal2
-# #This is needed to get the binaries
-# LD_LIBRARY_PATH=$CONDA_PREFIX/opt/cactus/lib/lib/:$LD_LIBRARY_PATH
-
-
+echo "Set CERNBOX_HOST"
+echo $CERNBOX_HOST
 
 #sudo mount -t cifs //192.168.0.6/Waveforms /home/etl/Test_Stand/daq/LecroyMount -o user=mothra,uid=etl,gid=etl,vers=2.0

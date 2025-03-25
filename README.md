@@ -3,26 +3,24 @@
 This repository is for system test beams for the MTD ETL project. Currently we use a [KCU105](https://etl-rb.docs.cern.ch/Hardware/#kcu105) as the DAQ and a [MCP](https://en.wikipedia.org/wiki/Microchannel_plate_detector). 
 
 ## Background
-The project is split up into 3 parts:
+The project is split up into 2 parts:
 * **ETL_TestingDAQ/daq**
     * Contains the code necessary to get oscilliscope trace files and etroc binaries. In all, it will set up the scope, etl front-end electronics and perform the scope acquisition (trace file) while simulataneously streaming the daq (etroc binary). See DAQ Concepts for more info!
-        * The actual data acquisition between the scope and streaming our daq is performed by `run_test_beam.py`
+        * The actual data acquisition between the scope and streaming our daq is performed by `take_runs.py`
         * The static directory contains text files that are used for synchronizing the daq stream and oscilloscope acquisition. Also log and the global run number.
 * **ETL_TestingDAQ/processing**
-    * Contains code for deconding the binaries, merging them into a root file and exporting/backing up the data
-* **ETL_TestingDAQ/monitoring**
-    * Contains code for monitoring the test beam setup for example,
-        * A high voltage supply monitor that will check the HV and could even turn it off or notify if leakage current is getting dangerous
-        * DAQ monitor that looks at hit maps, clock distrobutions, etc...
-        * Temperature monitor 
+    * Contains a script called `daq_watchdog.py` which monitors files based off the config (see below) and when files are created it does things like merge them, make plots, backup etc...
 
 ### module_test_sw
 We use the tamalero API to interact with the boards. It is a git submodule for this project and is crucial for configuration of the front end electronics. See `daq/etl_telescope.py` for how it is used here!
 
 ### The Config
-The external variables for the test beam are specified in a file named `config.py` there are also defintions in the file explaing the variables. 
+The external variables for the test beam are specified in a file named `config.py` there are also defintions in the file explaining the variables. 
 
 This file defines all variables needed to operate the test beam (str, int, paths etc...). The project isn't locked into using a configuration file, but all user inputs should be validated by the Pydantic models. See [here](https://docs.pydantic.dev/latest/examples/files/) for using other file formats. You can also instantiate the models directly in the code, having one main configuration file is just for what I though is convenient!
+
+#### Active Config
+The Config used to take a run should live in the active config directory (`configs/active_config`). It is enforced that only one config at a time can be in that directory. This lets you house other configs in the `configs/` directory.
 
 ## Getting Started
 This assumes you already have correclty setup the KCU and installed the ipbus-software. If not please follow [these](https://github.com/nebraska-silicon-lab/Lab-Instructions/blob/master/sop/ETL/200%20-%20ETL%20Test%20Stand%20Setup.md) directions by Ian Reed on getting a Test Stand up and running (it covers everything needed to set up a Test Stand!).
@@ -38,15 +36,28 @@ conda env create --file=environment.yaml
 conda activate etl_testing_daq
 ```
 
-Currently you have the ipbus-software installed but the python package will not be apart of the conda package. To add it you can do the following,
-```
-export PYTHONPATH=$PYTHONPATH:/path/to/ipbus-software/uhal/python/pkg
-```
-You will know this is the correct path because in the uhal directory it should have a `__init__.py` file with a `__core.so` binary. `uhal` also has needed dependencies which you can include by `export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH` but this is in the `setup.sh` file. Which we can now run it because it sets up needed environment variables,
+### Setup.sh
+We use a shell script to configure the correct paths and gather needed environment variables. It is called `setup.sh`, however you will also need to make a `local_setup.sh` script which is documented below:
+#### local_setup.sh
+Needed Fields:
+- `export CERNBOX_HOST = <cern box project link>`
+    - EXAMPLE: `https://cernbox.cern.ch/files/spaces/eos/project/m/mtd-etl-system-test`
+- `export CERNBOX_LOGIN = <service or personal account login>`
+    - EXAMPLE: `etlsystb`
+- `export CERNBOX_PASSWORD = <account password>`
+    - EXAMPLE: `bitemyshinymetal...`
+- `export PYTHONPATH = $PYTHONPATH:<UHAL PACKAGE LOCATION>`
+    - NOTE: Make sure this APPENDS to the python path by $PYTHONPATH. Currently you have the ipbus-software installed but the python package will not be apart of the conda package. You will know this is the correct path because in the uhal directory it should have a `__init__.py` file with a `__core.so` binary.
+    - EXAMPLE: `$PYTHONPATH:/home/etl/ipbus-software/uhal/python/pkg/`
+- `export LD_LIBRARY_PATH=...`
+    - NOTE: `uhal` also has needed dependencies which you can include by `export LD_LIBRARY_PATH=/opt/cactus/lib:$LD_LIBRARY_PATH`
+    - EXAMPLE: `/opt/cactus/lib:$LD_LIBRARY_PATH`
+
+Then after setting up the `local_setup.sh` you can run:
 ```
 source setup.sh
 ```
-You are now ready to run the code for the test beam! Before running it though you need to define a config, right now toml file is only supported in `test_beam.toml` for a place to start! You can also read the pydantic models directly in `config.py`.
+You are now ready to run the code for the test beam! Before running it though you need to define a config, right now toml file is only supported. Look in `configs` for a place to start! You can also read the pydantic models directly in `config.py` ;)
 
 ## Updating the Environment
 
@@ -54,7 +65,6 @@ If you work on a part are pushing to the repository, please push updates to `env
 ```
 conda env export | grep -v "^prefix: " > environment.yml
 ```
-
 
 # DAQ Concepts
 

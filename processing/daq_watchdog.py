@@ -1,21 +1,21 @@
-from process_binaries import consolidate_acquisition
 import logging
-from config import load_config
-import time
-import sys
-import logging
+from os import environ
 from pathlib import Path
-from typing import Set, Union
 import re
-from run_number import find_file_by_run_number, extract_run_number, get_all_run_numbers, get_next_run_number
-import time
+import shutil
+import subprocess
+from typing import Set, Union
+
+from config import load_config
+from plots import Clock_trace_generator, MCP_trace_generator, etroc_hitmaps_generator
+from process_binaries import consolidate_acquisition
+from run_number import (extract_run_number, find_file_by_run_number, 
+                        get_all_run_numbers, get_next_run_number)
+from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
-from watchdog.events import FileSystemEventHandler
-from config import load_config
-from plots import etroc_hitmaps_generator, MCP_trace_generator, Clock_trace_generator
-import subprocess
-import shutil
+from webdav3.client import Client
+from webdav3.exceptions import WebDavException
 
 TB_CONFIG = load_config()
 CONFIG = TB_CONFIG.watchdog
@@ -159,9 +159,8 @@ class MergeToRootHandler(FileSystemEventHandler):
             return
         ##################################################################################
         # Check if we have all required binaries: etroc(s), mcp and clock
-        found_etroc_runs = [
-            find_file_by_run_number(ETROC_BINARY_DIR, event_run_number, reg) for reg in etroc_regs
-        ]
+        found_etroc_runs = [find_file_by_run_number(ETROC_BINARY_DIR, event_run_number, reg) 
+                            for reg in etroc_regs]
         found_mcp_run = find_file_by_run_number(SCOPE_BINARY_DIR, event_run_number, MCP_FILENAME_REGEX)
         found_clock_run = find_file_by_run_number(SCOPE_BINARY_DIR, event_run_number, CLOCK_FILENAME_REGEX)
 
@@ -170,7 +169,7 @@ class MergeToRootHandler(FileSystemEventHandler):
         num_found_files += len([i for i in found_etroc_runs if i is not None]) 
         num_found_files += 1 if found_mcp_run else 0
         num_found_files += 1 if found_clock_run else 0
-        num_needed_files = len(found_etroc_runs) + 2
+        num_needed_files = len(found_etroc_runs) + 2 # 2 for scope
         logging.info(
             f"[MERGE PROGRESS {num_found_files}/{num_needed_files}]: EVENT TRIGGERED BY {file_path.name}"
         )
@@ -202,7 +201,7 @@ class MergeToRootHandler(FileSystemEventHandler):
         shutil.move(str(found_clock_run), str(CONFIG.final_scope_binary_dir))
 
 
-class BackupWatcherHandler(FileSystemEventHandler):
+class ArchiveWatcherHandler(FileSystemEventHandler):
     def on_created(self, event):
         file_path = Path(event.src_path)
         logging.info(f"[ARCHIVED ✅]: {file_path.name}")
@@ -226,10 +225,34 @@ class ConfigUpdateHandler(FileSystemEventHandler):
         logging.critical("Config updated, EXITING WATCHDOG!")
         subprocess.Popen(['notify-send', "ETL TB - CRITICAL - Config was updated, exiting watchdog"])
         self.observer.stop()
-        
-        # Just exit the watchdog with a big explanation
-        # The config has changed please rerun the watchdog in order to load the new config
-        # do this on file changes, or if new active config
+
+class CERNboxBackupHandler(FileSystemEventHandler):
+    def on_created(self, event):
+        file_archive_path = Path(event.src_path)
+        if "CERNBOX_HOST" not in environ or \
+           "CERNBOX_LOGIN" not in environ or \
+           "CERNBOX_PASSWORD" not in environ:
+            raise KeyError(" (Did you source setup.sh? See README for details :D) In order to backup the files to the CERNBox you need to add the correct environment variables: \
+                            CERNBOX_HOST, CERNBOX_LOGIN, CERNBOX_PASSWORD")
+        options = {
+            'webdav_hostname': environ["CERNBOX_HOST"],
+            'webdav_login':    environ["CERNBOX_LOGIN"],
+            'webdav_password': environ["CERNBOX_PASSWORD"]
+        }
+        try:
+            client = Client(options)            
+            # This seems fairly robust... famous last words
+            if file_archive_path.parent != CONFIG.final_archive_directory:
+                # Put file in the directory it is in
+                remote_path = Path("public/") / CONFIG.final_archive_directory.name / file_archive_path.parent.name
+            else: # Otherwise keep it in the base directory
+                remote_path = Path("public/") / CONFIG.final_archive_directory.name
+            client.upload_sync(
+                remote_path = str(remote_path), 
+                local_path  = str(file_archive_path))
+            logging.info(f"[CERNBOX] Successfully uploaded: {file_archive_path.name}")
+        except WebDavException as exception:
+            logging.error(f"[CERNBOX] Failed to upload: local={file_archive_path} on remote={remote_path}: exception = {exception}")
 
 if __name__ == "__main__":
     pc_observer = Observer()
@@ -250,9 +273,8 @@ if __name__ == "__main__":
     pc_observer.schedule(merge_to_root_handler, ETROC_BINARY_DIR)
     polling_observer.schedule(merge_to_root_handler, SCOPE_BINARY_DIR)
 
-    polling_observer.schedule(BackupWatcherHandler(), CONFIG.final_archive_directory, 
+    polling_observer.schedule(ArchiveWatcherHandler(), CONFIG.final_archive_directory, 
                               recursive=True)
-
 
     # pc_observer.schedule(etroc_hitmaps_handler,  CONFIG.final_merged_dir)
     # pc_observer.schedule(clock_plots_handler,    CONFIG.final_scope_binary_dir)
@@ -263,6 +285,9 @@ if __name__ == "__main__":
         ConfigUpdateHandler(observer=pc_observer), 
         TB_CONFIG.test_beam.project_directory / Path("configs/active_config/"))
     
+    # This could end up failing if the # of files becomes large
+    polling_observer.schedule(CERNboxBackupHandler(), CONFIG.final_archive_directory, recursive=True)
+
     pc_observer.start()
     polling_observer.start()
     logging.info(f"🐶 Watchdog is now monitoring directories...")
