@@ -5,7 +5,7 @@
 
 [run_config]
     comment = "Temperature -20C at new trigger threshold"
-    num_runs = 200
+    num_runs = 3
     run_log_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/run_logs"
 
 [telescope_config]
@@ -45,7 +45,7 @@
 [oscilloscope]
     name = "Teledyne LeCroy Waverunner 8104"
     ip_address = "192.168.0.6"
-    binary_data_directory = "/home/etl/Test_Stand/daq/"
+    binary_data_directory = "/home/etl/Test_Stand/daq/LecroyMount"
     sample_rate = [20, "GS/s"]
     horizontal_window = [25, "NS"]
     segment_display = "Overlay"

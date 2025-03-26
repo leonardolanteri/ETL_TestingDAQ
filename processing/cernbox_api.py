@@ -19,7 +19,7 @@ class CERNBoxAPI:
         self.client = Client(self.options)  
         self._base = Path("public")
 
-    def make_remote_dir(self, remote_dir: Path) -> None:
+    def make_remote_dir(self, directory: Path) -> Path:
         """
         Makes full paths in the CERNBox based off path
 
@@ -28,12 +28,18 @@ class CERNBoxAPI:
 
         It will make the full path, so you do not have to build each part. 
         """
-        remote_dir = self._base
-        for part in remote_dir.parts:
+        # Handles case if user gives self._base at start of directory already :)
+        if self._base.name != directory.parts[0]:
+            remote_dir = self._base
+        else:
+            remote_dir = Path()
+
+        for part in directory.parts:
             # slowly build the remote dir so it exists!
             remote_dir = remote_dir / part
             self.client.mkdir(str(remote_dir))
-
+        return remote_dir
+    
     def upload(self, local_path: Path, remote_dir: Path, overwrite=False) -> None:
         """
         Uploads all FILES in the local_path, local_path can also be a single file.
@@ -51,12 +57,11 @@ class CERNBoxAPI:
         if remote_dir.parts[0] == self._base.name:
             raise ValueError(f"Please do not include {self._base} in the directory. All files get put in {self._base} so I do it for you.")
         # create remote path
-        remote_dir = self._base / remote_dir
         if remote_dir.suffix:
             raise ValueError("Remote can only be a directory. This unfortunately constrains directories with periods in the name.")
         
         # Should create this dir now 
-        self.make_remote_dir(remote_dir)
+        remote_dir = self.make_remote_dir(remote_dir)
         if local_path.is_dir():
             # fetch and do the diff for speed?
             remote_files = self.fetch_remote(remote_dir)

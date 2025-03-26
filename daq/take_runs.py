@@ -15,15 +15,17 @@ from config import TelescopeConfig, load_config
 from pathlib import Path
 from functools import wraps
 import subprocess
-from emoji import emojize
 from typing import List
 import json
 from datetime import datetime
 import logging
+from rich.logging import RichHandler
+from rich.pretty import pprint
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
+                    datefmt='%Y-%m-%d %H:%M:%S',
+                    handlers=[RichHandler()])
 logging.getLogger('lecroy_controller').setLevel(logging.INFO)
 logging.getLogger('etl_telescope').setLevel(logging.INFO)
 
@@ -176,6 +178,9 @@ class RunDaqStreamPY:
 if __name__ == '__main__':    
     # LOAD THE CONFIG
     tb_config = load_config()
+    logging.info("RUNNING CONFIG:")
+    pprint(tb_config)
+
     telescope_config = tb_config.telescope_config
     scope_config = tb_config.oscilloscope
     project_dir = tb_config.test_beam.project_directory

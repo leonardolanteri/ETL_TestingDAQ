@@ -19,7 +19,6 @@ import json
 import traceback
 import base64
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def consolidate_acquisition(output_file_path: str, etroc_binary_paths: List[str]=None, mcp_binary_path: str=None, clock_binary_path: str=None, run_log_path:str = None):

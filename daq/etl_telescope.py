@@ -8,8 +8,6 @@ from module_test_sw.tamalero.ReadoutBoard import ReadoutBoard
 from module_test_sw.tamalero.FIFO import FIFO
 from module_test_sw.tamalero.DataFrame import DataFrame
 from module_test_sw.tamalero import utils
-from pathlib import Path
-from emoji import emojize
 from typing import List, Dict
 import sys
 import logging
@@ -137,11 +135,11 @@ class ETL_Telescope:
                 for etroc in mod.ETROCs:
                     etroc.reset()
 
-        logger.info(emojize(':factory:'), " Producing some test data")
+        logger.info("🏭 Producing some test data")
         fifos[0].send_l1a(10)
 
         for i, fifo in enumerate(fifos):
-            logger.info(emojize(':closed_mailbox_with_raised_flag:')+f" Data in FIFO {i}:")
+            logger.info(f"📫 Data in FIFO {i}:")
             for x in fifos[i].pretty_read(df):
                 logger.info(x)
 

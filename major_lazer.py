@@ -47,17 +47,17 @@ def init_scope():
     with LecroyController(ip, active_channels=channels) as lecroy:
         lecroy.setup_from_config(TB_CONFIG.oscilloscope)
 
-@cli.command()
-def take_runs():
-    """Executes the take runs python file"""
-    click.echo("Taking runs...")
-    subprocess.run(["python", "daq/take_runs.py"])
+# @cli.command()
+# def take_runs():
+#     """Executes the take runs python file"""
+#     click.echo("Taking runs...")
+#     subprocess.run(["python", "daq/take_runs.py"])
 
-@cli.command()
-def watchdog():
-    """Executes the daq_watchdog python file"""
-    click.echo("Running the watchdog...")
-    subprocess.run(["python", "processing/daq_watchdog.py"])
+# @cli.command()
+# def watchdog():
+#     """Executes the daq_watchdog python file"""
+#     click.echo("Running the watchdog...")
+#     subprocess.run(["python", "processing/daq_watchdog.py"])
 
 @cli.group()
 def backup():
@@ -79,6 +79,9 @@ def push_dir(directory):
         remote_dir = remote_dir, 
         local_path  = directory
     )
+
+# CONSOLODATE LOTS OF RUNS
+
 
 @cli.group()
 def plots():
