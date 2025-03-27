@@ -44,7 +44,7 @@ class TBplot:
         events = self.tree.arrays(branches, library="ak")
         print(events)
         if chipid_list is None:
-            chipid_list = self.find_chipds()
+            chipid_list = np.unique(np.concatenate(self.events["chipid"].to_list()))
 
         figs = []
         for chip_id in chipid_list:
