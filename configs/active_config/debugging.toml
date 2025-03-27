@@ -22,7 +22,7 @@
         rb = 0
         readout_board_version = "v2.2"
         readout_board_config = "modulev1"
-        module_select = [[110], [], []]
+        module_select = [[40], [], []]
         bias_voltage = 260
 
         #Optional
@@ -31,11 +31,11 @@
 
     # [[telescope_config.service_hybrids]]
     #     telescope_layer = 'second'
-    #    readout_board_name = "RB0034"
+    #     readout_board_name = "RB0003"
     #     rb = 1
     #     readout_board_version = "2.2"
     #     readout_board_config = "modulev1"
-    #     module_select = [[], [111], []]
+    #     module_select = [[50], [], []]
     #     bias_voltage = 260
 
     #     #Optional

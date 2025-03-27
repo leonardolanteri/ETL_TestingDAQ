@@ -7,10 +7,10 @@ import subprocess
 from typing import Set, Union, List
 
 from config import load_config
-from plots import Clock_trace_generator, MCP_trace_generator, etroc_hitmaps_generator
+from plots import Clock_trace_generator, MCP_trace_generator, etroc_hitmaps_generator, TBplot
 from process_binaries import consolidate_acquisition
 from run_number import (extract_run_number, find_file_by_run_number, 
-                        get_all_run_numbers, get_next_run_number)
+                        get_all_run_numbers)
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
@@ -242,6 +242,11 @@ class ArchiveWatcherHandler(FileSystemEventHandler):
     def on_created(self, event):
         file_path = Path(event.src_path)
         logging.info(f"[ARCHIVED 💿]: {file_path.name}")
+
+        # expression = re.compile(MERGED_FILENAME_REGEX)
+        # if expression.match(file_path.name):
+        #     root_plot = TBplot(file_path)
+        #     root_plot.etroc_hitmap(output_directory=TB_CONFIG.watchdog.etroc_hitmap_dir)
 
 class ConfigUpdateHandler(FileSystemEventHandler):
     def __init__(self, observer):
