@@ -7,7 +7,7 @@ import subprocess
 from typing import Set, Union, List
 
 from config import load_config
-from plots import Clock_trace_generator, MCP_trace_generator, etroc_hitmaps_generator, TBplot
+from plots import Clock_trace_generator, MCP_trace_generator, etroc_binary_monitor, TBplot
 from process_binaries import consolidate_acquisition
 from run_number import (extract_run_number, find_file_by_run_number, 
                         get_all_run_numbers)
@@ -17,6 +17,7 @@ from watchdog.observers.polling import PollingObserver
 from cernbox_api import CERNBoxAPI
 from rich.logging import RichHandler
 import time
+import traceback
 
 TB_CONFIG = load_config()
 CONFIG = TB_CONFIG.watchdog
@@ -119,49 +120,9 @@ def upload_to_cernbox(merged_path: Path, etroc_binaries: List[Path], mcp_binary:
 ############################# WATCHDOG EVENT HANDLERS ######################################
 ############################################################################################
 
-class EtrocHitMapsHandler(FileSystemEventHandler):
-    def on_modified(self, event):
-        if not event.src_path.endswith(".dat"):
-            return 
-        logging.info(f'[ETROC HIT MAP] ETROC Binary {Path(event.src_path).name} has been created')
-
-        file_path = Path(event.src_path)
-        try:
-            # Generate hitmap
-            output_file = etroc_hitmaps_generator(file_path, CONFIG.etroc_hitmap_dir)
-            logging.info(f"[ETROC HITMAP] {output_file.name}")
-        except Exception as e:
-            # daq_stream.py writes multiple times to the etroc binary file 
-            # which causes this to fire prematurely.
-            return
-class ClockPlotsHandler(FileSystemEventHandler):
-    def on_created(self, event):
-        file_path = Path(event.src_path)
-        match = re.match(SCOPE_TRC_FILE_REGEX, file_path.name)
-        if not match or match.group(1) != str(TB_CONFIG.oscilloscope.clock_channel_number):
-            return
-
-        try:
-            output_file = Clock_trace_generator(file_path, CONFIG.clock_plots_dir, match.group(2))
-            logging.info(f'[CLOCK PLOT] {output_file.name}')
-        except Exception as e:
-            logging.error(f"Failed to generate CLOCK traces plot for {file_path.name}: {e}")
-
-class McpPlotsHandler(FileSystemEventHandler):
-    def on_created(self, event):
-        file_path = Path(event.src_path)
-        match = re.match(SCOPE_TRC_FILE_REGEX, file_path.name)
-        if not match or match.group(1) != str(TB_CONFIG.oscilloscope.mcp_channel_number):
-            return
-
-        try:
-            output_file = MCP_trace_generator(file_path, CONFIG.mcp_plots_dir, match.group(2))
-            logging.info(f'[MCP PLOT] {output_file.name}')
-        except Exception as e:
-            logging.error(f"Failed to generate MCP traces plot for {file_path.name}: {e}")
-
 class MergeToRootHandler(FileSystemEventHandler):
     def on_created(self, event):
+        total_merge_time = time.perf_counter()
         if event.src_path.endswith(".yaml"):
             logging.info(f"DAQ made internal log at {event.src_path}")
             return
@@ -237,16 +198,32 @@ class MergeToRootHandler(FileSystemEventHandler):
             )
         shutil.move(str(found_mcp_binary), str(CONFIG.final_scope_binary_dir))
         shutil.move(str(found_clock_binary), str(CONFIG.final_scope_binary_dir))
+        logging.info(f"[TOTAL MERGE TIME 🕒] {time.perf_counter()-total_merge_time}")
 
 class ArchiveWatcherHandler(FileSystemEventHandler):
     def on_created(self, event):
         file_path = Path(event.src_path)
         logging.info(f"[ARCHIVED 💿]: {file_path.name}")
 
-        # expression = re.compile(MERGED_FILENAME_REGEX)
-        # if expression.match(file_path.name):
-        #     root_plot = TBplot(file_path)
-        #     root_plot.etroc_hitmap(output_directory=TB_CONFIG.watchdog.etroc_hitmap_dir)
+        try:
+            if run_number := extract_run_number(file_path, MERGED_FILENAME_REGEX):
+                root_plot = TBplot(file_path)
+                root_plot.etroc_hitmap(output_directory=CONFIG.monitor_directory)
+            
+            elif run_number := extract_run_number(file_path, CLOCK_FILENAME_REGEX):
+                Clock_trace_generator(file_path, CONFIG.monitor_directory, run_number)
+            
+            elif run_number := extract_run_number(file_path, MCP_FILENAME_REGEX):
+                MCP_trace_generator(file_path, CONFIG.monitor_directory, run_number)
+
+            for rb in TB_CONFIG.telescope_config.rbs:
+                if run_number := extract_run_number(file_path, ETROC_FILENAME_REGEX_FUNC(rb)):
+                    etroc_binary_monitor(file_path, CONFIG.monitor_directory, run_number)
+
+            logging.info(f"[MONITOR] Plots finished for {file_path.name} data")
+        except Exception as e:
+            error_msg = ''.join(traceback.format_exception(None, e, e.__traceback__))
+            logging.error(f"Monitor Process failed for {file_path}: {error_msg}")
 
 class ConfigUpdateHandler(FileSystemEventHandler):
     def __init__(self, observer):
@@ -262,9 +239,6 @@ if __name__ == "__main__":
     pc_observer = Observer()
     polling_observer = PollingObserver()
 
-    etroc_hitmaps_handler = EtrocHitMapsHandler()
-    clock_plots_handler = ClockPlotsHandler()
-    mcp_plots_handler = McpPlotsHandler()
     merge_to_root_handler = MergeToRootHandler()
 
     # Display User the unmerged runs
@@ -278,11 +252,6 @@ if __name__ == "__main__":
 
     polling_observer.schedule(ArchiveWatcherHandler(), CONFIG.final_archive_directory, 
                               recursive=True)
-
-    # Add both from chipid and from binary? Probably actually
-    # pc_observer.schedule(etroc_hitmaps_handler,  CONFIG.final_merged_dir)
-    # pc_observer.schedule(clock_plots_handler,    CONFIG.final_scope_binary_dir)
-    # pc_observer.schedule(mcp_plots_handler,      CONFIG.final_scope_binary_dir)
 
     pc_observer.schedule(
         ConfigUpdateHandler(observer=pc_observer), 

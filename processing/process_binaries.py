@@ -17,7 +17,6 @@ import awkward as ak
 import uproot
 import json
 import traceback
-import base64
 
 logger = logging.getLogger(__name__)
 

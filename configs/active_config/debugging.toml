@@ -65,7 +65,7 @@
 
 [watchdog]
     final_archive_directory = "/media/etl/Storage/DESY_April_2025/"
-    monitor_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/"
+    monitor_directory = "/home/etl/Test_Stand/ETL_TestingDAQ/Test_Beam_Data/DebugTB/plots"
 
 # Power Supplies
 [[power_supplies]]

@@ -186,7 +186,7 @@ class Oscilloscope(BaseModel):
         raise ValidationError("Clock channel not defined in the config.")
 
 class Watchdog(BaseModel):
-    monitor_directory: DirectoryPath
+    monitor_directory: DirectoryPath = Field(..., description="Where all the plots go")
     final_archive_directory: DirectoryPath
 
     ###############################################
@@ -197,21 +197,6 @@ class Watchdog(BaseModel):
     def ensure_dir_exists(self, directory: DirectoryPath) -> DirectoryPath:
         directory.mkdir(exist_ok=True) # throws error if parents dont exists :)
         return directory 
-    
-    @computed_field
-    @property
-    def mcp_plots_dir(self) -> Path:
-        return self.ensure_dir_exists(self.monitor_directory / "mcp_plots")
-
-    @computed_field
-    @property
-    def clock_plots_dir(self) -> Path:
-        return self.ensure_dir_exists(self.monitor_directory / "clock_plots")
-    
-    @computed_field
-    @property
-    def etroc_hitmap_dir(self) -> Path:
-        return self.ensure_dir_exists(self.monitor_directory / "etroc_hitmaps")
 
     @computed_field
     @property
