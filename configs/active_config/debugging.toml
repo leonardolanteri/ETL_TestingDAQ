@@ -66,9 +66,8 @@
         vertical_axis = { min=-2, max=2, units="V" }
 
 [watchdog]
-    base_directory = "/Users/leonardolanteri/Desktop/ETL_TestingDAQ/Test_Beam_Data/DebugTB/watchdog/"
-    backup_directory = "/Users/leonardolanteri/Desktop/ETL_TestingDAQ/Test_Beam_Data/DebugTB/watchdog/backup"
-
+    final_archive_directory = "/Users/leonardolanteri/Desktop/"
+    monitor_directory = "/Users/leonardolanteri/Desktop/ETL_TestingDAQ/Test_Beam_Data/DebugTB/"
 # Power Supplies
 [[power_supplies]]
     name = "CAEN HV Power Supply"

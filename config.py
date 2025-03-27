@@ -15,7 +15,7 @@ from daq.lecroy_controller import (
     TriggerSlope
 )
 
-def all_unique(array: List) -> bool:
+def all_unique(array: list) -> bool:
     "Returns true if all the elements in an array are unique"
     return len(array) == len(set(array))
 
@@ -35,7 +35,7 @@ class TestBeam(BaseModel):
     
 class RunConfig(BaseModel):
     comment: Optional[str] = Field(None, strip_whitespace=True)
-    num_runs: int 
+    num_runs: int
     run_log_directory: DirectoryPath = Field(..., description="Directory containing the run logs, each log corresponds to a series/group of runs")
 
 class ServiceHybrid(BaseModel):
@@ -50,11 +50,11 @@ class ServiceHybrid(BaseModel):
     bias_voltage: float
 
     @field_validator('module_select', mode='after')
-    def check_single_module_selected(rb_positions: List):
+    def check_single_module_selected(rb_positions: list):
         """Logic for handling the format [[110], [], []], checks only 1 module is connected to rb"""
         if len(get_modules(rb_positions)) != 1:
             raise ValueError(f"COME ON MAN! Only a single module can be selected for test beam. You selected: {rb_positions}")
-        return rb_positions  
+        return rb_positions
     
     #lowercase and strip
     @field_validator('telescope_layer',mode='before')
@@ -71,8 +71,6 @@ class TelescopeConfig(BaseModel):
     l1a_delay: int
     offset: Union[int, Literal['auto']]
     power_mode: Literal['default','low', 'medium','high'] = Field(..., strip_whitespace=True, description="Power mode of the etroc, they are 'i4','i3','i2','i1' respectively.")
-    all_thresholds_directory: DirectoryPath = Field(..., description="Directory to put all the thresholds for all the runs.")
-    reuse_thresholds: bool
     etroc_binary_data_directory: DirectoryPath
 
     @field_validator('service_hybrids', mode='after')
@@ -158,9 +156,9 @@ class Oscilloscope(BaseModel):
     @classmethod
     def convert_list_to_tuple(cls, data: Any) -> Any:
         if isinstance(data, dict):
-            if 'horizontal_window' in data and isinstance(data['horizontal_window'], List):
+            if 'horizontal_window' in data and isinstance(data['horizontal_window'], list):
                 data['horizontal_window'] = tuple(data['horizontal_window'])
-            if 'sample_rate' in data and isinstance(data['sample_rate'], List):
+            if 'sample_rate' in data and isinstance(data['sample_rate'], list):
                 data['sample_rate'] = tuple(data['sample_rate'])
         return data
 
@@ -188,8 +186,32 @@ class Oscilloscope(BaseModel):
         raise ValidationError("Clock channel not defined in the config.")
 
 class Watchdog(BaseModel):
-    base_directory: DirectoryPath
-    backup_directory: DirectoryPath
+    monitor_directory: DirectoryPath = Field(..., description="Where all the plots go")
+    final_archive_directory: DirectoryPath
+
+    ###############################################
+    ###### BELOW ARE PRECOMPUTED DIRECTORIES ######
+    ###### COMPUTED FROM INPUTTED DIRS ABOVE ######
+    ###############################################
+
+    def ensure_dir_exists(self, directory: DirectoryPath) -> DirectoryPath:
+        directory.mkdir(exist_ok=True) # throws error if parents dont exists :)
+        return directory
+
+    @computed_field
+    @property
+    def final_etroc_binary_dir(self) -> Path:
+        return self.ensure_dir_exists(self.final_archive_directory / "etroc_binary")
+
+    @computed_field
+    @property
+    def final_scope_binary_dir(self) -> Path:
+        return self.ensure_dir_exists(self.final_archive_directory / "scope_binary")
+    
+    @computed_field
+    @property
+    def final_merged_dir(self) -> Path:
+        return self.ensure_dir_exists(self.final_archive_directory / "merged")
 
 class TBConfig(BaseModel):
     test_beam: TestBeam
@@ -199,8 +221,7 @@ class TBConfig(BaseModel):
     power_supplies: List[PowerSupply]
     watchdog: Watchdog
 
-
-def load_config() -> TBConfig:
+def load_config(relax_validation=False) -> TBConfig:
     """
     The active config should be put in the active config director, if there is more than one it throws an error.
 
@@ -232,6 +253,12 @@ def load_config() -> TBConfig:
         import tomli
         with open(active_config_path, 'rb') as f:
             data = tomli.load(f)
-        return TBConfig.model_validate(data)
     else:
         raise NotImplementedError(f"Sorry the file extension you provided ({active_config_path.suffix}) is not currently implemented!")
+   
+    if relax_validation:
+        # if key is missing it wont add it but it wont run validation
+        # so extra_fields are not added!
+        return TBConfig.model_construct(**data)
+    else:
+        return TBConfig.model_validate(data)

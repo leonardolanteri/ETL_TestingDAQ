@@ -5,8 +5,8 @@ Simple processing routine that uses multiprocessing
 Please watch this video if you are new to multiprocessing:
 https://www.youtube.com/watch?v=X7vBbelRXn0 
 """
-from .lecroy_binary_decoder import LecroyReader
-from .etroc_binary_decoder import converter, root_dumper
+from lecroy_binary_decoder import LecroyReader
+from etroc_binary_decoder import converter, root_dumper
 
 import logging
 import time
